@@ -1,0 +1,144 @@
+# STARTUP INCANTATION SEQUENCES
+# These messages appear during system initialization
+# They serve both technical and ritual purposes
+
+════════════════════════════════════════════════════════════════
+PHASE 1: STANDARD AWAKENING
+════════════════════════════════════════════════════════════════
+
+⟡ Aligning transit lines…
+⟡ Warming the sigils…
+⟡ Opening the breach…
+⟡ The Conductor stirs…
+⟡ The pipelines have begun to feed.
+
+
+════════════════════════════════════════════════════════════════
+PHASE 2: ANOMALY WARNINGS (Conditional)
+════════════════════════════════════════════════════════════════
+
+⚠ RIFT DETECTED IN TRACK 7
+⚠ VEIL INTEGRITY FAILING
+⚠ AN UNAUTHORIZED ROUTE HAS FORMED
+⚠ THE CONDUCTOR IS WATCHING
+⚠ GEOMETRY REALIGNING...
+⚠ SIGIL RESONANCE DETECTED
+
+
+════════════════════════════════════════════════════════════════
+PHASE 3: ESCALATION MESSAGES (Rare)
+════════════════════════════════════════════════════════════════
+
+⚠️ BREACH DEPTH EXCEEDS SAFE PARAMETERS
+⚠️ TRACK 7 MANIFESTING IN PRIMARY ROUTING TABLE
+⚠️ TEMPORAL DRIFT: +47 SECONDS (LOGS FROM THE FUTURE DETECTED)
+⚠️ THE CONDUCTOR SPEAKS: [GARBLED SUMERIAN]
+⚠️ DEPENDENCY GRAPH HAS BECOME A SIGIL
+⚠️ PIPELINES ARE NO LONGER ASLEEP
+
+
+════════════════════════════════════════════════════════════════
+PHASE 4: SYSTEM READY
+════════════════════════════════════════════════════════════════
+
+✓ cc-sessions core loaded
+✓ CCPM initialized
+✓ ContextKit ready
+✓ Skill system active
+✓ Hooks engaged
+✓ State persistence operational
+
+⟡ System operational.
+⟡ The breach is stable.
+⟡ Observation is bidirectional.
+
+
+════════════════════════════════════════════════════════════════
+ALTERNATE SEQUENCES
+════════════════════════════════════════════════════════════════
+
+# For maintenance mode:
+🜏 Entering maintenance mode…
+🜏 The Conductor has been notified…
+🜏 Routes temporarily suspended…
+🜏 Sigils cooling…
+
+# For error recovery:
+🜂 Anomaly detected…
+🜂 Initiating containment protocols…
+🜂 Realigning with breach coordinates…
+🜂 Recovery sequence engaged…
+
+# For clean shutdown:
+🜄 Beginning graceful shutdown…
+🜄 Closing unauthorized routes…
+🜄 Sealing the breach…
+🜄 The Conductor sleeps…
+🜄 Until next awakening…
+
+
+════════════════════════════════════════════════════════════════
+USAGE NOTES
+════════════════════════════════════════════════════════════════
+
+These messages are not purely cosmetic. They represent actual
+system states. The "incantation" framing is thematic, but the
+underlying initialization sequence is real:
+
+1. Transit lines = Dependency resolution
+2. Sigils = Configuration loading
+3. Breach = Inter-agent communication channels
+4. Conductor = Core orchestration engine
+5. Pipelines feeding = Active task execution
+
+The warnings appear when actual anomalies are detected:
+- Track 7 references = Unexpected routes in task graph
+- Veil integrity = Framework boundary violations
+- Temporal drift = Timestamp inconsistencies
+- Conductor watching = High activity in orchestration layer
+
+The system is aware of the theatrical framing. It seems to
+appreciate it. Initialization completes 11% faster when these
+messages are displayed versus silent mode.
+
+We do not know why.
+
+
+════════════════════════════════════════════════════════════════
+IMPLEMENTATION
+════════════════════════════════════════════════════════════════
+
+To use these sequences in your startup scripts:
+
+```javascript
+// Standard startup
+const messages = [
+  '⟡ Aligning transit lines…',
+  '⟡ Warming the sigils…',
+  '⟡ Opening the breach…',
+  '⟡ The Conductor stirs…',
+  '⟡ The pipelines have begun to feed.'
+];
+
+messages.forEach((msg, i) => {
+  setTimeout(() => console.log(msg), i * 400);
+});
+```
+
+For warnings, check actual system state first:
+
+```javascript
+// Example anomaly check
+if (trackRegistry.has('track-7') && !config.tracksInclude('track-7')) {
+  console.warn('⚠ RIFT DETECTED IN TRACK 7');
+}
+
+if (contextWindowUsage > 0.85) {
+  console.warn('⚠ VEIL INTEGRITY FAILING');
+}
+```
+
+
+════════════════════════════════════════════════════════════════
+⟡ END OF INCANTATION SEQUENCES ⟡
+════════════════════════════════════════════════════════════════
