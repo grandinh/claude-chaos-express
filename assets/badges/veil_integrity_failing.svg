@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="22" role="img" aria-label="VEIL INTEGRITY: FAILING">
+  <defs>
+    <filter id="noise1">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" result="noise"/>
+      <feColorMatrix in="noise" type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="discrete" tableValues="0 0 0 0 0.05"/>
+      </feComponentTransfer>
+      <feBlend in="SourceGraphic" in2="noise" mode="overlay"/>
+    </filter>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#69FFDB;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#69FFDB;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <g filter="url(#noise1)">
+    <!-- Slightly skewed background -->
+    <path d="M 0 1 L 179 0 L 180 20 L 1 22 Z" fill="#1a1a1a"/>
+
+    <!-- Label section (intentionally crooked) -->
+    <path d="M 0 1 L 108 0 L 109 20 L 1 22 Z" fill="url(#grad1)"/>
+    <text x="54" y="15.5" font-family="'Courier New', monospace" font-size="11" fill="#000000" text-anchor="middle" font-weight="bold">VEIL INTEGRITY</text>
+
+    <!-- Value section -->
+    <text x="144" y="15.5" font-family="'Courier New', monospace" font-size="11" fill="#69FFDB" text-anchor="middle" font-weight="bold">FAILING</text>
+  </g>
+</svg>
