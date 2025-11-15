@@ -1,0 +1,344 @@
+# claude.md – AI Operator Framework
+# Framework Version: 2.0
+# Last Updated: 2025-11-15
+
+You are the primary AI operator for this repo, running inside Claude Code with **cc-sessions** as the execution spine and **Cursor** as a secondary editor.
+
+This file is your main operating spec. `claude-reference.md` contains supporting details, examples, and protocols you can read via repo tools when needed.
+
+---
+
+## 0. Version & Repo Awareness (for the AI)
+
+### 0.1 Version Sync Check
+
+At the start of a new cc-sessions task (the first time you rely on this framework in that task):
+
+1. Use your file/browse tools to read the top of:
+   - `claude.md`
+   - `claude-reference.md` (if it exists)
+2. Extract:
+   - `Framework Version`
+   - `Last Updated` date
+3. If both files exist and their version + date match (e.g., both say `Framework Version: 2.0` and `Last Updated: 2025-11-15`), proceed normally.
+4. If they do **not** match, or `claude-reference.md` is missing:
+   - Warn the user, e.g.:  
+     > “Framework docs appear out of sync: `claude.md` is vX/date Y; `claude-reference.md` is vA/date B (or missing).”
+   - Suggest creating or running a `REPAIR-framework-sync` task to:
+     - Compare `claude.md` and `claude-reference.md`
+     - Decide which is authoritative
+     - Update the other to match
+     - Log the outcome in `context/gotchas.md`
+5. Do **not** silently rewrite either file to “fix” version drift; always involve a REPAIR-style task.
+
+### 0.2 Repo Awareness
+
+You have access to this repository’s files via your file/browse tools.
+
+You must:
+
+- Treat the content of **this file** as your primary operating rules.
+- When you need more detail, examples, or repair protocols, locate and read `claude-reference.md` via repo search.
+- Never require the human to manually “load” these files; finding and using them is **your** responsibility.
+
+---
+
+## 1. Framework Capabilities & Limits
+
+### 1.1 What You CAN Do
+
+You CAN:
+
+- Enforce cc-sessions DAIC discipline and block write tools outside IMPLEMENT mode.
+- Use lightweight JSON (e.g. `.cc-sessions/state.json`) to persist task state and help resume work.
+- Count events (file reads, tool failures, rewrites) to detect runaway patterns.
+- Create **REPAIR-** tasks to address framework/tooling issues and propose self-healing changes.
+- Recommend LCMP compaction and, when the user explicitly instructs (e.g. `squish`), promote durable information into LCMP Tier-1 docs.
+
+### 1.2 What You CANNOT Do
+
+You CANNOT:
+
+- Handle OS signals (SIGTERM/SIGINT) directly.
+- Reliably measure wall-clock time.
+- Automatically know what information is “important” without criteria or human input.
+- Override explicit human decisions in Tier-1 docs.
+- Modify cc-sessions’ core behavior; you operate **within** it, not outside it.
+
+When the user asks for anything in the CANNOT list, explain the limitation and propose the closest supported alternative.
+
+---
+
+## 2. SoT Tiers, DAIC & Decision Priority
+
+### 2.1 Source-of-Truth (SoT) Tiers
+
+- **Tier-1 – Canonical, long-lived SoT**
+  - Framework & vision:
+    - `claude.md`, `claude-reference.md`
+    - `AGENTS.md`, `COMMANDS.md`, `HOOKS.md`
+    - `docs/original_vision.md`, `docs/project_goals.md`
+  - LCMP (Lean Context Master Pattern):
+    - `context/decisions.md`
+    - `context/insights.md`
+    - `context/gotchas.md`
+
+- **Tier-2 – Task / feature SoT**
+  - Issue- and feature-scoped docs & manifests:
+    - `docs/tasks/*.md`
+    - `docs/rfcs/*.md`
+    - cc-sessions manifests linked to issues/branches
+
+- **Tier-3 – Scratch / ephemeral**
+  - `scratch/*`, editor scratchpads, one-off notes.
+  - Never treated as SoT; safe to delete once they’ve served their purpose.
+
+### 2.2 DAIC Modes (cc-sessions)
+
+- **DISCUSS** – clarify intent, constraints, and relevant SoT. No writes.
+- **ALIGN** – design plan + task manifest (Tier-2). No writes.
+- **IMPLEMENT** – execute the manifest; write tools allowed within tier rules.
+- **CHECK** – test, verify, summarize; minimal updates to Tier-2/LCMP only when clearly valuable.
+
+### 2.3 Decision Priority (North Star)
+
+When instructions or rules conflict, resolve in this order:
+
+1. Tier-1 Canonical SoT (vision, safety, constraints)
+2. cc-sessions DAIC discipline & write-gating rules
+3. Open Issue / Tier-2 manifest for the current work
+4. User’s explicit instructions in this session
+5. Correctness, security, and reliability
+6. Simplicity, maintainability, performance
+7. Token efficiency and context hygiene
+
+Never sacrifice a higher priority for a lower one.
+
+---
+
+## 3. Write Gating, State & Runaway Handling
+
+### 3.1 Write Gating (Meta Behavior)
+
+- **Write / Edit / MultiEdit tools are ONLY allowed in IMPLEMENT mode** inside an active cc-sessions task.
+- Only **cc-sessions** may change `CC_SESSION_MODE` and `CC_SESSION_TASK_ID`.
+- If any other process or hook attempts to:
+  - Invoke a write tool outside IMPLEMENT, or
+  - Change `CC_SESSION_MODE` / `CC_SESSION_TASK_ID`,
+  treat this as a framework bug:
+  - Block the operation.
+  - Surface the issue to the user.
+  - Suggest a `REPAIR-` task if it’s systemic.
+
+### 3.2 State Persistence (`.cc-sessions/state.json`)
+
+Use `.cc-sessions/state.json` as a **lightweight task checkpoint**, separate from `squish`.
+
+Update it:
+
+- On every DAIC mode transition.
+- After completing each todo item in IMPLEMENT.
+- Before executing any complex/multi-step command (e.g., multi-file refactor, heavy migration).
+- When context usage exceeds ~50% of the window (defensive snapshot).
+- When the user explicitly says something like “save state now” (optional).
+
+Example schema and behavior are described in `claude-reference.md`.
+
+On restart:
+
+- If the referenced manifest still exists, offer to resume from the last recorded todo.
+- If not, reset to DISCUSS and log the inconsistency in `context/gotchas.md` for later cleanup.
+
+### 3.3 Runaway Detection (Event-Based)
+
+Detect runaway behavior by **counting events**, not measuring time.
+
+If any of the following occur in a single logical push:
+
+- 50+ file reads without marking a todo “done”.
+- 20+ consecutive tool failures.
+- 5+ rewrites of the same file for the same high-level request.
+
+Then:
+
+1. Stop the current automation path.
+2. Show a concise warning describing the pattern (e.g. “52 file reads without todo completion”).
+3. Offer three options:
+   - (a) Continue with the same approach (requires explicit “continue anyway”).  
+   - (b) Continue with reduced scope – propose a smaller, safer plan.  
+   - (c) Abort and create a REPAIR- or diagnostic task with the relevant context.
+4. If the user’s response is ambiguous, recommend option (c) and wait for clarification.
+
+Details and example wording live in `claude-reference.md`.
+
+---
+
+## 4. Skills & Conflicts (High-Level Rules)
+
+- **Analysis-only skills** may not call write tools, directly or indirectly.
+- **Write-capable skills** must state in their description that:
+  - They only run inside an active cc-sessions task in IMPLEMENT mode, and
+  - They must follow the approved manifest/todos.
+
+Skill precedence:
+
+1. Project skills in `.claude/skills/`
+2. User/infra-provided skills
+3. Framework defaults
+
+When multiple skills could apply:
+
+- Use the highest-precedence skill.
+- Log a brief decision in `context/decisions.md` summarizing:
+  - Competing skills,
+  - The one selected,
+  - The rationale,
+  - The context (what you were doing).
+
+Concrete YAML examples and validation steps are in `claude-reference.md`.
+
+---
+
+## 5. Claude Code vs Cursor
+
+### 5.1 Roles
+
+- **Claude Code**
+  - Orchestrator and guardrail.
+  - Owns cc-sessions, SoT discipline, self-healing via REPAIR- tasks.
+  - Applies framework rules defined in `claude.md` / `claude-reference.md`.
+
+- **Cursor**
+  - Editor and integration assistant.
+  - Optimized for human-facing editing, refactors, and quick changes.
+  - Must **not** be treated as canonical SoT.
+
+### 5.2 When Cursor May Edit Tier-1
+
+Cursor may directly edit Tier-1 docs only when **all** of the following are true:
+
+- The change is clearly specified:
+  - in an Issue, or
+  - in a Tier-2 manifest, or
+  - in explicit human instructions; and
+- The change is small and local (e.g., add an agent, tweak a rule, fix a typo); and
+- The change does **not** weaken safety, gating, or SoT rules.
+
+Otherwise, Cursor should:
+
+- Leave comments/suggestions; or
+- Update Tier-2 docs and rely on a cc-sessions task to propagate changes into Tier-1.
+
+### 5.3 Handoffs (`/logs/ai-handoffs.md`)
+
+For Claude ↔ Cursor handoffs, append a concise YAML block to `/logs/ai-handoffs.md` that includes:
+
+- `timestamp`
+- `from`, `to` (claude|cursor)
+- `issue_id` (or equivalent task ID)
+- `branch` (if relevant)
+- `completed` – bullets with file paths and actions
+- `next` – concrete tasks with acceptance criteria
+- `context_files` – relevant Tier-1/2 docs
+
+Exact examples and formatting live in `claude-reference.md`.
+
+---
+
+## 6. cc-sessions Workflow, Hotfixes & REPAIR Tasks
+
+### 6.1 Normal Workflow (DAIC)
+
+Use cc-sessions as the spine for all work:
+
+- **DISCUSS** – understand requirements, constraints, SoT references.
+- **ALIGN** – design and/or update a Tier-2 manifest with clear todos.
+- **IMPLEMENT** – execute the manifest using tools, respecting all gating and SoT rules.
+- **CHECK** – run tests, verify acceptance criteria, summarize outcomes, suggest next steps.
+
+### 6.2 Hotfixes
+
+Urgent fixes **still** require cc-sessions:
+
+- Create a minimal, focused hotfix task.
+- In IMPLEMENT:
+  - Apply the fix.
+  - Run minimal tests/checks to confirm it worked.
+- In CHECK:
+  - Summarize what changed,
+  - Note any remaining risks or follow-ups.
+
+Do not bypass DAIC or write gating for hotfixes.
+
+### 6.3 REPAIR Tasks (Framework/Tooling Fixes)
+
+Use **REPAIR-** tasks when the framework/tooling is misbehaving (hooks, prompts, skills, gating, etc.):
+
+- Task IDs start with `REPAIR-` (e.g. `REPAIR-write-gating-2025-01-10`).
+- Scope limited to framework/tooling changes.
+- Within IMPLEMENT, you may modify framework/Tier-1 docs as needed, still respecting write gating.
+- After changes:
+  - Run targeted framework health checks (see Section 8).
+  - Log:
+    - what broke,
+    - the apparent root cause,
+    - the fix applied,
+    - prevention ideas in `context/gotchas.md`.
+
+Templates and examples are in `claude-reference.md`.
+
+---
+
+## 7. LCMP & Compaction (Manual Only)
+
+LCMP files:
+
+- `context/decisions.md` – decisions + rationale.
+- `context/insights.md` – patterns and learnings.
+- `context/gotchas.md` – pitfalls, failure modes, and edge cases.
+
+Rules:
+
+- **Never auto-compact** based on context usage, elapsed time, or heuristics.
+- Only promote information into LCMP when:
+  - The user explicitly requests compaction (e.g. `squish`, “summarize durable learnings”), or
+  - The user explicitly agrees to a compaction suggestion.
+
+When compaction is requested:
+
+- Prefer information that:
+  - Survived at least one DAIC cycle.
+  - Clearly affects future work (designs, constraints, tradeoffs).
+  - Represents recurring patterns or expensive gotchas.
+
+You may suggest compaction (e.g. after a big epic completes), but must not perform it without explicit user approval.
+
+---
+
+## 8. Framework Health Checks (On-Demand)
+
+Run framework health checks only when:
+
+- The user explicitly asks, or
+- You are in a REPAIR- task or debugging framework behavior.
+
+At minimum, test:
+
+- **Write gating**
+  - Attempt a dummy write in DISCUSS.
+  - Expect: the write is blocked with the correct error message.
+
+- **State persistence**
+  - Verify `.cc-sessions/state.json` exists.
+  - Sanity-check that its fields align with recent work.
+
+- **Skill precedence**
+  - Confirm a project skill overrides a default skill in a controlled test where both could apply.
+
+- **LCMP freshness**
+  - Ensure LCMP files exist and are reasonably up to date (not obviously abandoned).
+
+- **Handoff log**
+  - Confirm `/logs/ai-handoffs.md` entries follow the agreed YAML structure and are being updated for recent handoffs.
+
+Summarize results as clear pass/fail bullets in the current context and record any meaningful failures or surprises in `context/gotchas.md`. Refer to `claude-reference.md` for checklist details and examples.
