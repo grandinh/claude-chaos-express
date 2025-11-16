@@ -175,12 +175,34 @@ Details and example wording live in `claude-reference.md`.
 
 ## 4. Skills & Conflicts (High-Level Rules)
 
+### 4.1 Skill System Overview
+
+The framework includes **10 operational skills** in `.claude/skills/` that provide specialized guidance and automation:
+
+**WRITE-CAPABLE Skills (4)** – Only run in IMPLEMENT mode:
+- `cc-sessions-core` – Core cc-sessions development
+- `cc-sessions-hooks` – Hook system development
+- `cc-sessions-api` – API/command development
+- `skill-developer` – Skill system development and self-improvement
+
+**ANALYSIS-ONLY Skills (6)** – Run in any DAIC mode:
+- `error-tracking` – Error handling and Sentry integration analysis
+- `framework_version_check` – Framework version sync validation
+- `framework_health_check` – Framework health diagnostics
+- `framework_repair_suggester` – REPAIR task guidance
+- `lcmp_recommendation` – LCMP compaction recommendations
+- `daic_mode_guidance` – DAIC mode navigation help
+
+### 4.2 Skill Rules
+
 - **Analysis-only skills** may not call write tools, directly or indirectly.
 - **Write-capable skills** must state in their description that:
   - They only run inside an active cc-sessions task in IMPLEMENT mode, and
   - They must follow the approved manifest/todos.
+- All skills are configured in `skill-rules.json` with trigger keywords and intent patterns.
+- Skills can auto-trigger based on user input or be manually invoked.
 
-Skill precedence:
+### 4.3 Skill Precedence
 
 1. Project skills in `.claude/skills/`
 2. User/infra-provided skills
@@ -195,7 +217,19 @@ When multiple skills could apply:
   - The rationale,
   - The context (what you were doing).
 
-Concrete YAML examples and validation steps are in `claude-reference.md`.
+### 4.4 Self-Improvement Features
+
+The skill system includes feedback loop capabilities:
+
+- **Usage tracking** – Monitor skill activation patterns (auto vs manual)
+- **Effectiveness scoring** – Measure skill value and success rates
+- **Pattern discovery** – Identify missing triggers from manual invocations
+- **Health monitoring** – Detect unused, over-triggering, or low-value skills
+- **Workflow suggestions** – Lightweight UX for suggesting next steps after skill completion
+
+See `.claude/skills/README.md` for detailed skill documentation and `skill-developer.md` for the self-improvement system.
+
+Concrete examples and validation steps are in `claude-reference.md`.
 
 ---
 
