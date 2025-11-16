@@ -263,13 +263,13 @@ When multiple skills could apply:
 ├── skill-rules.json                    # Trigger configuration (v3.0.0)
 ├── skill-usage.json                    # Usage tracking (created on first use)
 │
-├── WRITE-CAPABLE/ (4 skills)
+├── WRITE-CAPABLE Skills (4 total) - all .md files in root:
 │   ├── cc-sessions-core.md
 │   ├── cc-sessions-hooks.md
 │   ├── cc-sessions-api.md
 │   └── skill-developer.md
 │
-├── ANALYSIS-ONLY/ (7 skills)
+├── ANALYSIS-ONLY Skills (7 total) - all .md files in root:
 │   ├── error-tracking.md
 │   ├── framework_version_check.md
 │   ├── framework_health_check.md
@@ -278,7 +278,7 @@ When multiple skills could apply:
 │   ├── daic_mode_guidance.md
 │   └── skill-assessor.md
 │
-└── WORKFLOW-TRIGGERS/ (9 skills - NEW in v3.0)
+└── WORKFLOW-TRIGGER Skills (9 total - NEW in v3.0) - all .md files in root:
     ├── code-review-trigger.md          # Natural language for /code-review
     ├── research-trigger.md             # Natural language for /research
     ├── pm-workflow-trigger.md          # Natural language for PM commands
@@ -289,6 +289,9 @@ When multiple skills could apply:
     ├── validation-trigger.md           # Natural language for quality checks
     └── checkpoint-trigger.md           # Natural language for checkpoints
 ```
+
+**IMPORTANT:** All skill files MUST be located directly in `.claude/skills/<skill-name>.md` (flat structure).
+Do NOT create subdirectories - the Skill tool expects all skills at root level.
 
 ---
 

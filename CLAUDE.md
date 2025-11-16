@@ -275,6 +275,12 @@ The framework includes **20 operational skills** in `.claude/skills/` that provi
 - All skills are configured in `skill-rules.json` with trigger keywords and intent patterns.
 - Skills can auto-trigger based on user input or be manually invoked.
 
+**File Organization:**
+- All skill files MUST be in `.claude/skills/<skill-name>.md` (flat structure, root level)
+- Do NOT use subdirectories (e.g., `WRITE-CAPABLE/`, `ANALYSIS-ONLY/`, `WORKFLOW-TRIGGERS/`)
+- The skill activation system expects all skills at root level
+- Skill categorization (WRITE-CAPABLE, ANALYSIS-ONLY, etc.) is handled via metadata in `skill-rules.json`, not directory structure
+
 ### 4.3 Skill Precedence
 
 1. Project skills in `.claude/skills/`
