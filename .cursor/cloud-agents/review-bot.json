@@ -1,0 +1,46 @@
+{
+  "$schema": "../schemas/cloud-agent-config.json",
+  "name": "ReviewBot",
+  "description": "Automated code review agent triggered on pull requests for comprehensive quality analysis",
+  "claudeAgentId": "code-review-expert",
+  "claudeAgentPath": ".claude/agents/code-review-expert.md",
+  "trigger": {
+    "type": "webhook",
+    "events": ["pull_request.opened", "pull_request.synchronize"],
+    "filters": {
+      "excludePatterns": [
+        "**/*.md",
+        "**/*.txt",
+        "**/docs/**"
+      ],
+      "minChangedLines": 10
+    }
+  },
+  "model": "claude-sonnet-4",
+  "prompt": {
+    "template": "Perform a comprehensive code review of this pull request:\n\n**Architecture & Design:**\n- Design patterns and SOLID principles\n- Code organization and modularity\n- API design and interfaces\n\n**Code Quality:**\n- Readability and maintainability\n- Error handling and edge cases\n- Performance considerations\n- Security vulnerabilities\n\n**Testing:**\n- Test coverage for new code\n- Edge case coverage\n- Integration test needs\n\nProvide specific line-by-line feedback with severity levels (critical/high/medium/low).",
+    "context": {
+      "includeDiff": true,
+      "includeContext": 10,
+      "analyzeImpact": true,
+      "checkTests": true
+    }
+  },
+  "output": {
+    "format": "pr-review",
+    "commentStyle": "inline",
+    "severity": {
+      "critical": "request-changes",
+      "high": "request-changes",
+      "medium": "comment",
+      "low": "approve-with-comments"
+    },
+    "summaryTemplate": "## Code Review Summary\n\n**Overall Assessment:** {assessment}\n\n**Key Issues:** {issue_count}\n- Critical: {critical_count}\n- High: {high_count}\n- Medium: {medium_count}\n- Low: {low_count}\n\n**Recommendations:** {recommendations}"
+  },
+  "metadata": {
+    "category": "code-review",
+    "priority": "high",
+    "estimatedDuration": "5-10 minutes",
+    "requiredTools": ["Read", "Grep", "Glob", "Bash"]
+  }
+}

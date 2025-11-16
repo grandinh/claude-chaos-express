@@ -1,0 +1,359 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "description": "Example GitHub webhook payloads for Cursor Cloud Agent triggers",
+  "examples": {
+    "pull_request_opened": {
+      "description": "Triggered when a new pull request is opened. Used by A11yGuard, ReviewBot, and CommitGen.",
+      "payload": {
+        "action": "opened",
+        "number": 123,
+        "pull_request": {
+          "id": 987654321,
+          "number": 123,
+          "state": "open",
+          "title": "feat: add user authentication module",
+          "body": "This PR implements JWT-based authentication with refresh tokens.\n\nCloses #45",
+          "user": {
+            "login": "developer",
+            "id": 12345,
+            "avatar_url": "https://avatars.githubusercontent.com/u/12345?v=4"
+          },
+          "created_at": "2025-01-20T10:30:00Z",
+          "updated_at": "2025-01-20T10:30:00Z",
+          "head": {
+            "ref": "feature/auth-module",
+            "sha": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0",
+            "repo": {
+              "name": "claude-chaos-express",
+              "full_name": "grandinh/claude-chaos-express"
+            }
+          },
+          "base": {
+            "ref": "main",
+            "sha": "z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4j3i2h1g0"
+          },
+          "labels": [
+            {
+              "name": "enhancement",
+              "color": "a2eeef"
+            }
+          ],
+          "changed_files": 12,
+          "additions": 456,
+          "deletions": 89,
+          "commits": 5
+        },
+        "repository": {
+          "id": 456789,
+          "name": "claude-chaos-express",
+          "full_name": "grandinh/claude-chaos-express",
+          "owner": {
+            "login": "grandinh",
+            "id": 67890
+          },
+          "private": false,
+          "default_branch": "main"
+        },
+        "sender": {
+          "login": "developer",
+          "id": 12345
+        }
+      },
+      "extracted_context": {
+        "pr_number": 123,
+        "branch": "feature/auth-module",
+        "base_branch": "main",
+        "title": "feat: add user authentication module",
+        "description": "This PR implements JWT-based authentication with refresh tokens.\n\nCloses #45",
+        "author": "developer",
+        "changed_files": 12,
+        "additions": 456,
+        "deletions": 89,
+        "labels": ["enhancement"],
+        "head_sha": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0"
+      }
+    },
+    "pull_request_synchronize": {
+      "description": "Triggered when new commits are pushed to an existing PR. Used by A11yGuard and ReviewBot for re-review.",
+      "payload": {
+        "action": "synchronize",
+        "number": 123,
+        "before": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0",
+        "after": "b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0a1",
+        "pull_request": {
+          "id": 987654321,
+          "number": 123,
+          "state": "open",
+          "title": "feat: add user authentication module",
+          "user": {
+            "login": "developer",
+            "id": 12345
+          },
+          "updated_at": "2025-01-20T11:45:00Z",
+          "head": {
+            "ref": "feature/auth-module",
+            "sha": "b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0a1"
+          },
+          "base": {
+            "ref": "main",
+            "sha": "z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4j3i2h1g0"
+          },
+          "labels": [
+            {
+              "name": "enhancement",
+              "color": "a2eeef"
+            }
+          ],
+          "changed_files": 14,
+          "additions": 512,
+          "deletions": 103,
+          "commits": 7
+        },
+        "repository": {
+          "id": 456789,
+          "name": "claude-chaos-express",
+          "full_name": "grandinh/claude-chaos-express",
+          "default_branch": "main"
+        },
+        "sender": {
+          "login": "developer",
+          "id": 12345
+        }
+      },
+      "extracted_context": {
+        "pr_number": 123,
+        "branch": "feature/auth-module",
+        "previous_sha": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0",
+        "new_sha": "b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0a1",
+        "incremental_diff": true,
+        "new_commits": 2,
+        "total_changed_files": 14,
+        "trigger_reason": "New commits pushed - re-run accessibility and code review checks"
+      }
+    },
+    "pull_request_labeled": {
+      "description": "Triggered when a label is added to a PR. Used by CommitGen (optional trigger with 'needs-commit-msg' label).",
+      "payload": {
+        "action": "labeled",
+        "number": 123,
+        "label": {
+          "name": "needs-commit-msg",
+          "color": "d4c5f9"
+        },
+        "pull_request": {
+          "id": 987654321,
+          "number": 123,
+          "state": "open",
+          "title": "feat: add user authentication module",
+          "user": {
+            "login": "developer",
+            "id": 12345
+          },
+          "head": {
+            "ref": "feature/auth-module",
+            "sha": "b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0a1"
+          },
+          "base": {
+            "ref": "main",
+            "sha": "z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4j3i2h1g0"
+          },
+          "labels": [
+            {
+              "name": "enhancement",
+              "color": "a2eeef"
+            },
+            {
+              "name": "needs-commit-msg",
+              "color": "d4c5f9"
+            }
+          ]
+        },
+        "repository": {
+          "id": 456789,
+          "name": "claude-chaos-express",
+          "full_name": "grandinh/claude-chaos-express",
+          "default_branch": "main"
+        },
+        "sender": {
+          "login": "reviewer",
+          "id": 54321
+        }
+      },
+      "extracted_context": {
+        "pr_number": 123,
+        "label_added": "needs-commit-msg",
+        "trigger_reason": "CommitGen requested via label"
+      }
+    },
+    "pull_request_closed": {
+      "description": "Triggered when a PR is closed (merged or abandoned). Can be used for cleanup or analytics.",
+      "payload": {
+        "action": "closed",
+        "number": 123,
+        "pull_request": {
+          "id": 987654321,
+          "number": 123,
+          "state": "closed",
+          "merged": true,
+          "merged_at": "2025-01-20T14:30:00Z",
+          "merge_commit_sha": "c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0a1b2",
+          "title": "feat: add user authentication module",
+          "user": {
+            "login": "developer",
+            "id": 12345
+          },
+          "merged_by": {
+            "login": "maintainer",
+            "id": 99999
+          }
+        },
+        "repository": {
+          "id": 456789,
+          "name": "claude-chaos-express",
+          "full_name": "grandinh/claude-chaos-express"
+        }
+      },
+      "extracted_context": {
+        "pr_number": 123,
+        "merged": true,
+        "merge_commit": "c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0a1b2",
+        "trigger_reason": "PR closed - cleanup agent run data"
+      }
+    }
+  },
+  "authentication": {
+    "description": "GitHub webhook requests include authentication headers for verification",
+    "headers": {
+      "X-GitHub-Event": "pull_request",
+      "X-GitHub-Delivery": "12345678-1234-1234-1234-123456789abc",
+      "X-Hub-Signature-256": "sha256=abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+      "User-Agent": "GitHub-Hookshot/abc123",
+      "Content-Type": "application/json"
+    },
+    "signature_verification": {
+      "description": "Verify webhook authenticity using HMAC SHA256",
+      "algorithm": "HMAC-SHA256",
+      "secret": "CURSOR_WEBHOOK_SECRET (from GitHub repository secrets)",
+      "verification_steps": [
+        "Extract X-Hub-Signature-256 header value",
+        "Remove 'sha256=' prefix to get signature",
+        "Compute HMAC SHA256 of payload using webhook secret",
+        "Compare computed signature with received signature (constant-time comparison)",
+        "Reject request if signatures don't match"
+      ],
+      "example_code": {
+        "node": "const crypto = require('crypto');\nconst hmac = crypto.createHmac('sha256', webhookSecret);\nhmac.update(JSON.stringify(payload));\nconst expectedSignature = 'sha256=' + hmac.digest('hex');\nconst isValid = crypto.timingSafeEqual(\n  Buffer.from(expectedSignature),\n  Buffer.from(receivedSignature)\n);"
+      }
+    }
+  },
+  "agent_filtering": {
+    "description": "How Cloud Agents filter webhook events based on config",
+    "a11y_guard_example": {
+      "config": {
+        "trigger": {
+          "events": ["pull_request.opened", "pull_request.synchronize"],
+          "filters": {
+            "pathPatterns": ["**/*.tsx", "**/*.jsx"],
+            "excludePatterns": ["**/*.test.*"]
+          }
+        }
+      },
+      "evaluation": {
+        "step1": "Check if event type matches: pull_request.opened ✓",
+        "step2": "Extract changed files from PR diff",
+        "step3": "Apply pathPatterns filter: at least 1 .tsx or .jsx file changed?",
+        "step4": "Apply excludePatterns filter: exclude test files",
+        "step5": "If any files match after filtering → trigger agent"
+      },
+      "example_files": {
+        "changed_files": [
+          "src/components/LoginForm.tsx",
+          "src/components/LoginForm.test.tsx",
+          "src/utils/api.ts",
+          "README.md"
+        ],
+        "after_pathPatterns": [
+          "src/components/LoginForm.tsx",
+          "src/components/LoginForm.test.tsx"
+        ],
+        "after_excludePatterns": [
+          "src/components/LoginForm.tsx"
+        ],
+        "trigger_decision": "YES - 1 file matches filters (LoginForm.tsx)"
+      }
+    },
+    "commit_gen_example": {
+      "config": {
+        "trigger": {
+          "events": ["pull_request.opened"],
+          "filters": {
+            "requireLabel": "needs-commit-msg"
+          }
+        }
+      },
+      "evaluation": {
+        "step1": "Check if event type matches: pull_request.opened ✓",
+        "step2": "Extract PR labels from payload",
+        "step3": "Check if 'needs-commit-msg' label is present",
+        "step4": "If label present → trigger agent, else skip"
+      },
+      "example_labels": [
+        "enhancement",
+        "needs-commit-msg"
+      ],
+      "trigger_decision": "YES - required label present"
+    }
+  },
+  "cursor_api_integration": {
+    "description": "How webhook payloads are transformed for Cursor Cloud Agents API",
+    "endpoint": "POST https://api.cursor.com/v0/agents/webhook",
+    "request_format": {
+      "headers": {
+        "Authorization": "Bearer ${CURSOR_API_KEY}",
+        "Content-Type": "application/json",
+        "X-Webhook-Signature": "${X-Hub-Signature-256}"
+      },
+      "body": {
+        "event": "pull_request.opened",
+        "repository": "grandinh/claude-chaos-express",
+        "pr_number": 123,
+        "branch": "feature/auth-module",
+        "base_branch": "main",
+        "head_sha": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0",
+        "github_payload": "{ ... full GitHub payload ... }",
+        "agents_to_trigger": [
+          {
+            "agent_id": "a11y-guard",
+            "config_path": ".cursor/cloud-agents/a11y-guard.json",
+            "reason": "UI component files changed"
+          },
+          {
+            "agent_id": "review-bot",
+            "config_path": ".cursor/cloud-agents/review-bot.json",
+            "reason": "PR meets minimum changed lines threshold"
+          }
+        ]
+      }
+    },
+    "response_format": {
+      "status": 202,
+      "body": {
+        "message": "Agents triggered successfully",
+        "agents": [
+          {
+            "agent_id": "a11y-guard",
+            "run_id": "run_abc123",
+            "status": "queued",
+            "estimated_duration": "3-5 minutes"
+          },
+          {
+            "agent_id": "review-bot",
+            "run_id": "run_xyz789",
+            "status": "queued",
+            "estimated_duration": "5-10 minutes"
+          }
+        ]
+      }
+    }
+  }
+}

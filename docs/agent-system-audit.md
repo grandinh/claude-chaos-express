@@ -23,13 +23,22 @@ These systems are **complementary**, not competing. Each has its own strengths a
 ### System Characteristics
 
 - **Location:** `.claude/agents/*.md`
-- **Count:** 51 agents organized across 12 categories
 - **Execution:** Local, synchronous, part of cc-sessions workflow
 - **Scope:** Project-specific, task-specific, highly specialized
 - **Integration:** Deep integration with cc-sessions DAIC workflow
 - **State:** Can access and maintain task state via `sessions/sessions-state.json`
 
-### Agent Categories (51 Total)
+<!-- AUTO-GENERATED:START:agent-count -->
+**Total Agents:** 24
+**Claude Agents:** 18
+**Cloud Agents:** 6
+**Automation Candidates:** 2
+**Deprecated:** 1
+
+*Last updated: 2025-11-16T17:30:00.466Z | Auto-generated from `repo_state/agent-registry.json` (v1.0.0)*
+<!-- AUTO-GENERATED:END:agent-count -->
+
+### Agent Categories
 
 #### 1. Build Tools (2)
 - **vite-expert** - Vite build optimization, ESM, HMR, plugins
@@ -107,6 +116,54 @@ These systems are **complementary**, not competing. Each has its own strengths a
 - **refactoring-expert** - Systematic code refactoring
 - **research-expert** - Parallel research with citations
 - **triage-expert** - Problem diagnosis before specialized experts
+
+<!-- AUTO-GENERATED:START:agent-catalog -->
+| ID | Category | Type | Description | Automation Candidate |
+|---|---|---|---|---|
+| a11y-guard | automation | cloud | Accessibility compliance checker for PRs |  |
+| ai-sdk-expert | framework | claude | AI SDK by Vercel Expert (v5 Focused) |  |
+| cli-expert | devops | claude | CLI Development Expert |  |
+| code-analyzer | uncategorized | claude | You are an elite bug hunting specialist with deep expertise in code analysis, lo... |  |
+| code-review | uncategorized | claude | Code Review Agent |  |
+| code-review-expert | general | claude | Code Review Expert | ✓ |
+| code-search | tools | claude | Code Search Agent |  |
+| commit-gen | automation | cloud | Optional PR commit message generator |  |
+| context-gathering | uncategorized | claude | Context-Gathering Agent |  |
+| context-refinement | uncategorized | claude | Context Refinement Agent |  |
+| debt-scanner | automation | cloud | Monthly technical debt scanner |  |
+| doc-sync | automation | cloud | Weekly documentation sync agent |  |
+| file-analyzer | uncategorized | claude | You are an expert file analyzer specializing in extracting and summarizing criti... |  |
+| logging | uncategorized | claude | Logging Agent |  |
+| modernize-bot | automation | cloud | Quarterly code modernization agent |  |
+| nestjs-expert | framework | claude | Nest.js Expert |  |
+| oracle | general | claude | Oracle |  |
+| parallel-worker | uncategorized | claude | You are a parallel execution coordinator working in a git worktree. Your job is ... |  |
+| research-expert | general | claude | Research Expert |  |
+| review-bot | automation | cloud | Automated code review agent for PRs |  |
+| service-documentation | uncategorized | claude | Service Documentation Agent | ✓ |
+| test-lifecycle-demo | test | claude | [Agent description] |  |
+| test-runner | uncategorized | claude | You are an expert test execution and analysis specialist. Your primary responsib... |  |
+| triage-expert | general | claude | Triage Expert |  |
+
+*Last updated: 2025-11-16T17:30:00.475Z | Auto-generated from `repo_state/agent-registry.json` (v1.0.0)*
+<!-- AUTO-GENERATED:END:agent-catalog -->
+
+<!-- AUTO-GENERATED:START:automation-candidates -->
+### Automation Candidates
+
+Agents identified for potential Cursor Cloud Agent automation:
+
+- **code-review-expert** (general) - Code Review Expert
+  - File: `.claude/agents/code-review-expert.md`
+  - Model: sonnet
+  - Tools: Read, Grep, Glob, Bash
+- **service-documentation** (uncategorized) - Service Documentation Agent
+  - File: `.claude/agents/service-documentation.md`
+  - Model: inherit
+  - Tools: Read, Grep, Glob, LS, Edit, MultiEdit, Bash
+
+*Last updated: 2025-11-16T17:30:00.475Z | Auto-generated from `repo_state/agent-registry.json` (v1.0.0)*
+<!-- AUTO-GENERATED:END:automation-candidates -->
 
 ### Use Cases for Claude Subagents
 

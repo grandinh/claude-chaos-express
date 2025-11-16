@@ -1,0 +1,267 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cloud Agent Config Schema",
+  "description": "Schema for Cursor Cloud Agent configuration files",
+  "type": "object",
+  "required": ["$schema", "name", "description", "claudeAgentId", "trigger", "model", "prompt", "output", "metadata"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to this schema file"
+    },
+    "name": {
+      "type": "string",
+      "description": "Display name of the Cloud Agent (e.g., 'DocSync', 'ReviewBot')",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of the agent's purpose and behavior",
+      "minLength": 10
+    },
+    "claudeAgentId": {
+      "type": "string",
+      "description": "ID of the linked Claude agent in the registry",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "claudeAgentPath": {
+      "type": "string",
+      "description": "Path to the Claude agent file (relative to repo root or parent workspace)",
+      "pattern": "^(\\.\\.?/|\\.claude/|~/.claude/).*\\.md$"
+    },
+    "trigger": {
+      "type": "object",
+      "description": "Trigger configuration for the Cloud Agent",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["schedule", "webhook", "manual"],
+          "description": "Trigger type: schedule (cron), webhook (GitHub events), or manual"
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "type": { "const": "schedule" },
+            "schedule": {
+              "type": "string",
+              "description": "Cron expression (5-field format: minute hour day month weekday)",
+              "pattern": "^[\\d\\*,\\-/]+ [\\d\\*,\\-/]+ [\\d\\*,\\-/]+ [\\d\\*,\\-/]+ [\\d\\*,\\-/]+$"
+            },
+            "timezone": {
+              "type": "string",
+              "description": "Timezone for scheduled execution (default: UTC)",
+              "default": "UTC"
+            },
+            "description": {
+              "type": "string",
+              "description": "Human-readable description of the schedule"
+            }
+          },
+          "required": ["schedule"]
+        },
+        {
+          "properties": {
+            "type": { "const": "webhook" },
+            "events": {
+              "type": "array",
+              "description": "GitHub webhook events to trigger on",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z_]+\\.[a-z_]+$"
+              },
+              "minItems": 1
+            },
+            "filters": {
+              "type": "object",
+              "description": "Filters to limit when the agent runs",
+              "properties": {
+                "pathPatterns": {
+                  "type": "array",
+                  "description": "File patterns to include (glob format)",
+                  "items": { "type": "string" }
+                },
+                "excludePatterns": {
+                  "type": "array",
+                  "description": "File patterns to exclude (glob format)",
+                  "items": { "type": "string" }
+                },
+                "includePatterns": {
+                  "type": "array",
+                  "description": "File patterns to include (glob format)",
+                  "items": { "type": "string" }
+                },
+                "minChangedLines": {
+                  "type": "integer",
+                  "description": "Minimum number of changed lines to trigger",
+                  "minimum": 0
+                },
+                "branches": {
+                  "type": "array",
+                  "description": "Branches to trigger on (default: all)",
+                  "items": { "type": "string" }
+                },
+                "labels": {
+                  "type": "array",
+                  "description": "PR labels to trigger on (default: all)",
+                  "items": { "type": "string" }
+                }
+              }
+            }
+          },
+          "required": ["events"]
+        },
+        {
+          "properties": {
+            "type": { "const": "manual" }
+          }
+        }
+      ]
+    },
+    "model": {
+      "type": "string",
+      "enum": ["claude-opus-4", "claude-sonnet-4", "claude-haiku-4"],
+      "description": "Claude model to use for execution"
+    },
+    "prompt": {
+      "type": "object",
+      "description": "Prompt configuration for the agent",
+      "required": ["template"],
+      "properties": {
+        "template": {
+          "type": "string",
+          "description": "Prompt template with instructions for the agent",
+          "minLength": 50
+        },
+        "context": {
+          "type": "object",
+          "description": "Context configuration for the prompt",
+          "properties": {
+            "includeRecentCommits": {
+              "type": "boolean",
+              "description": "Include recent commit history in context"
+            },
+            "commitLookbackDays": {
+              "type": "integer",
+              "description": "Number of days to look back for commits",
+              "minimum": 1,
+              "maximum": 90
+            },
+            "includeDiff": {
+              "type": "boolean",
+              "description": "Include git diff in context (webhook triggers)"
+            },
+            "includeContext": {
+              "type": "integer",
+              "description": "Number of context lines around changes",
+              "minimum": 0,
+              "maximum": 50
+            },
+            "focusAreas": {
+              "type": "array",
+              "description": "Specific directories or files to focus on",
+              "items": { "type": "string" }
+            },
+            "analyzeImpact": {
+              "type": "boolean",
+              "description": "Analyze impact of changes"
+            },
+            "checkTests": {
+              "type": "boolean",
+              "description": "Check test coverage and quality"
+            }
+          }
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "description": "Output configuration for the agent",
+      "required": ["format"],
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": ["pull-request", "pr-review", "pr-comment", "comment", "issue", "commit"],
+          "description": "Output format type"
+        },
+        "branch": {
+          "type": "string",
+          "description": "Branch name pattern for PR creation (supports {timestamp}, {date})"
+        },
+        "autoMerge": {
+          "type": "boolean",
+          "description": "Auto-merge PRs if all checks pass",
+          "default": false
+        },
+        "reviewers": {
+          "type": "array",
+          "description": "GitHub usernames to request reviews from",
+          "items": { "type": "string" }
+        },
+        "commentStyle": {
+          "type": "string",
+          "enum": ["inline", "summary", "both", "review", "suggestion"],
+          "description": "Comment style for PR reviews"
+        },
+        "severity": {
+          "type": "object",
+          "description": "Severity-based review actions",
+          "properties": {
+            "critical": {
+              "type": "string",
+              "enum": ["request-changes", "comment", "approve-with-comments"]
+            },
+            "high": {
+              "type": "string",
+              "enum": ["request-changes", "comment", "approve-with-comments"]
+            },
+            "medium": {
+              "type": "string",
+              "enum": ["request-changes", "comment", "approve-with-comments"]
+            },
+            "low": {
+              "type": "string",
+              "enum": ["request-changes", "comment", "approve-with-comments"]
+            }
+          }
+        },
+        "summaryTemplate": {
+          "type": "string",
+          "description": "Template for summary output (supports placeholders)"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Metadata about the Cloud Agent",
+      "required": ["category", "priority"],
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": ["documentation", "code-review", "testing", "security", "automation", "maintenance", "accessibility", "quality", "compliance", "code-quality", "developer-experience"],
+          "description": "Agent category for organization"
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["critical", "high", "medium", "low"],
+          "description": "Priority level for execution"
+        },
+        "estimatedDuration": {
+          "type": "string",
+          "description": "Estimated execution duration (e.g., '5-10 minutes')",
+          "pattern": "^[\\d]+-[\\d]+ (seconds|minutes|hours)$"
+        },
+        "requiredTools": {
+          "type": "array",
+          "description": "Required Claude Code tools",
+          "items": {
+            "type": "string",
+            "enum": ["Read", "Write", "Edit", "MultiEdit", "Bash", "Grep", "Glob", "LS", "WebFetch", "WebSearch"]
+          }
+        }
+      }
+    }
+  }
+}

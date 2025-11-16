@@ -16,11 +16,32 @@
 
 Both systems should be documented, mapped, and synchronized to avoid confusion and duplication.
 
+<!-- AUTO-GENERATED:START:registry-reference -->
+**Source of Truth:** All Claude agent definitions are maintained in `repo_state/agent-registry.json`. Use `node scripts/agent-registry.js sync` to update the registry from `.claude/agents/` changes.
+
+*Last updated: 2025-11-16T17:30:00.477Z | Registry version 1.0.0*
+<!-- AUTO-GENERATED:END:registry-reference -->
+
 ---
 
 ## Agent Mapping: Claude → Cursor Cloud Agent Candidates
 
+<!-- AUTO-GENERATED:START:agent-mapping -->
 ### High-Potential Automation Candidates
+
+*Source: `repo_state/agent-registry.json` (automationCandidate === true)*
+
+| Claude Agent | Category | Cloud Agent Use Case | Trigger | File |
+|---|---|---|---|---|
+| **code-review-expert** | general | [Manual: TBD] | [Manual: TBD] | `.claude/agents/code-review-expert.md` |
+| **service-documentation** | uncategorized | [Manual: TBD] | [Manual: TBD] | `.claude/agents/service-documentation.md` |
+
+**Note:** Cloud Agent use cases and triggers are maintained manually. Agent definitions are sourced from the registry.
+
+*Last updated: 2025-11-16T17:30:00.477Z | Auto-generated from `repo_state/agent-registry.json` (v1.0.0)*
+<!-- AUTO-GENERATED:END:agent-mapping -->
+
+### High-Potential Automation Candidates (Manual Reference)
 
 These Claude agents have strong potential for Cursor Cloud Agent equivalents for automation use cases:
 

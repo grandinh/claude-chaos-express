@@ -1,0 +1,39 @@
+{
+  "$schema": "../schemas/cloud-agent-config.json",
+  "name": "DocSync",
+  "description": "Weekly documentation sync agent that updates service documentation based on code changes",
+  "claudeAgentId": "service-documentation",
+  "claudeAgentPath": ".claude/agents/service-documentation.md",
+  "trigger": {
+    "type": "schedule",
+    "schedule": "0 9 * * 1",
+    "timezone": "UTC",
+    "description": "Runs every Monday at 9:00 AM UTC"
+  },
+  "model": "claude-sonnet-4",
+  "prompt": {
+    "template": "Review and update service documentation for any code changes from the past week. Focus on:\n- API endpoint changes\n- Configuration updates\n- Architectural modifications\n- New features or deprecations\n\nGenerate a summary of documentation updates and create a pull request.",
+    "context": {
+      "includeRecentCommits": true,
+      "commitLookbackDays": 7,
+      "focusAreas": [
+        "src/",
+        "docs/",
+        "README.md",
+        "CLAUDE.md"
+      ]
+    }
+  },
+  "output": {
+    "format": "pull-request",
+    "branch": "docs/weekly-sync-{timestamp}",
+    "autoMerge": false,
+    "reviewers": []
+  },
+  "metadata": {
+    "category": "documentation",
+    "priority": "medium",
+    "estimatedDuration": "5-10 minutes",
+    "requiredTools": ["Read", "Grep", "Glob", "LS", "Edit", "MultiEdit", "Bash"]
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "../schemas/cloud-agent-config.json",
+  "name": "CommitGen",
+  "description": "Optional PR commit message generator that analyzes diffs and suggests conventional commit messages",
+  "claudeAgentId": "commit-changes",
+  "claudeAgentPath": "~/.claude/agents/commit-changes.md",
+  "trigger": {
+    "type": "webhook",
+    "events": ["pull_request.opened"],
+    "filters": {
+      "requireLabel": "needs-commit-msg",
+      "excludePatterns": [
+        "**/*.md"
+      ]
+    },
+    "optional": true
+  },
+  "model": "claude-sonnet-4",
+  "prompt": {
+    "template": "Analyze the pull request diff and generate conventional commit messages:\n- Follow conventional commit format (type(scope): description)\n- Use appropriate types: feat, fix, docs, style, refactor, test, chore\n- Keep subject line under 72 characters\n- Provide detailed body when changes are complex\n- Include breaking change notices if applicable\n\nSuggest 2-3 commit message options ranked by quality.",
+    "context": {
+      "includeDiff": true,
+      "includeFileList": true,
+      "analyzeImpact": true
+    }
+  },
+  "output": {
+    "format": "pr-comment",
+    "commentStyle": "suggestion",
+    "prefix": "💬 Commit Message Suggestions"
+  },
+  "metadata": {
+    "category": "developer-experience",
+    "priority": "low",
+    "estimatedDuration": "1-2 minutes",
+    "requiredTools": ["Read", "Bash", "Grep", "Glob"],
+    "notes": "Only triggers when PR has 'needs-commit-msg' label"
+  }
+}

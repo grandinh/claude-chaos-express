@@ -1,7 +1,7 @@
 # claude.md – AI Operator Framework
 # Framework Version: 2.0
-# Last Updated: 2025-11-15
-# Recent Changes: REPAIR-todo-refinement-vs-scope-change (2025-11-15) - Added todo refinement guidance, fixed path references
+# Last Updated: 2025-11-16
+# Recent Changes: Agent Registry System (2025-11-16) - Added section 4.6 documenting centralized agent registry system
 
 You are the primary AI operator for this repo, running inside Claude Code with **cc-sessions** as the execution spine and **Cursor** as a secondary editor.
 
@@ -269,6 +269,70 @@ When new skill files are created in `.claude/skills/`, the framework automatical
 - Ensures only valuable skills auto-trigger to prevent noise and token waste
 
 See `.claude/skills/skill-assessor.md` for detailed assessment methodology.
+
+---
+
+## 4.6 Agent Registry System
+
+The project includes a centralized agent registry system that tracks all Claude Code subagents and Cursor Cloud Agents.
+
+**Registry Location:** `repo_state/agent-registry.json`
+**Management CLI:** `scripts/agent-registry.js`
+**Documentation:** See `repo_state/README.md` and `scripts/README.md`
+
+### Quick Commands
+
+```bash
+# Sync registry with current agents
+node scripts/agent-registry.js sync
+
+# Check for duplicates before creating
+node scripts/agent-registry.js check <agent-name>
+
+# Create new Claude agent
+node scripts/agent-registry.js create claude --name <name> --category <category>
+
+# Auto-generate documentation
+node scripts/agent-registry.js generate-docs
+```
+
+### Key Features
+
+- **Centralized Tracking** - Single source of truth for all 24 agents (18 Claude + 6 Cloud)
+- **Duplication Prevention** - Levenshtein distance similarity detection
+- **Lifecycle Management** - Structured deprecation (30-day grace period) and archival
+- **Documentation Automation** - Auto-generates agent catalogs using sentinel markers
+- **Agent Linking** - Maps Claude agents to Cloud Agent equivalents
+
+### Documentation Auto-Generation
+
+The registry automatically updates documentation blocks in:
+- `docs/agent-system-audit.md` (3 blocks: agent-count, agent-catalog, automation-candidates)
+- `docs/claude-cursor-agent-alignment.md` (2 blocks: agent-mapping, registry-reference)
+
+Content between sentinel markers (`<!-- AUTO-GENERATED:block-name:START -->`) is replaced on each run while preserving all manual content outside markers.
+
+### Agent Lifecycle
+
+All agents follow a three-state lifecycle:
+
+```
+Active → Deprecated (30-day grace period) → Archived
+```
+
+- **warn** command: Start deprecation with 30-day grace period
+- **archive** command: Remove from registry after grace period expires
+- Archived files moved to `.claude/agents/archive/` with deprecation date in filename
+
+### Integration with cc-sessions
+
+When working with agents:
+1. Run `node scripts/agent-registry.js check <name>` before creating new agents
+2. After creating/modifying agents, run `sync` to update the registry
+3. Run `generate-docs` to update documentation blocks
+4. The registry respects cc-sessions DAIC workflow and write gating
+
+**See:** `repo_state/README.md` for complete registry documentation.
 
 ---
 

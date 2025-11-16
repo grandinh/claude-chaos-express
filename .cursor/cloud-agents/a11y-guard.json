@@ -1,0 +1,50 @@
+{
+  "$schema": "../schemas/cloud-agent-config.json",
+  "name": "A11yGuard",
+  "description": "Accessibility compliance checker triggered on pull requests affecting UI components",
+  "claudeAgentId": "check-accessibility",
+  "claudeAgentPath": "~/.claude/agents/check-accessibility.md",
+  "trigger": {
+    "type": "webhook",
+    "events": ["pull_request.opened", "pull_request.synchronize"],
+    "filters": {
+      "pathPatterns": [
+        "**/*.tsx",
+        "**/*.jsx",
+        "**/*.vue",
+        "**/*.svelte",
+        "**/components/**",
+        "**/pages/**"
+      ],
+      "excludePatterns": [
+        "**/*.test.*",
+        "**/*.spec.*",
+        "**/__tests__/**"
+      ]
+    }
+  },
+  "model": "claude-sonnet-4",
+  "prompt": {
+    "template": "Review UI components in this pull request for accessibility compliance:\n- WCAG 2.1 AA standards\n- ARIA attributes and roles\n- Keyboard navigation\n- Screen reader compatibility\n- Color contrast ratios\n- Focus management\n\nProvide specific violations with line numbers and remediation suggestions.",
+    "context": {
+      "includeDiff": true,
+      "includeContext": 5
+    }
+  },
+  "output": {
+    "format": "pr-comment",
+    "commentStyle": "review",
+    "severity": {
+      "critical": "request-changes",
+      "high": "comment",
+      "medium": "comment",
+      "low": "comment"
+    }
+  },
+  "metadata": {
+    "category": "accessibility",
+    "priority": "high",
+    "estimatedDuration": "3-5 minutes",
+    "requiredTools": ["Read", "Grep", "Glob", "Edit", "MultiEdit"]
+  }
+}

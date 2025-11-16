@@ -1,0 +1,42 @@
+{
+  "$schema": "../schemas/cloud-agent-config.json",
+  "name": "ModernizeBot",
+  "description": "Quarterly code modernization agent that identifies outdated APIs and suggests modern alternatives",
+  "claudeAgentId": "check-modern-code",
+  "claudeAgentPath": "~/.claude/agents/check-modern-code.md",
+  "trigger": {
+    "type": "schedule",
+    "schedule": "0 11 1 1,4,7,10 *",
+    "timezone": "UTC",
+    "description": "Runs quarterly (Jan 1, Apr 1, Jul 1, Oct 1) at 11:00 AM UTC"
+  },
+  "model": "claude-sonnet-4",
+  "prompt": {
+    "template": "Scan the codebase for outdated patterns and APIs that can be modernized:\n- Deprecated Node.js APIs\n- Legacy React patterns (class components, deprecated lifecycle methods)\n- Outdated package versions with breaking changes\n- Callback hell vs async/await\n- var/function vs const/arrow functions\n- Manual DOM manipulation vs declarative patterns\n\nGenerate a modernization roadmap with priority levels and migration effort estimates.",
+    "context": {
+      "excludePaths": [
+        "node_modules/",
+        "dist/",
+        "build/",
+        ".git/"
+      ],
+      "focusAreas": [
+        "src/",
+        "scripts/",
+        ".claude/"
+      ]
+    }
+  },
+  "output": {
+    "format": "issue",
+    "labels": ["modernization", "refactor", "enhancement"],
+    "assignees": [],
+    "template": "modernization-roadmap"
+  },
+  "metadata": {
+    "category": "code-quality",
+    "priority": "low",
+    "estimatedDuration": "10-15 minutes",
+    "requiredTools": ["Read", "Grep", "Glob", "Bash"]
+  }
+}
