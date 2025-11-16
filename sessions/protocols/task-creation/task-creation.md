@@ -109,24 +109,92 @@ Then fill out task frontmatter
   - status: Start as 'pending'
   - created: Today's date{submodules_field}
 
-### 2: Ask user about task success and propose success criteria
+### 2: Ask smart contextual questions (0-3 questions, value-driven)
 
-First, ask the user about their vision and propose specific success criteria based on the task:
+Before defining success criteria, analyze the task description for clarity gaps and ask targeted questions ONLY if they add value.
+
+#### Decision Logic: How Many Questions?
+
+**Ask 0 questions when:**
+- Success criteria is already clear in user's description
+- Task is low-risk (docs, tests, minor fixes, simple refactors)
+- Constraints and scope boundaries are explicitly stated
+- Integration points are obvious from context
+
+**Ask 1-3 questions when:**
+- Description lacks clear success criteria beyond "make it work"
+- Risks/constraints not mentioned (deadlines, breaking changes, rollback needs)
+- Integration points or dependencies unclear
+- Scope boundaries ambiguous (what's in/out)
+
+**Ask 4+ questions ONLY for high-risk scenarios:**
+- Security-sensitive changes (auth, permissions, data access)
+- Data migrations or schema changes
+- Breaking API/contract changes
+- Core architectural refactors
+- User explicitly indicates complexity or requests help thinking through implications
+
+#### Question Selection (pick max 3 unless high-risk)
+
+Present questions in this format:
 
 ```markdown
-[QUESTION: Task Success]
-Based on your requirements, I propose the following success criteria:
+[CONTEXTUAL CLARITY - [N] Questions]
 
-□ [Specific measurable criterion based on user input]
-□ [Additional criterion I've identified]
-□ [Another criterion for completeness]
+Before I create the implementation plan, I need to clarify:
 
-Would you like to adjust or add to these criteria? What else might need to be true in order for this task to be complete/successful?
+1. [Question from list below, only if adds value]
+2. [Question from list below, only if adds value]
+3. [Question from list below, only if adds value]
+
+Your insights:
 ```
 
-Once approved, write a clear description of what we're solving/building in Problem/Goal section and record the success criteria with checkboxes in the text file.
+**Available questions (pick what's missing from user's description):**
 
-### 3: Run context-gathering agent or mark complete
+1. **Success Clarity** (if vague): "What does 'done' look like from a user/stakeholder perspective beyond code working?"
+
+2. **Risk/Constraints** (if unstated): "Are there deadlines, breaking change concerns, or rollback requirements I should know about?"
+
+3. **Integration** (if unclear): "What other systems, features, or teams does this interact with?"
+
+4. **Scope Boundaries** (if ambiguous): "What should explicitly NOT be included in this work?"
+
+5. **Future Extensibility** (for significant features): "How might this need to evolve in the next 6-12 months?"
+
+**HIGH-RISK Additional Questions (add to the 3 above if applicable):**
+- Auth/Security: "Who should have access? What permission model applies?"
+- Data Migration: "What's the rollback plan if issues occur?"
+- Breaking Changes: "What's the deprecation timeline and communication plan?"
+- Performance: "What are the performance requirements or SLAs?"
+
+#### Wait for Responses
+
+**WAIT for user response** - execution MUST stop here if questions were asked.
+
+### 3: Propose success criteria based on context
+
+Based on the user's original description AND any contextual answers from step 2, propose specific success criteria:
+
+```markdown
+[PROPOSAL: Success Criteria]
+Based on your requirements and context, I propose:
+
+**Problem/Goal:**
+[Clear description of what we're solving/building, incorporating business context]
+
+**Success Criteria:**
+□ [Specific measurable criterion - technical]
+□ [User/stakeholder outcome - if applicable]
+□ [Additional criterion for completeness]
+□ [Integration/compatibility requirement - if applicable]
+
+Would you like to adjust or add to these criteria?
+```
+
+Once approved, write the Problem/Goal description and record the success criteria with checkboxes in the task file.
+
+### 4: Run context-gathering agent or mark complete
 
 Present the decision to the user:
 
@@ -144,7 +212,7 @@ Your choice:
   - If no: Mark this step complete and continue
   - Context manifest MUST be complete before work begins (if not now, during task startup)
 
-### 4: Update service index files if applicable
+### 5: Update service index files if applicable
   - Check if task relates to any task indexes (sessions/tasks/indexes)
   - If not, present a structured decision:
 
@@ -172,7 +240,7 @@ Your choice:
     - For directory tasks, append `/` to the filename
   - Skip if no relevant index exists and user declines to create one
 
-### 5: Commit the new task file
+### 6: Commit the new task file
 - Stage the task file and any updated index files
 - Commit with descriptive message about the new task
 
@@ -196,6 +264,43 @@ If a file task needs subtasks during work:
 ## Important Note on Context
 
 The context-gathering agent is responsible for creating a complete, self-contained context manifest. This replaces the deprecated patterns system. If the context proves insufficient during implementation, the agent's prompt should be improved rather than adding workarounds or modifying the context manifest manually.
+
+## Philosophy: Smart Contextual Questions
+
+### Why Questions Matter
+
+Code analysis alone cannot reveal:
+- **Business value** - Why this work matters to users/stakeholders
+- **Success criteria** - What "done" looks like beyond technical completion
+- **Constraints** - Deadlines, risk tolerance, rollback requirements
+- **Integration expectations** - How this fits with other systems/teams
+- **Future evolution** - What needs to stay flexible vs. locked down
+
+These insights dramatically improve task outcomes by ensuring alignment before implementation begins.
+
+### Intelligence Over Automation
+
+The questioning system is **value-driven, not checklist-driven**:
+
+- **0 questions** when the user has already provided clear context
+- **1-3 targeted questions** when specific clarity gaps exist
+- **4+ questions** only for genuinely high-risk scenarios
+
+This approach:
+- ✅ Respects the user's time (no redundant questions)
+- ✅ Adds value where code can't (business/human context)
+- ✅ Scales questioning to task complexity and risk
+- ✅ Prevents ambiguous requirements from reaching implementation
+
+### Question Selection Criteria
+
+A question should be asked ONLY when ALL of these are true:
+1. **Missing**: The information is not in the user's description
+2. **Valuable**: The answer will improve task outcomes
+3. **Non-inferrable**: Code analysis cannot determine this
+4. **Actionable**: The answer will change implementation approach or success criteria
+
+If a question doesn't meet all four criteria, skip it.
 
 ## Protocol Completion
 
