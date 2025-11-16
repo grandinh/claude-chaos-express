@@ -1,7 +1,7 @@
 # git-workflow-trigger
 
 **Type:** WRITE-CAPABLE
-**DAIC Modes:** IMPLEMENT only (for write operations)
+**DAIC Modes:** IMPLEMENT only
 **Priority:** Medium
 
 ## Trigger Reference
@@ -16,6 +16,8 @@ From: `skill-rules.json` - git-workflow-trigger configuration
 
 Automatically trigger git commands (`/git:commit`, `/git:status`, `/git:push`) when users express git workflow intent using natural language.
 
+**Important:** This skill is classified as WRITE-CAPABLE and only triggers in IMPLEMENT mode, even for read-only operations like `git status`. This is intentional to keep git operations grouped together. If you need git status outside IMPLEMENT mode, use the `/git:status` command directly.
+
 ## Core Behavior
 
 1. **Git Workflow Detection**
@@ -23,13 +25,14 @@ Automatically trigger git commands (`/git:commit`, `/git:status`, `/git:push`) w
    - Route to appropriate git command based on intent
 
 2. **Command Routing**
-   - **Commit:** "commit changes" → `/git:commit` (IMPLEMENT mode only)
-   - **Status:** "show changes" → `/git:status` (any mode)
-   - **Push:** "push changes" → `/git:push` (IMPLEMENT mode only)
+   - **Commit:** "commit changes" → `/git:commit`
+   - **Status:** "show changes" → `/git:status`
+   - **Push:** "push changes" → `/git:push`
 
-3. **Mode-Aware Execution**
-   - Read operations (status) allowed in any mode
-   - Write operations (commit, push) only in IMPLEMENT mode
+3. **Mode Restriction**
+   - This skill only triggers in IMPLEMENT mode (WRITE-CAPABLE classification)
+   - All git operations (including status) are grouped together
+   - For git status outside IMPLEMENT mode, use `/git:status` directly
 
 ## Natural Language Examples
 
