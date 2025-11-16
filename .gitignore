@@ -30,3 +30,44 @@ yarn-error.log*
 .env
 .env.local
 .env.*.local
+
+# Development-only files (excluded from v0.1.0+ install package)
+# These remain locally but are not uploaded to GitHub
+
+# Task management (development artifacts)
+# Exclude actual task files but keep essential templates
+# Templates are needed for task creation during runtime
+sessions/tasks/*.md
+!sessions/tasks/TEMPLATE.md
+sessions/tasks/done/
+sessions/tasks/indexes/*.md
+!sessions/tasks/indexes/INDEX_TEMPLATE.md
+# Exclude task subdirectories (task-specific files)
+sessions/tasks/*/
+!sessions/tasks/indexes/
+
+# Development planning and context
+Context/Backlog/
+Context/Features/
+Context/Scripts/
+Context/decisions.md
+Context/gotchas.md
+Context/insights.md
+
+# Development metadata
+repo_state/
+
+# Optional non-code assets (excluded with --minimal flag)
+# These can be excluded during installation
+assets/
+ascii/
+lore/
+summoning/
+abyss/
+hazards/
+incidents/
+offerings/
+rifts/
+sigils/
+stationmaster/
+tracks/

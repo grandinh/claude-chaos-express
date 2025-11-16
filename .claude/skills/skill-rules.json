@@ -260,6 +260,32 @@
           "sessions/api/**/*.js"
         ]
       }
+    },
+    "skill-assessor": {
+      "type": "domain",
+      "skillType": "ANALYSIS-ONLY",
+      "daicMode": {
+        "allowedModes": ["DISCUSS", "ALIGN", "IMPLEMENT", "CHECK"]
+      },
+      "enforcement": "suggest",
+      "priority": "medium",
+      "promptTriggers": {
+        "keywords": [
+          "assess skill",
+          "skill assessment",
+          "evaluate skill",
+          "should this skill auto-trigger",
+          "add skill to rules",
+          "analyze skill",
+          "skill auto-invoke"
+        ],
+        "intentPatterns": [
+          "(assess|evaluate|analyze).*?skill",
+          "skill.*?(assessment|evaluation|analysis)",
+          "auto.*?trigger.*?skill",
+          "should.*?skill.*?(auto|trigger)"
+        ]
+      }
     }
   }
 }

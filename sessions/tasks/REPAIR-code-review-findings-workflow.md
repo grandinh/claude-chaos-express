@@ -15,6 +15,8 @@ This violates the explicit agent instruction. The hook system should NOT overrid
 
 Additionally, there's no structured way to track code-review findings that aren't fixed immediately - they just get lost in chat history.
 
+**Note:** This task also includes adding natural language triggers for code-review (consolidated from `m-audit-and-add-auto-invoke-triggers.md` to avoid duplicate work on code-review improvements).
+
 ## Success Criteria
 
 - [ ] Fix hook system to respect code-review agent's "wait for user confirmation" instruction
@@ -34,6 +36,10 @@ Additionally, there's no structured way to track code-review findings that aren'
 - [ ] Document the workflow in CLAUDE.md or claude-reference.md
 - [ ] Test with sample code-review findings at each severity level
 - [ ] Ensure works for both `finito` and `squish` protocols
+- [ ] Add natural language triggers for code-review command/skill to `skill-rules.json`:
+  - [ ] Keywords: "review this code", "check for bugs", "validate code quality", "code review", "review code", "check code quality"
+  - [ ] Intent patterns: `"(review|check|validate|analyze).*?(code|quality|bugs)"`, `"code.*?(review|quality|check)"`
+  - [ ] Ensure triggers work for both `/code-review` command and code-review-expert agent invocation
 
 ## Context Manifest
 
@@ -210,6 +216,26 @@ Priority mapping:
    - Extract checked items
    - Create tasks only for selected findings
    - Report selection summary
+
+**Phase 5: Add Natural Language Triggers**
+
+1. **Create or update code-review skill entry in `skill-rules.json`**:
+   - Skill type: ANALYSIS-ONLY (code-review reads code, provides feedback)
+   - DAIC modes: All modes (DISCUSS, ALIGN, IMPLEMENT, CHECK)
+   - Priority: Medium (helpful but not critical)
+
+2. **Add comprehensive trigger patterns**:
+   - Keywords: "review this code", "check for bugs", "validate code quality", "code review", "review code", "check code quality", "analyze code", "code analysis"
+   - Intent patterns: 
+     - `"(review|check|validate|analyze).*?(code|quality|bugs|issues)"`
+     - `"code.*?(review|quality|check|analysis)"`
+     - `"(find|identify|detect).*?(bugs|issues|problems).*?code"`
+   - File triggers: Consider adding if code-review should auto-trigger on certain file patterns
+
+3. **Test trigger accuracy**:
+   - Verify natural language phrases correctly trigger code-review
+   - Ensure no false positives with unrelated phrases
+   - Test in different DAIC modes
 
 ### Hook System Changes Required
 
