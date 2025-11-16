@@ -490,6 +490,8 @@ class SessionsFlags {
         this.subagent = data.subagent || false;
         this.noob = data.noob !== undefined ? data.noob : true;
         this.bypass_mode = data.bypass_mode || false;
+        this.waiting_for_user_input = data.waiting_for_user_input || false;
+        this.pause_reason = data.pause_reason || null;
     }
 
     clearFlags() {
@@ -497,6 +499,8 @@ class SessionsFlags {
         this.context_90 = false;
         this.subagent = false;
         this.bypass_mode = false;
+        this.waiting_for_user_input = false;
+        this.pause_reason = null;
     }
 }
 
@@ -690,7 +694,9 @@ class SessionsState {
             context_90: context90,
             subagent: flagsData.subagent || false,
             noob: flagsData.noob !== undefined ? flagsData.noob : true,
-            bypass_mode: flagsData.bypass_mode || false
+            bypass_mode: flagsData.bypass_mode || false,
+            waiting_for_user_input: flagsData.waiting_for_user_input || false,
+            pause_reason: flagsData.pause_reason || null
         });
         state.metadata = data.metadata || {};
 

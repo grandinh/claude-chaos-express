@@ -71,8 +71,7 @@ These files are used exclusively by Claude Code and cc-sessions. Cursor may read
 
 | File | Status | Referenced By | Purpose |
 |------|--------|---------------|---------|
-| `docs/tasks/*.md` | Directory | Claude only | Task-specific documentation |
-| `sessions/tasks/*.md` | Directory | Claude only | cc-sessions task manifests |
+| `sessions/tasks/*.md` | Directory | Claude only | cc-sessions task manifests (actual task files) |
 | `docs/rfcs/*.md` | Directory | Claude only | Request for Comments documents |
 
 ---

@@ -58,6 +58,14 @@ try {
 
 const toolName = inputData.tool_name || "";
 const toolInput = inputData.tool_input || {};
+const toolResponse = inputData.tool_response || {};
+// Extract output from tool_response (may be string or object)
+// Handles edge cases: null, arrays, unexpected types
+const toolOutput =
+    typeof toolResponse === 'string' ? toolResponse :
+    (toolResponse && typeof toolResponse === 'object' && !Array.isArray(toolResponse))
+        ? (toolResponse.output || toolResponse.content || "")
+        : "";
 const cwd = inputData.cwd || "";
 let mod = false;
 
@@ -82,6 +90,32 @@ Handles post-tool execution cleanup and state management:
 
 // ===== EXECUTION ===== //
 
+//!> Pause detection for agent instructions
+function shouldPauseForUserInput(toolName, toolOutput) {
+    if (toolName === "Task" && STATE.flags.subagent) {
+        // Check subagent output for pause markers
+        const output = toolOutput || "";
+
+        // Check for explicit wait instructions
+        if (output.match(/WAIT for user|Wait for user|execution MUST stop/i)) {
+            return true;
+        }
+
+        // Check for decision prompts
+        if (output.match(/\[DECISION:/) && output.match(/Your choice:/)) {
+            return true;
+        }
+
+        // Check for code-review findings
+        if (output.match(/\[FINDINGS: Code Review\]/)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+//!<
+
 //!> Claude compass (directory position reminder)
 if (toolName === "Bash") {
     const command = toolInput.command || "";
@@ -94,6 +128,20 @@ if (toolName === "Bash") {
 
 //!> Subagent cleanup
 if (toolName === "Task" && STATE.flags.subagent) {
+    // Check if agent requested pause before cleaning up
+    if (shouldPauseForUserInput(toolName, toolOutput)) {
+        // Set pause flag instead of cleaning up
+        // Note: subagent flag remains true to preserve context for resume
+        editState(s => {
+            s.flags.waiting_for_user_input = true;
+            s.flags.pause_reason = "agent_requested";
+        });
+        console.error("[PAUSE] Agent requested user input. Waiting for response...");
+        // Exit before cleanup - transcript directories preserved for resume
+        process.exit(0);
+    }
+
+    // Otherwise proceed with normal cleanup
     editState(s => {
         s.flags.subagent = false;
     });

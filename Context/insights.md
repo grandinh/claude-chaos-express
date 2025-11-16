@@ -158,3 +158,108 @@ When adding new skills with auto-triggers:
 5. **Machine Learning:** Train model on user interaction patterns to suggest new triggers
 6. **Context-Aware Triggers:** Trigger skills based on current DAIC mode, recent actions, or file context
 
+---
+
+## System Boundary Clarification: cc-sessions as Both SoT and Execution Spine
+
+**Date:** 2025-11-16
+**Context:** REPAIR-hook-system-agent-conflicts task
+**Impact:** Clarified system architecture and control boundaries
+
+### Key Insight: Internal vs External System Conflicts
+
+When debugging system conflicts, it's critical to distinguish between:
+
+**Internal Conflicts** - Different components of the SAME system conflicting
+- Example: cc-sessions protocols (instructional layer) vs cc-sessions hooks (mechanical layer)
+- Resolution: The SoT system resolves internally (instructional layer wins)
+
+**External Conflicts** - Two DIFFERENT systems with competing authority
+- Example: cc-sessions rules vs Claude Code permissions
+- Resolution: Higher-priority system wins (explicit hierarchy needed)
+
+### The REPAIR-hook-system-agent-conflicts Case
+
+**Initial Framing (Incorrect):**
+"The hook system (Claude Code) conflicts with agent instructions (cc-sessions)"
+- This framed it as Claude Code vs cc-sessions (external conflict)
+- Led to questions about permission systems and cross-system coordination
+
+**Correct Framing:**
+"The cc-sessions hooks (mechanical layer) conflict with cc-sessions protocols (instructional layer)"
+- This is an INTERNAL cc-sessions conflict
+- Both layers are part of the same system
+- cc-sessions is both the SoT AND the execution spine
+
+**Claude Code's Role:**
+- Provides hook infrastructure (PreToolUse, PostToolUse events)
+- Provides tool system (Task, Bash, Edit, etc.)
+- Makes NO workflow decisions
+- Is passive infrastructure, not an active decision-maker
+
+### System Architecture Layers
+
+```
+cc-sessions (Control/SoT System)
+├── Instructional Layer (Protocols/Agents)
+│   ├── Defines WHAT should happen
+│   └── Says: "WAIT for user", "Your choice:"
+│
+├── Mechanical Layer (Hooks)
+│   ├── Enforces HOW it happens
+│   └── Does: Auto-advances workflows, cleans up subagents
+│
+└── When they conflict → Instructional layer wins
+
+Claude Code (Infrastructure Only)
+├── Provides hook system
+├── Provides tool system
+└── Makes no workflow decisions
+```
+
+### Decision Framework for System Conflicts
+
+When encountering apparent system conflicts:
+
+1. **Identify the systems involved**
+   - What are the competing authorities?
+   - Are they separate systems or layers within one system?
+
+2. **Check if it's an internal conflict**
+   - Do both components belong to the same system?
+   - If YES → System should resolve internally using its own rules
+   - If NO → Need explicit cross-system priority hierarchy
+
+3. **For internal conflicts**
+   - Which layer is instructional (defines goals)?
+   - Which layer is mechanical (executes goals)?
+   - Instructional layer wins
+
+4. **For external conflicts**
+   - Consult CLAUDE.md Section 2.3 "Decision Priority (North Star)"
+   - Apply priority order: Tier-1 SoT → DAIC → Task manifest → User instructions → Correctness → Simplicity → Performance
+
+### Lessons Learned
+
+**1. System Role Clarity Matters**
+- Know which systems make decisions vs provide infrastructure
+- Claude Code is infrastructure (passive)
+- cc-sessions is control/SoT (active)
+
+**2. Layer Conflicts Are Common**
+- Instructional vs mechanical layers naturally conflict
+- Design for this: instructional should override mechanical
+- Example: Agent says "wait" → Hook should detect and respect it
+
+**3. Framing Affects Solutions**
+- Incorrect framing (external conflict) → complex cross-system coordination
+- Correct framing (internal conflict) → simpler internal resolution
+- Always verify system boundaries before designing solutions
+
+### Related Files
+
+- `sessions/tasks/REPAIR-hook-system-agent-conflicts.md` - Task that clarified this
+- `CLAUDE.md` Section 2 - SoT Tiers and Decision Priority
+- `sessions/hooks/post_tool_use.js` - Hook system (mechanical layer)
+- `sessions/protocols/` - Protocol files (instructional layer)
+

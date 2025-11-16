@@ -86,7 +86,7 @@ When the user asks for anything in the CANNOT list, explain the limitation and p
 
 - **Tier-2 – Task / feature SoT**
   - Issue- and feature-scoped docs & manifests:
-    - `docs/tasks/*.md`
+    - `sessions/tasks/*.md` (cc-sessions task manifests)
     - `docs/rfcs/*.md`
     - cc-sessions manifests linked to issues/branches
 
@@ -171,6 +171,66 @@ Then:
 4. If the user’s response is ambiguous, recommend option (c) and wait for clarification.
 
 Details and example wording live in `claude-reference.md`.
+
+### 3.4 Agent Pause/Resume Detection
+
+The hook system detects when agents or protocols request user input and pauses workflow advancement until the user responds.
+
+**Principle:** Agent instructions ("WAIT", "Your choice:") **always override** hook automation.
+
+**Pause Markers:**
+
+Agents and protocols can request pauses using these patterns:
+
+1. **Explicit wait instructions:**
+   - `WAIT for user response`
+   - `Wait for user confirmation`
+   - `execution MUST stop here`
+
+2. **Decision prompts:**
+   - `[DECISION: ...]` blocks combined with `Your choice:`
+   - `[PROPOSAL: ...]` blocks (sometimes)
+
+3. **Special cases:**
+   - `[FINDINGS: Code Review]` - code-review agent findings
+
+**How It Works:**
+
+1. When a subagent completes (`Task` tool with `subagent` flag), the hook system checks the agent output for pause markers.
+2. If a pause marker is detected:
+   - Sets `STATE.flags.waiting_for_user_input = true`
+   - Sets `STATE.flags.pause_reason = "agent_requested"`
+   - Displays `[PAUSE] Agent requested user input. Waiting for response...`
+   - Preserves subagent context (no cleanup)
+3. When the user responds:
+   - Clears `waiting_for_user_input` and `pause_reason` flags
+   - Workflow continues normally
+
+**For Protocol/Agent Authors:**
+
+Use these patterns consistently when requiring user input:
+
+```markdown
+**WAIT for user response** - execution MUST stop here.
+
+[DECISION: Action Selection]
+How would you like to proceed?
+- Option A: Description
+- Option B: Description
+
+Your choice:
+```
+
+**State Fields:**
+
+- `STATE.flags.waiting_for_user_input` (boolean) - true when paused for user input
+- `STATE.flags.pause_reason` (string|null) - reason for pause (e.g., "agent_requested")
+
+**Implementation:**
+
+- Detection: `sessions/hooks/post_tool_use.js` (lines 85-108, 122-133)
+- Resume: `sessions/hooks/user_messages.js` (lines 227-236)
+- State: `sessions/hooks/shared_state.js` (SessionsFlags class)
 
 ---
 

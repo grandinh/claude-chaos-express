@@ -82,6 +82,35 @@ context_files:
 
 ```yaml
 schema_version: "1.0"
+timestamp: 2025-01-20T00:00:00Z
+from: cursor
+to: claude
+issue_id: none
+branch: none
+completed:
+  - Created investigation task sessions/tasks/?-investigate-optional-sot-files.md to analyze optional SoT files (AGENTS.md, METASTRATEGY.md, IMPLEMENTATION_GUIDE.md, etc.)
+  - Task includes investigation goals, success criteria, and approach for tracing references and assessing value
+next:
+  - Pick up sessions/tasks/?-investigate-optional-sot-files.md as next active task
+  - Complete audit of all references to optional SoT files across codebase using grep/search
+  - Document where each reference appears and in what context (CLAUDE.md, CURSOR.md, docs, etc.)
+  - Assess value proposition for each file: does existing documentation cover this? Would creating it reduce confusion?
+  - Make recommendations: Create / Remove reference / Redirect to existing docs / Keep optional with rationale
+  - Update docs/sot-reference-map.md with findings and decisions
+  - Update any documentation that references these files based on decisions
+context_files:
+  - sessions/tasks/?-investigate-optional-sot-files.md
+  - docs/sot-reference-map.md
+  - docs/tiers_of_context.md
+  - CLAUDE.md
+  - CURSOR.md
+  - .cursor/rules/cursor-agent-operating-spec.mdc
+  - .claude/agents/
+  - sessions/protocols/
+```
+
+```yaml
+schema_version: "1.0"
 timestamp: 2025-11-16T01:15:00Z
 from: cursor
 to: claude
