@@ -1,8 +1,9 @@
 ---
 name: REPAIR-todo-refinement-vs-scope-change
 branch: feature/REPAIR-todo-refinement-vs-scope-change
-status: pending
+status: completed
 created: 2025-11-16
+completed: 2025-11-15
 ---
 
 # REPAIR: Todo Refinement vs Scope Change
@@ -31,23 +32,23 @@ All references to `.cc-sessions/state.json` should be corrected to `sessions/ses
 
 ### Primary: Todo Refinement vs Scope Change
 - [x] Create REPAIR task as proper cc-sessions task (demonstrating the pattern)
-- [ ] Update `CLAUDE.md` Section 6.3 to explicitly state REPAIR tasks ARE cc-sessions tasks
-- [ ] Update `CLAUDE.md` or `claude-reference.md` to define "todo refinement" vs "scope change"
-- [ ] Add examples distinguishing legitimate refinements from violations
-- [ ] Document when shame ritual is actually needed vs when refinement is allowed
-- [ ] Optionally: Review and refine `sessions/hooks/user_messages.js` todo-change detection logic to be smarter about refinements
-- [ ] Add this pattern to `context/gotchas.md` with concrete examples
-- [ ] Ensure DAIC integrity remains intact while allowing natural planning evolution
+- [x] Update `CLAUDE.md` Section 6.3 to explicitly state REPAIR tasks ARE cc-sessions tasks
+- [x] Update `CLAUDE.md` or `claude-reference.md` to define "todo refinement" vs "scope change"
+- [x] Add examples distinguishing legitimate refinements from violations
+- [x] Document when shame ritual is actually needed vs when refinement is allowed
+- [x] Optionally: Review and refine `sessions/hooks/user_messages.js` todo-change detection logic to be smarter about refinements (DECISION: Leave hook as-is, documentation fix sufficient)
+- [x] Add this pattern to `context/gotchas.md` with concrete examples
+- [x] Ensure DAIC integrity remains intact while allowing natural planning evolution
 
 ### Secondary: Documentation Path Corrections
-- [ ] Fix all `.cc-sessions/` → `sessions/` path references in framework documentation
-- [ ] Update `CLAUDE.md` references (lines 53, 133, 135, 366)
-- [ ] Update `.claude/skills/framework_health_check.md` references
-- [ ] Update `.claude/skills/cc-sessions-core.md` references (line 125)
-- [ ] Update `claude-reference.md` references (line 15)
-- [ ] Update `Context/Features/001-CustomizeSkillRules.md` references
-- [ ] Verify all documentation now correctly references canonical cc-sessions structure
-- [ ] Run framework health check to verify changes work correctly
+- [x] Fix all `.cc-sessions/` → `sessions/` path references in framework documentation
+- [x] Update `CLAUDE.md` references (lines 53, 133, 135, 366)
+- [x] Update `.claude/skills/framework_health_check.md` references
+- [x] Update `.claude/skills/cc-sessions-core.md` references (line 125)
+- [x] Update `claude-reference.md` references (line 15)
+- [x] Update `Context/Features/001-CustomizeSkillRules.md` references
+- [x] Verify all documentation now correctly references canonical cc-sessions structure
+- [x] Run framework health check to verify changes work correctly
 
 ## Context Manifest
 
@@ -112,4 +113,56 @@ This REPAIR task itself demonstrates the fix: it IS a cc-sessions task going thr
 - Added secondary success criteria for fixing all path references
 - Updated Problem/Goal section to reflect both issues
 - Rationale: Both issues discovered during same investigation, both affect framework documentation consistency
+
+### 2025-11-15 - Implementation Complete
+
+#### Path Corrections (Secondary Issue)
+- Fixed all 14 path references across 7 files:
+  - `CLAUDE.md`: 4 corrections (lines 53, 133, 135, 366)
+  - `claude-reference.md`: 1 correction (line 15)
+  - `.claude/skills/cc-sessions-core.md`: 1 correction (line 125)
+  - `.claude/skills/framework_health_check.md`: 4 corrections (lines 30, 90, 125, 184)
+  - `Context/Features/001-CustomizeSkillRules.md`: 2 corrections (lines 79, 89)
+  - `sessions/tasks/m-implement-custom-skill-rules.md`: 1 correction (line 46)
+  - `sessions/tasks/done/m-repo-initialization.md`: 1 correction (line 106)
+- All `.cc-sessions/state.json` references now correctly point to `sessions/sessions-state.json`
+- Verified with grep - no remaining incorrect references
+
+#### Todo Refinement Documentation (Primary Issue)
+- **Added Section 2 to claude-reference.md**: "Todo Refinement vs Scope Change"
+  - Defined clear distinction between refinement and scope violation
+  - Provided concrete examples of each category
+  - Established rules for when shame ritual applies
+  - Added cross-reference to CLAUDE.md Section 6.3
+- **Updated CLAUDE.md Section 6.3**: Explicitly stated REPAIR tasks ARE cc-sessions tasks
+  - Clarified they follow normal DAIC workflow
+  - Listed all framework rules they must respect
+  - Emphasized scope difference is limited to framework modifications
+  - Added cross-reference to claude-reference.md Section 2
+- **Created Context/gotchas.md**: Documented both issues with template
+  - Todo Refinement vs Scope Change pattern with examples
+  - Documentation Path Inconsistency with root cause analysis
+  - Prevention strategies for both issues
+  - Added reference to real-world example in template section
+
+#### Code Review Findings Addressed
+- Added cross-references between CLAUDE.md 6.3 and claude-reference.md Section 2
+- Strengthened definitions in claude-reference.md Section 2.1 and 2.2
+- Added concrete before/after examples in Section 2.3
+- Added version history notes to both CLAUDE.md and claude-reference.md headers
+- Updated gotchas.md template to reference real-world example
+
+#### Framework Health Check
+- Verified state persistence: `sessions/sessions-state.json` exists and valid
+- Confirmed all path corrections work correctly
+- No framework integrity issues detected
+
+#### Key Decisions
+- **Decision**: Leave hook logic unchanged, fix via documentation only
+  - Rationale: Hook's conservative approach is actually correct - it should block ambiguous changes
+  - Solution: Provide clear guidelines so AI operators understand when refinement is legitimate
+  - Impact: Maintains safety while reducing false positives through better documentation
+- **Decision**: User approved scope expansion during implementation to address code review findings
+  - Added cross-references, strengthened definitions, added examples, added version tracking
+  - Rationale: Improves documentation quality and prevents similar confusion in future
 

@@ -43,14 +43,24 @@ Warnings:
 Suggestions:
 □ [Optional improvements identified]
 
-Would you like to address any of these findings before completing the task?
-- YES: We'll fix the issues first
-- NO: Proceed with task completion
+How would you like to proceed?
 
-Your choice:
+1. YES - Fix issues now (stay in current task, address immediately)
+2. NO - Proceed with task completion (accept findings, continue workflow)
+3. LOG ALL - Create CODE-REVIEW- tasks for all findings, then continue
+4. SELECT - Choose which findings become tasks (multi-select), then continue
+
+Your choice: [1/2/3/4]
 ```
 
    - Wait for user confirmation before proceeding
+   - If user chooses LOG ALL (3): Create tasks for ALL findings using naming pattern:
+     - Critical (🔴): `h-CODE-REVIEW-critical-[brief-description].md`
+     - Warnings (🟡): `m-CODE-REVIEW-warning-[brief-description].md`
+     - Suggestions (🟢): `l-CODE-REVIEW-suggestion-[brief-description].md`
+     - Report created tasks, then continue workflow
+   - If user chooses SELECT (4): Present findings as checkboxes grouped by severity, allow user to select which ones become tasks, create tasks for selected findings only, report created tasks, then continue workflow
+   - Task creation happens synchronously BEFORE workflow resumes
    
 2. service-documentation agent - Update CLAUDE.md files 
    Include: List of services modified during task

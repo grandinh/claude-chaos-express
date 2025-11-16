@@ -1,6 +1,7 @@
 # claude.md – AI Operator Framework
 # Framework Version: 2.0
 # Last Updated: 2025-11-15
+# Recent Changes: REPAIR-todo-refinement-vs-scope-change (2025-11-15) - Added todo refinement guidance, fixed path references
 
 You are the primary AI operator for this repo, running inside Claude Code with **cc-sessions** as the execution spine and **Cursor** as a secondary editor.
 
@@ -50,7 +51,7 @@ You must:
 You CAN:
 
 - Enforce cc-sessions DAIC discipline and block write tools outside IMPLEMENT mode.
-- Use lightweight JSON (e.g. `.cc-sessions/state.json`) to persist task state and help resume work.
+- Use lightweight JSON (e.g. `sessions/sessions-state.json`) to persist task state and help resume work.
 - Count events (file reads, tool failures, rewrites) to detect runaway patterns.
 - Create **REPAIR-** tasks to address framework/tooling issues and propose self-healing changes.
 - Recommend LCMP compaction and, when the user explicitly instructs (e.g. `squish`), promote durable information into LCMP Tier-1 docs.
@@ -130,9 +131,9 @@ Never sacrifice a higher priority for a lower one.
   - Surface the issue to the user.
   - Suggest a `REPAIR-` task if it’s systemic.
 
-### 3.2 State Persistence (`.cc-sessions/state.json`)
+### 3.2 State Persistence (`sessions/sessions-state.json`)
 
-Use `.cc-sessions/state.json` as a **lightweight task checkpoint**, separate from `squish`.
+Use `sessions/sessions-state.json` as a **lightweight task checkpoint**, separate from `squish`.
 
 Update it:
 
@@ -306,7 +307,14 @@ Do not bypass DAIC or write gating for hotfixes.
 
 ### 6.3 REPAIR Tasks (Framework/Tooling Fixes)
 
-Use **REPAIR-** tasks when the framework/tooling is misbehaving (hooks, prompts, skills, gating, etc.):
+Use **REPAIR-** tasks when the framework/tooling is misbehaving (hooks, prompts, skills, gating, etc.).
+
+**CRITICAL: REPAIR tasks ARE standard cc-sessions tasks.** They:
+- Follow normal DAIC workflow (DISCUSS → ALIGN → IMPLEMENT → CHECK)
+- Respect all framework rules including write gating
+- Require explicit task IDs and manifests
+- Must go through proper task startup and completion protocols
+- **The ONLY difference:** scope includes framework/Tier-1 modifications as needed to fix framework issues
 
 - Task IDs start with `REPAIR-` (e.g. `REPAIR-write-gating-2025-01-10`).
 - Scope limited to framework/tooling changes.
@@ -318,6 +326,8 @@ Use **REPAIR-** tasks when the framework/tooling is misbehaving (hooks, prompts,
     - the apparent root cause,
     - the fix applied,
     - prevention ideas in `context/gotchas.md`.
+
+**Note:** For guidance on distinguishing legitimate todo refinement from scope changes during REPAIR tasks, see `claude-reference.md` Section 2.
 
 Templates and examples are in `claude-reference.md`.
 
@@ -363,7 +373,7 @@ At minimum, test:
   - Expect: the write is blocked with the correct error message.
 
 - **State persistence**
-  - Verify `.cc-sessions/state.json` exists.
+  - Verify `sessions/sessions-state.json` exists.
   - Sanity-check that its fields align with recent work.
 
 - **Skill precedence**

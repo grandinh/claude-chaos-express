@@ -27,7 +27,7 @@ In any DAIC mode, when explicitly requested or during REPAIR tasks:
    - Validate CC_SESSION_MODE / CC_SESSION_TASK_ID protection
 
 2. **State Persistence Validation**
-   - Check `.cc-sessions/state.json` exists
+   - Check `sessions/sessions-state.json` exists
    - Validate JSON structure and required fields
    - Verify state aligns with recent work
    - Test state read/write operations
@@ -87,7 +87,7 @@ In any DAIC mode, when explicitly requested or during REPAIR tasks:
 - Write-capable skills properly gated to IMPLEMENT mode
 
 **State Persistence:** ✓ PASS
-- .cc-sessions/state.json exists and valid
+- sessions/sessions-state.json exists and valid
 - Fields align with session state
 - JSON structure correct
 
@@ -122,7 +122,7 @@ In any DAIC mode, when explicitly requested or during REPAIR tasks:
 - Actual: Write succeeded
 
 **State Persistence:** ✓ PASS
-- .cc-sessions/state.json valid
+- sessions/sessions-state.json valid
 
 **Skill Precedence:** ⚠️ WARNING
 - skill-rules.json has syntax error on line 45
@@ -181,7 +181,7 @@ In any DAIC mode, when explicitly requested or during REPAIR tasks:
 
 ```markdown
 **Test Procedure:**
-1. Check .cc-sessions/state.json exists
+1. Check sessions/sessions-state.json exists
 2. Parse JSON (should not throw)
 3. Validate required fields: mode, task, flags
 4. Check if task aligns with git branch (if applicable)

@@ -1,6 +1,7 @@
 # claude-reference.md – Detailed Framework Spec & Examples
 # Framework Version: 2.0
 # Last Updated: 2025-11-15
+# Recent Changes: REPAIR-todo-refinement-vs-scope-change (2025-11-15) - Added Section 2 (todo refinement guidance), fixed path references
 
 This file supports `claude.md`. Use it for:
 - Framework debugging
@@ -12,7 +13,7 @@ This file supports `claude.md`. Use it for:
 
 ## 1. State Persistence – Example Schema
 
-`/.cc-sessions/state.json` is a lightweight checkpoint. Example:
+`sessions/sessions-state.json` is a lightweight checkpoint. Example:
 
 ```json
 {
@@ -26,9 +27,111 @@ This file supports `claude.md`. Use it for:
 
 ---
 
-## 2. Skills – Concrete Examples
+## 2. Todo Refinement vs Scope Change
 
-### 2.1 Skill File Structure (ANALYSIS-ONLY)
+**Note:** This guidance applies to all cc-sessions tasks, especially REPAIR tasks (see `CLAUDE.md` Section 6.3).
+
+### 2.1 Definitions
+
+**Todo Refinement** - Legitimate breakdown of generic placeholder todos into specific implementation steps after gathering context. This is a natural part of the ALIGN phase and should NOT trigger scope violation warnings.
+
+**Scope Change** - Fundamental alteration of what the task is trying to accomplish, adding new features, or changing success criteria without explicit user approval. This SHOULD trigger scope violation warnings.
+
+### 2.2 Legitimate Refinement Examples (✓ ALLOWED)
+
+**Example 1: Breaking down "Begin work on task"**
+```markdown
+Before (from task startup):
+□ Begin work on task
+
+After (after context gathering in ALIGN):
+□ Read authentication flow in src/auth/middleware.ts
+□ Add JWT verification to existing middleware
+□ Update tests in tests/auth/middleware.test.ts
+□ Document changes in CLAUDE.md
+```
+**Why allowed:** Original todo was a generic placeholder. Refinement maintains the same goal (work on the task) but adds specific steps based on gathered context.
+
+**Example 2: Expanding implementation steps**
+```markdown
+Before:
+□ Fix path references in documentation
+
+After:
+□ Fix CLAUDE.md path references (4 locations)
+□ Fix claude-reference.md path references (1 location)
+□ Fix skill file path references (5 locations)
+□ Verify all corrections complete
+```
+**Why allowed:** Same goal (fix path references), just broken into file-specific subtasks for tracking clarity.
+
+### 2.3 Scope Change Examples (✗ VIOLATION)
+
+**Example 1: Adding new features**
+```markdown
+Original task: "Fix authentication bug in login flow"
+
+Before:
+□ Debug login issue
+□ Fix authentication bug
+
+After:
+□ Debug login issue
+□ Fix authentication bug
+□ Add OAuth support ← SCOPE CHANGE
+□ Implement password reset ← SCOPE CHANGE
+```
+**Why violation:** Added completely new features not in original task scope.
+
+**Example 2: Changing success criteria**
+```markdown
+Original success criteria: "Fix bug where users can't log in with email"
+
+New todos:
+□ Fix email login bug
+□ Rewrite entire auth system to use different library ← SCOPE CHANGE
+```
+**Why violation:** Changed from a targeted bug fix to a major architectural change.
+
+### 2.4 Decision Framework
+
+Ask these questions when todos change:
+
+1. **Is the goal the same?**
+   - YES → Likely refinement
+   - NO → Likely scope change
+
+2. **Are you adding implementation detail or adding new features?**
+   - Implementation detail → Refinement
+   - New features → Scope change
+
+3. **Would the user expect this based on the original task description?**
+   - YES → Refinement
+   - NO → Scope change
+
+4. **Does it still satisfy the same success criteria?**
+   - YES → Refinement
+   - NO → Scope change
+
+### 2.5 When Shame Ritual is Needed
+
+The shame ritual (scope violation warning) should ONLY trigger when:
+- Fundamental task goal changes
+- New features added without user approval
+- Success criteria modified without user approval
+- Work diverges from stated task purpose
+
+The shame ritual should NOT trigger when:
+- Breaking generic todos into specific steps
+- Adding file-specific subtasks for same goal
+- Expanding implementation detail after context gathering
+- Reordering or restructuring todos for same outcome
+
+---
+
+## 3. Skills – Concrete Examples
+
+### 3.1 Skill File Structure (ANALYSIS-ONLY)
 
 Example: `.claude/skills/error-tracking.md`
 

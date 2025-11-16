@@ -76,7 +76,7 @@ We need to customize this file to:
 - `sessions/hooks/sessions_enforce.js` - Hook that enforces DAIC discipline and write-gating
 - `sessions/hooks/post_tool_use.js` - Post-tool-use validation hook
 - `sessions/api/` - Session command implementations (task_commands.js, state_commands.js, etc.)
-- `.cc-sessions/state.json` - Would store CC_SESSION_MODE and CC_SESSION_TASK_ID
+- `sessions/sessions-state.json` - Would store CC_SESSION_MODE and CC_SESSION_TASK_ID
 
 **Current Patterns:**
 - skill-rules.json schema: Each skill has `type` (domain/guardrail), `enforcement` (suggest/block), `priority` (critical/high/medium), `promptTriggers` (keywords, intentPatterns), `fileTriggers` (pathPatterns, skipConditions)
@@ -86,7 +86,7 @@ We need to customize this file to:
 - Hook enforcement: sessions_enforce.js blocks write tools in DISCUSS/ALIGN/CHECK, but doesn't integrate with skill system
 
 **Integration Points:**
-- Skill auto-trigger logic (external to skill-rules.json) must read CC_SESSION_MODE from .cc-sessions/state.json or environment
+- Skill auto-trigger logic (external to skill-rules.json) must read CC_SESSION_MODE from sessions/sessions-state.json or environment
 - Framework health check skills should reference checklist defined in claude-reference.md
 - REPAIR suggester skill should know how to format REPAIR- task proposals (naming: REPAIR-issue-YYYY-MM-DD)
 - LCMP recommendation skill should understand when compaction is appropriate vs premature

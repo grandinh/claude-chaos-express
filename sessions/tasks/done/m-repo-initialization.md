@@ -103,7 +103,7 @@ Art style for all badges:
 **Framework Files:**
 - claude.md - Framework operating spec with DAIC discipline
 - claude-reference.md - Supporting details and protocols
-- .cc-sessions/state.json - Task state persistence
+- sessions/sessions-state.json - Task state persistence
 
 **Key Constraints:**
 - Write tools only in IMPLEMENT mode

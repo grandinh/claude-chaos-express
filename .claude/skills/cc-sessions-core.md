@@ -122,7 +122,7 @@ When activated in IMPLEMENT mode with an active cc-sessions task:
 
 ### State Management
 - Session state tracked in `sessions/sessions-state.json`
-- Task state tracked in `.cc-sessions/state.json` (lightweight checkpoint)
+- Task state tracked in `sessions/sessions-state.json` (lightweight checkpoint)
 - Hooks enforce state consistency
 - State transitions logged for debugging
 

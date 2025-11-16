@@ -43,7 +43,7 @@ Configure the newly installed skill-activation system to match this project's sp
 **Framework Context:**
 - claude.md - Primary operating spec with DAIC modes, SoT tiers, write-gating rules
 - claude-reference.md - Supporting details and protocols
-- .cc-sessions/state.json - Lightweight task checkpoint mechanism
+- sessions/sessions-state.json - Lightweight task checkpoint mechanism
 - context/ - LCMP files (decisions.md, insights.md, gotchas.md)
 
 **Implementation Plan:**
