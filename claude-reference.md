@@ -334,3 +334,178 @@ Example `.claude/skills/skill-usage.json`:
 3. Test intent pattern matching
 4. Verify skill precedence (project > user/infra > defaults)
 5. Check decision logging in `context/decisions.md` when multiple skills apply
+
+### 3.6 Automated Skill Assessment Workflow
+
+The framework includes an automated skill assessment system integrated via the `post_tool_use.js` hook.
+
+**Hook Detection Pattern:**
+
+When a new `.md` file is created in `.claude/skills/`:
+
+```javascript
+// post_tool_use.js (lines 222-275)
+if (["Edit", "Write", "MultiEdit"].includes(toolName)) {
+    const filePath = path.resolve(toolInput.file_path);
+    const skillsPath = path.join(PROJECT_ROOT, '.claude', 'skills');
+
+    // Check if file is in .claude/skills/ and is a .md file
+    if (filePath.startsWith(skillsPath) && filePath.endsWith('.md')) {
+        const skillFileName = path.basename(filePath);
+
+        // Exclude README.md
+        if (skillFileName !== 'README.md') {
+            // Check if skill already exists in skill-rules.json
+            const rules = JSON.parse(fs.readFileSync(rulesPath, 'utf-8'));
+            const skillName = skillFileName.replace('.md', '');
+
+            // Only suggest if NOT yet configured
+            if (!rules.skills || !rules.skills[skillName]) {
+                console.error(`
+[New Skill Detected] ${skillFileName} created but not yet in skill-rules.json.
+
+💡 Recommendation: Assess this skill for auto-invocation using:
+   1. context-gathering agent to understand skill purpose
+   2. code-analyzer agent to find codebase patterns
+   3. skill-assessor skill (if configured)
+`);
+            }
+        }
+    }
+}
+```
+
+**Assessment Workflow Example:**
+
+```markdown
+# Scenario: User creates new "database-migration" skill
+
+1. User creates `.claude/skills/database-migration.md` in IMPLEMENT mode
+
+2. Hook detects file creation and prints to stderr:
+   [New Skill Detected] database-migration.md created but not yet in skill-rules.json.
+
+   💡 Recommendation: Assess this skill for auto-invocation...
+
+3. Claude sees hook output and suggests:
+   "I see you've created a new skill. Would you like me to assess whether it should auto-trigger?"
+
+4. User: "Yes, assess it"
+
+5. Claude invokes skill-assessor skill which:
+   a. Uses context-gathering agent to read database-migration.md
+   b. Uses code-analyzer to search for migration patterns in codebase
+   c. Evaluates against prioritized criteria:
+      - Guardrails: LOW (migrations don't enforce framework rules)
+      - Frequency: LOW (4% of files contain migration patterns)
+      - Convenience: MEDIUM (saves time when working on migrations)
+   d. Calculates token cost:
+      - Skill file: 350 tokens
+      - Estimated trigger rate: 15% of messages mentioning "database"
+      - Value Score = (0.15 × 0.3) - (0.35 × 0.85) = -0.25 (negative!)
+   e. Recommendation: MANUAL-ONLY
+      Rationale: Low frequency and low guardrail value don't justify token cost.
+                 User can manually invoke when needed.
+
+6. skill-assessor outputs structured assessment:
+   # Skill Assessment: database-migration
+
+   ## Assessment Summary
+   - Recommendation: MANUAL-ONLY
+   - Confidence: HIGH
+
+   ## Evaluation Criteria
+
+   ### Guardrails/Safety: LOW
+   This skill provides guidance for database migrations but does not enforce
+   framework rules or prevent errors. It's convenience-focused.
+
+   ### Frequency: LOW
+   - Codebase Coverage: 4% of files contain migration patterns
+   - Pattern Occurrences: 8 instances found
+   - Relevance Rate: 15% (only applies when actively working on migrations)
+
+   ### Token Cost Analysis
+   - Skill File Size: 350 tokens
+   - Estimated Trigger Rate: 15% of messages
+   - Value Score: -0.25 (below 0.4 threshold)
+   - Token Waste Risk: CONCERNING
+
+   ## Recommendation
+
+   MANUAL-ONLY invocation recommended. The skill provides value but triggers
+   too infrequently to justify auto-loading. Users can invoke it explicitly
+   when working on migrations: "use database-migration skill"
+
+   ## Next Steps
+
+   No action needed for skill-rules.json. Keep the skill file for manual use.
+   Log this assessment in context/decisions.md.
+
+7. User approves recommendation (no changes to skill-rules.json)
+
+8. Assessment logged in context/decisions.md:
+   ### Skill Assessment: database-migration - 2025-11-15
+
+   **Skill File:** `.claude/skills/database-migration.md`
+   **Assessed By:** skill-assessor (context-gathering + code-analyzer)
+
+   **Purpose**: Guidance for database schema migrations
+
+   **Evaluation Criteria**:
+   - Guardrails/Safety: LOW
+   - Frequency: LOW (4% of codebase)
+   - Convenience: MEDIUM
+   - Token Cost: 350 tokens (CONCERNING)
+   - Value Score: -0.25
+
+   **Final Recommendation**: MANUAL-ONLY
+   **Rationale**: Low frequency and guardrail value don't justify token cost
+
+   **User Decision**: APPROVED
+   **Decision Date**: 2025-11-15
+```
+
+**Example: Skill APPROVED for Auto-Invocation:**
+
+```markdown
+# Scenario: User creates "framework_scope_guard" skill
+
+1. skill-assessor evaluates:
+   - Guardrails: HIGH (prevents scope creep, enforces DAIC discipline)
+   - Frequency: HIGH (applies to every task with todos)
+   - Token Cost: 400 tokens
+   - Value Score = (0.85 × 1.0) - (0.4 × 0.15) = 0.79 (well above threshold!)
+
+2. Recommendation: AUTO-INVOKE
+   Suggested triggers:
+   {
+     "keywords": ["scope change", "add feature", "expand scope", "todo update"],
+     "intentPatterns": ["(add|expand|change).*?scope", "todo.*?(update|change)"]
+   }
+
+3. User approves
+
+4. User manually adds to skill-rules.json:
+   "framework_scope_guard": {
+     "type": "domain",
+     "skillType": "ANALYSIS-ONLY",
+     "daicMode": { "allowedModes": ["DISCUSS", "ALIGN", "IMPLEMENT", "CHECK"] },
+     "enforcement": "suggest",
+     "priority": "high",
+     "promptTriggers": {
+       "keywords": ["scope change", "add feature", "expand scope", "todo update"],
+       "intentPatterns": ["(add|expand|change).*?scope", "todo.*?(update|change)"]
+     }
+   }
+
+5. Assessment logged in context/decisions.md with APPROVED status
+```
+
+**Key Design Principles:**
+
+1. **Hook is read-only** - Never modifies skill-rules.json, only suggests
+2. **Conservative bias** - When uncertain, recommend MANUAL-ONLY
+3. **Token cost awareness** - Always calculate and report value score
+4. **LCMP logging** - Every assessment logged for pattern learning
+5. **User approval required** - No automatic configuration changes

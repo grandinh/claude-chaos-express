@@ -219,6 +219,63 @@ if (["Edit", "Write", "MultiEdit"].includes(toolName) && STATE.current_task.name
 }
 //!<
 
+//!> New skill file detection
+// Performance: O(1) for path checks, single JSON parse (cached by Node.js if repeated reads)
+// Typical execution: <5ms for pattern matching + JSON validation
+if (["Edit", "Write", "MultiEdit"].includes(toolName)) {
+    // Extract file path from tool input
+    const filePathStr = toolInput.file_path;
+    if (filePathStr) {
+        const filePath = path.resolve(filePathStr);
+        const skillsPath = path.join(PROJECT_ROOT, '.claude', 'skills');
+
+        // Check if file is in .claude/skills/ and is a .md file
+        if (filePath.startsWith(skillsPath) && filePath.endsWith('.md')) {
+            const skillFileName = path.basename(filePath);
+
+            // Exclude README.md from triggering assessment
+            if (skillFileName !== 'README.md') {
+                try {
+                    // Check if this skill is already configured in skill-rules.json
+                    const rulesPath = path.join(skillsPath, 'skill-rules.json');
+                    const rulesContent = fs.readFileSync(rulesPath, 'utf-8');
+                    const rules = JSON.parse(rulesContent);
+                    const skillName = skillFileName.replace('.md', '');
+
+                    // Only suggest assessment if skill is NOT yet in skill-rules.json
+                    if (!rules.skills || !rules.skills[skillName]) {
+                        console.error(`
+[New Skill Detected] ${skillFileName} created but not yet in skill-rules.json.
+
+💡 Recommendation: Assess this skill for auto-invocation using:
+   1. context-gathering agent to understand skill purpose
+   2. code-analyzer agent to find codebase patterns
+   3. skill-assessor skill (if configured)
+
+This ensures only valuable skills auto-trigger while preventing skill bloat.
+`);
+                        mod = true;
+                    }
+                } catch (error) {
+                    // If we can't read skill-rules.json, log warning but don't block
+                    if (error.code !== 'ENOENT') {  // Only log if NOT a "file not found" error
+                        // Distinguish between JSON parse errors and read errors
+                        const errorType = error instanceof SyntaxError ? 'Invalid JSON format' : 'Read error';
+                        console.error(`
+[Warning] Could not parse skill-rules.json (${errorType}): ${error.message}
+Skill assessment suggestion skipped for ${skillFileName}.
+Check that skill-rules.json is valid JSON.
+`);
+                        mod = true;
+                    }
+                    // File not existing is expected for new projects, so silently skip in that case
+                }
+            }
+        }
+    }
+}
+//!<
+
 //!> Disable windowed API permissions after any tool use (except the windowed command itself)
 if (STATE.api.todos_clear && toolName === "Bash") {
     // Check if this is the todos clear command

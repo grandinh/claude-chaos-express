@@ -178,7 +178,7 @@ Details and example wording live in `claude-reference.md`.
 
 ### 4.1 Skill System Overview
 
-The framework includes **10 operational skills** in `.claude/skills/` that provide specialized guidance and automation:
+The framework includes **11 operational skills** in `.claude/skills/` that provide specialized guidance and automation:
 
 **WRITE-CAPABLE Skills (4)** – Only run in IMPLEMENT mode:
 - `cc-sessions-core` – Core cc-sessions development
@@ -186,13 +186,14 @@ The framework includes **10 operational skills** in `.claude/skills/` that provi
 - `cc-sessions-api` – API/command development
 - `skill-developer` – Skill system development and self-improvement
 
-**ANALYSIS-ONLY Skills (6)** – Run in any DAIC mode:
+**ANALYSIS-ONLY Skills (7)** – Run in any DAIC mode:
 - `error-tracking` – Error handling and Sentry integration analysis
 - `framework_version_check` – Framework version sync validation
 - `framework_health_check` – Framework health diagnostics
 - `framework_repair_suggester` – REPAIR task guidance
 - `lcmp_recommendation` – LCMP compaction recommendations
 - `daic_mode_guidance` – DAIC mode navigation help
+- `skill-assessor` – Automated skill assessment for auto-invocation decisions
 
 ### 4.2 Skill Rules
 
@@ -227,10 +228,36 @@ The skill system includes feedback loop capabilities:
 - **Pattern discovery** – Identify missing triggers from manual invocations
 - **Health monitoring** – Detect unused, over-triggering, or low-value skills
 - **Workflow suggestions** – Lightweight UX for suggesting next steps after skill completion
+- **Automated skill assessment** – New skills automatically trigger assessment suggestions via hook system
 
 See `.claude/skills/README.md` for detailed skill documentation and `skill-developer.md` for the self-improvement system.
 
 Concrete examples and validation steps are in `claude-reference.md`.
+
+### 4.5 Automated Skill Assessment
+
+When new skill files are created in `.claude/skills/`, the framework automatically suggests assessment to determine if they should auto-trigger:
+
+**How It Works:**
+1. Hook detects new `.md` file creation in `.claude/skills/` directory
+2. Checks if skill is already configured in `skill-rules.json`
+3. If not configured, suggests running skill assessment
+4. User can invoke `skill-assessor` skill to evaluate the new skill
+
+**Assessment Process:**
+- Orchestrates multi-agent analysis (context-gathering + code-analyzer + optional research-expert)
+- Evaluates using prioritized criteria: Guardrails (highest) > Frequency > Convenience
+- Analyzes token cost impact to prevent skill bloat
+- Provides structured recommendation with suggested trigger configuration
+- Requires explicit user approval before modifying `skill-rules.json`
+- Logs all assessments in `context/decisions.md` for pattern learning
+
+**Conservative Approach:**
+- Never auto-modifies `skill-rules.json`
+- When uncertain, recommends MANUAL-ONLY invocation
+- Ensures only valuable skills auto-trigger to prevent noise and token waste
+
+See `.claude/skills/skill-assessor.md` for detailed assessment methodology.
 
 ---
 

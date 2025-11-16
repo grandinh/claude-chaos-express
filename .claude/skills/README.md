@@ -3,7 +3,7 @@
 **Version:** 2.0  
 **Last Updated:** 2025-11-15
 
-This directory contains **10 operational AI skills** that provide specialized guidance and automation within the cc-sessions framework. Skills auto-trigger based on user input patterns or can be manually invoked.
+This directory contains **11 operational AI skills** that provide specialized guidance and automation within the cc-sessions framework. Skills auto-trigger based on user input patterns or can be manually invoked.
 
 ---
 
@@ -28,6 +28,7 @@ This directory contains **10 operational AI skills** that provide specialized gu
 | **framework_repair_suggester** | REPAIR task guidance | "REPAIR task", "framework issue", "broken gating" |
 | **lcmp_recommendation** | LCMP compaction suggestions | "/squish", "compaction", "LCMP", "context cleanup" |
 | **daic_mode_guidance** | DAIC mode navigation | "what mode", "can I write", "current mode" |
+| **skill-assessor** | Skill assessment for auto-invocation | "assess skill", "skill assessment", "evaluate skill" |
 
 ---
 
@@ -173,18 +174,53 @@ Use the `skill-developer` skill in IMPLEMENT mode:
    - Safety guardrails
    - Examples
 
-2. Add configuration to `skill-rules.json`:
+2. **IMPORTANT: Skill assessment is automatically suggested**
+   - When you create a new skill file, the `post_tool_use.js` hook detects it
+   - If the skill is not yet in `skill-rules.json`, you'll see a suggestion to assess it
+   - Run the `skill-assessor` skill to get a comprehensive evaluation
+   - The assessment will recommend whether the skill should auto-trigger and provide suggested configuration
+
+3. Add configuration to `skill-rules.json` (if assessment recommends auto-invocation):
    - `skillType` – ANALYSIS-ONLY or WRITE-CAPABLE
    - `daicMode.allowedModes` – Which DAIC modes skill can run in
-   - `promptTriggers.keywords` – Trigger keywords
+   - `promptTriggers.keywords` – Trigger keywords (use assessment recommendations)
    - `promptTriggers.intentPatterns` – Regex patterns for user intent
    - `fileTriggers.pathPatterns` – Optional file path patterns
 
-3. Test activation:
+4. Test activation:
    - Verify auto-trigger works with configured keywords
    - Test manual invocation by name
    - Confirm DAIC mode enforcement
    - Validate write-gating for WRITE-CAPABLE skills
+
+### Automated Skill Assessment
+
+The framework includes an automated skill assessment system to prevent skill bloat and ensure only valuable skills auto-trigger:
+
+**How It Works:**
+1. Create a new skill file in `.claude/skills/`
+2. Hook automatically detects the new file and suggests assessment
+3. Invoke `skill-assessor` skill (manually or via suggestion)
+4. skill-assessor orchestrates multi-agent analysis:
+   - `context-gathering` agent understands skill purpose and domain
+   - `code-analyzer` agent finds codebase patterns where skill applies
+   - `research-expert` agent (optional) provides domain-specific insights
+5. Evaluation uses prioritized criteria:
+   - **(c) Guardrails/Safety** (HIGHEST) – Prevents mistakes or enforces framework rules
+   - **(b) Frequency** (MEDIUM) – Applies to common scenarios (>60% relevance)
+   - **(a) Convenience** (LOWEST) – Merely saves time without protection or frequency
+6. Token cost analysis calculates value score to prevent waste
+7. Recommendation provided with suggested trigger configuration
+8. User must explicitly approve before adding to `skill-rules.json`
+9. Assessment logged in `context/decisions.md` for pattern learning
+
+**Conservative Approach:**
+- Never auto-modifies `skill-rules.json`
+- When uncertain, recommends MANUAL-ONLY invocation
+- Token cost analysis prevents bloat
+- All decisions logged for future reference
+
+**See:** `.claude/skills/skill-assessor.md` for detailed assessment methodology
 
 ### Skill Precedence
 
@@ -219,7 +255,8 @@ When multiple skills could apply:
     ├── framework_health_check.md
     ├── framework_repair_suggester.md
     ├── lcmp_recommendation.md
-    └── daic_mode_guidance.md
+    ├── daic_mode_guidance.md
+    └── skill-assessor.md               # NEW: Automated skill assessment
 ```
 
 ---

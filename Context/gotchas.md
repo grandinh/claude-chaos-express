@@ -197,4 +197,36 @@ Updated all 14 path references from `.cc-sessions/state.json` to `sessions/sessi
 
 ---
 
+## Code Review Auto-Invocation Sensitivity
+
+**Issue Discovered:** 2025-11-16
+
+### The Problem
+
+The `self-review` hook in `.claude/settings.json` Stop hooks automatically invokes `code-review-expert` agent when Stop hooks run, even when the user has asked a question that requires input. This can interrupt user interaction flow.
+
+**Example:** User asks "Would you like me to commit these changes or test with a real skill assessment?" but before receiving an answer, the Stop hooks fire and `self-review` automatically invokes code-review-expert, bypassing the user's question.
+
+### Root Cause
+
+The Stop hooks run automatically on session end/pause, and `claudekit-hooks run self-review` doesn't check if there's pending user interaction or questions that need responses first.
+
+### Current Status
+
+**Note:** This behavior is acceptable for now, but may be too sensitive. The auto-invocation happens even when user input is expected.
+
+### Future Consideration
+
+If this becomes problematic:
+- Make `self-review` conditional (only run when no pending user questions)
+- Add user confirmation before auto-invoking code-review
+- Adjust Stop hook timing to avoid interrupting user interaction flow
+
+### Related Files
+
+- `.claude/settings.json` - Stop hooks configuration (line 276)
+- `sessions/tasks/REPAIR-code-review-findings-workflow.md` - Related issue about code-review workflow
+
+---
+
 *More gotchas will be added as they are discovered during framework development and usage.*
