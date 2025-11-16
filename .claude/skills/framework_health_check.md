@@ -45,7 +45,7 @@ In any DAIC mode, when explicitly requested or during REPAIR tasks:
    - Suggest compaction if appropriate
 
 5. **Handoff Log Structure**
-   - Verify `/logs/ai-handoffs.md` exists (if applicable)
+   - Verify `docs/ai_handoffs.md` exists (if applicable)
    - Validate YAML structure of recent entries
    - Check required fields: timestamp, from, to, issue_id, branch, completed, next, context_files
    - Report format violations
@@ -103,7 +103,7 @@ In any DAIC mode, when explicitly requested or during REPAIR tasks:
 - All files active and current
 
 **Handoff Log:** ✓ PASS (or N/A if not used)
-- /logs/ai-handoffs.md structure valid
+- docs/ai_handoffs.md structure valid
 - Last 3 entries follow YAML format
 - Required fields present
 
@@ -133,7 +133,7 @@ In any DAIC mode, when explicitly requested or during REPAIR tasks:
 - Suspiciously stale, may need review
 
 **Handoff Log:** ✗ FAIL
-- /logs/ai-handoffs.md missing required field: `context_files`
+- docs/ai_handoffs.md missing required field: `context_files`
 - Entry from 2025-11-10 uses old schema
 
 **Overall Status:** ⚠️ Framework has issues
@@ -248,7 +248,7 @@ In any DAIC mode, when explicitly requested or during REPAIR tasks:
 
 ```markdown
 **Test Procedure:**
-1. Check if /logs/ai-handoffs.md exists
+1. Check if docs/ai_handoffs.md exists
 2. Read last 3 entries
 3. Validate YAML structure
 4. Check required fields present

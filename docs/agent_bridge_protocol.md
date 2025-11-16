@@ -20,7 +20,7 @@ This document defines the rules for inter-agent operations between Cursor (local
 
 - Always maintain `/repo_state/metadata.json` before ANY handoff
 - Auto-create missing infrastructure files using templates
-- Always update `ai_handoffs.md` with structured YAML entries
+- Always update `docs/ai_handoffs.md` with structured YAML entries
 - Enforce handoff completeness (never partial or ambiguous)
 - Never modify Tier-0 files unless directly instructed by user
 - Always treat Cursor as ground truth for filesystem state
@@ -29,7 +29,7 @@ This document defines the rules for inter-agent operations between Cursor (local
 
 - Always read `/repo_state/metadata.json` at task start
 - Validate repo state matches expectations before writing
-- Append completion entries to `ai_handoffs.md` after work
+- Append completion entries to `docs/ai_handoffs.md` after work
 - Respect file tier protections
 - Coordinate with Cursor via structured handoff protocol
 

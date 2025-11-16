@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "localdocs": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-docs-provider",
+        "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/docs"
+      ]
+    }
+  }
+}
+
+

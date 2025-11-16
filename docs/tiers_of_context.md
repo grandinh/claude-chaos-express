@@ -8,7 +8,8 @@ These files define core agent behavior and framework rules. Do not modify withou
 
 - `CLAUDE.md`
 - `claude-reference.md`
-- `CURSOR.md`
+- `CURSOR.md` (legacy, kept for reference)
+- `.cursor/rules/*.mdc` (active Cursor rules)
 - `.claude/AGENTS.md` (if present)
 - `.claude/METASTRATEGY.md` (if present)
 - `sessions/CLAUDE.sessions.md`

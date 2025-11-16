@@ -229,4 +229,65 @@ If this becomes problematic:
 
 ---
 
+## Claude-Cursor SoT Reference Alignment
+
+**Audit Date:** 2025-01-20 (Task: h-align-claude-cursor-systems)
+
+### The Audit
+
+Comprehensive audit of all file references in Claude Code (`CLAUDE.md`) and Cursor Agent (`.cursor/rules/cursor-agent-operating-spec.mdc`) to verify alignment.
+
+**Files Audited:**
+- `CLAUDE.md` - 100+ file references
+- `.cursor/rules/cursor-agent-operating-spec.mdc` - All @ file references
+- `CURSOR.md` (legacy) - File references
+- `docs/agent_bridge_protocol.md` - Protocol references
+
+### Findings
+
+**✅ All references are properly aligned:**
+
+1. **Handoff Log Path** - All systems now reference `docs/ai_handoffs.md` (previously had mismatch with `/logs/ai-handoffs.md`)
+2. **LCMP Files** - Both systems reference `context/decisions.md`, `context/insights.md`, `context/gotchas.md`
+3. **Framework Core** - Both systems reference `CLAUDE.md` and `claude-reference.md` correctly
+4. **Operational Context** - Both systems reference `docs/agent_bridge_protocol.md`, `docs/tiers_of_context.md`
+
+**⚠️ Optional Files Referenced But Missing:**
+- `AGENTS.md`, `COMMANDS.md`, `HOOKS.md` - Optional Claude framework docs
+- `METASTRATEGY.md`, `IMPLEMENTATION_GUIDE.md` - Optional architecture docs
+- `docs/ARCHITECTURE.md`, `docs/AI_WORKFLOWS.md` - Optional project docs
+- `docs/original_vision.md`, `docs/project_goals.md` - Optional vision docs
+- `context/progress.md` - Optional progress tracking
+
+These are acceptable - files are documented as optional and can be created when needed.
+
+### Documentation Created
+
+**`docs/sot-reference-map.md`** - Comprehensive SoT reference map documenting:
+- Shared SoT files (both systems reference)
+- Claude-specific files
+- Cursor-specific files
+- Alignment verification status
+- Maintenance rules for keeping systems aligned
+
+### Prevention
+
+**To maintain alignment going forward:**
+
+1. **Use the SoT reference map** - Always consult `docs/sot-reference-map.md` when adding/moving/renaming files
+2. **Update both systems** - When changing shared SoT, update CLAUDE.md AND Cursor rule
+3. **Verify paths match** - Paths must match exactly (case-sensitive) between systems
+4. **Run drift detection** - Use drift detection mechanism (to be created) to catch misalignments
+5. **Document changes** - Log significant alignment changes in `context/decisions.md`
+
+### Related Files
+
+- `docs/sot-reference-map.md` - Comprehensive reference map
+- `CLAUDE.md` Section 5 - Claude Code vs Cursor coordination
+- `.cursor/rules/cursor-agent-operating-spec.mdc` - Active Cursor spec
+- `docs/agent_bridge_protocol.md` - Inter-agent coordination protocol
+- `sessions/tasks/h-align-claude-cursor-systems.md` - Alignment task
+
+---
+
 *More gotchas will be added as they are discovered during framework development and usage.*

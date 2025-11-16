@@ -284,6 +284,8 @@ See `.claude/skills/skill-assessor.md` for detailed assessment methodology.
 - **Cursor**
   - Editor and integration assistant.
   - Optimized for human-facing editing, refactors, and quick changes.
+  - Operating spec: `.cursor/rules/cursor-agent-operating-spec.mdc` (active Cursor rule)
+  - Legacy reference: `CURSOR.md` (kept for reference only)
   - Must **not** be treated as canonical SoT.
 
 ### 5.2 When Cursor May Edit Tier-1
@@ -302,9 +304,9 @@ Otherwise, Cursor should:
 - Leave comments/suggestions; or
 - Update Tier-2 docs and rely on a cc-sessions task to propagate changes into Tier-1.
 
-### 5.3 Handoffs (`/logs/ai-handoffs.md`)
+### 5.3 Handoffs (`docs/ai_handoffs.md`)
 
-For Claude ↔ Cursor handoffs, append a concise YAML block to `/logs/ai-handoffs.md` that includes:
+For Claude ↔ Cursor handoffs, append a concise YAML block to `docs/ai_handoffs.md` that includes:
 
 - `timestamp`
 - `from`, `to` (claude|cursor)
@@ -421,6 +423,12 @@ At minimum, test:
   - Ensure LCMP files exist and are reasonably up to date (not obviously abandoned).
 
 - **Handoff log**
-  - Confirm `/logs/ai-handoffs.md` entries follow the agreed YAML structure and are being updated for recent handoffs.
+  - Confirm `docs/ai_handoffs.md` entries follow the agreed YAML structure and are being updated for recent handoffs.
+
+- **Claude-Cursor alignment**
+  - Run `scripts/check-claude-cursor-alignment.sh` to detect system drift.
+  - Verify Cursor rule exists at `.cursor/rules/cursor-agent-operating-spec.mdc`.
+  - Check handoff log path consistency between systems.
+  - Confirm agent system documentation is current.
 
 Summarize results as clear pass/fail bullets in the current context and record any meaningful failures or surprises in `context/gotchas.md`. Refer to `claude-reference.md` for checklist details and examples.
