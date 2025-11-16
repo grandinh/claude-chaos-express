@@ -157,8 +157,8 @@ Follow the repo's 3-tier documentation strategy:
   - Only lightly edited when there is a clear, scoped reason.
 
 - **Tier 2 (Execution / Session)**  
-  - Feature/task-specific docs in `docs/` or `docs/tasks/`  
-  - cc-sessions manifests (you may read but must NOT edit their structure or DAIC/workflow content unless explicitly instructed)
+  - Feature/task-specific docs in `docs/`  
+  - cc-sessions task manifests in `sessions/tasks/` (you may read but must NOT edit their structure or DAIC/workflow content unless explicitly instructed)
   - Good place to add clarifying notes or specs for the work you're doing.
 
 - **Tier 3 (Scratch)**  

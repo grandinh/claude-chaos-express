@@ -223,6 +223,19 @@ if (transcriptPath && fs.existsSync(transcriptPath)) {
 }
 ///-///
 
+/// ===== RESUME AFTER PAUSE ===== ///
+//!> Resume after user input
+if (STATE.flags.waiting_for_user_input) {
+    // User has responded, clear pause flag
+    editState(s => {
+        s.flags.waiting_for_user_input = false;
+        s.flags.pause_reason = null;
+    });
+    // Allow workflow to continue
+}
+//!<
+///-///
+
 /// ===== TRIGGER DETECTION ===== ///
 
 //!> Discussion/Implementation mode toggling

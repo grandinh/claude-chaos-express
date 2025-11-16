@@ -290,4 +290,64 @@ These are acceptable - files are documented as optional and can be created when 
 
 ---
 
+## Hook System: Claude Code Tool Response Field Name
+
+**Issue Discovered:** 2025-11-16 during REPAIR-hook-system-agent-conflicts task
+
+### The Problem
+
+Initial pause detection implementation used incorrect field name `tool_result` when extracting tool output from hook input. The correct field name is `tool_response` per Claude Code hooks reference documentation.
+
+**Impact:** Pause detection silently failed because it was reading from a non-existent field. Agent pause requests were never detected, causing the hook system to auto-advance despite explicit "WAIT for user response" instructions.
+
+### Root Cause
+
+1. **Undocumented field names** - Hook input structure isn't immediately obvious; requires consulting official Claude Code hooks reference
+2. **No validation** - Hooks run silently without errors if accessing undefined fields
+3. **Format variation** - `tool_response` can be either string or object, requiring defensive extraction
+
+### The Fix
+
+**Field Name Correction:**
+```javascript
+// ❌ INCORRECT
+const toolResult = hookInput.tool_result;  // undefined!
+
+// ✅ CORRECT
+const toolResponse = hookInput.tool_response;
+```
+
+**Defensive Extraction:**
+```javascript
+let toolOutput = "";
+if (typeof toolResponse === "string") {
+    toolOutput = toolResponse;
+} else if (toolResponse && typeof toolResponse === "object") {
+    toolOutput = toolResponse.output || toolResponse.content || "";
+}
+```
+
+### Prevention
+
+**When working with Claude Code hook inputs:**
+
+1. **Always check official docs** - Don't assume field names, verify against Claude Code hooks reference
+2. **Add debug logging** - Use environment-gated debug logs to verify data extraction:
+   ```javascript
+   if (process.env.DEBUG_HOOKS) {
+       console.error("[DEBUG] hookInput keys:", Object.keys(hookInput));
+       console.error("[DEBUG] tool_response type:", typeof toolResponse);
+   }
+   ```
+3. **Handle format variations** - Tool responses vary by tool type (string vs object), always extract defensively
+4. **Test with real hook events** - Don't assume extraction works; test with actual Claude Code tool executions
+
+### Related Files
+
+- `sessions/hooks/post_tool_use.js` - Pause detection implementation (lines 61, 129)
+- `sessions/hooks/shared_state.js` - SessionsFlags class with pause state
+- `sessions/tasks/REPAIR-hook-system-agent-conflicts.md` - Task that discovered and fixed this
+
+---
+
 *More gotchas will be added as they are discovered during framework development and usage.*
