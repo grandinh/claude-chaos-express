@@ -1,0 +1,291 @@
+{
+  "version": "2.0.0",
+  "_schema": {
+    "description": "Skill trigger configuration for cc-sessions framework with DAIC-aware skill activation",
+    "skillType_values": {
+      "ANALYSIS-ONLY": "Skills that only read/analyze code and provide suggestions. Safe to run in any DAIC mode (DISCUSS/ALIGN/IMPLEMENT/CHECK). Never call write tools.",
+      "WRITE-CAPABLE": "Skills that may call write tools (Edit, Write, MultiEdit). Only allowed in IMPLEMENT mode. Auto-trigger logic must check CC_SESSION_MODE before firing."
+    },
+    "daicMode_behavior": "Auto-trigger logic MUST check CC_SESSION_MODE before firing WRITE-CAPABLE skills. If CC_SESSION_MODE is undefined/null, treat as DISCUSS (read-only). ANALYSIS-ONLY skills may run in any mode.",
+    "enforcement_values": {
+      "suggest": "Skill provides suggestions but user controls activation",
+      "block": "Skill blocks certain actions (use sparingly, guardrails only)"
+    }
+  },
+  "skills": {
+    "skill-developer": {
+      "type": "domain",
+      "skillType": "WRITE-CAPABLE",
+      "daicMode": {
+        "allowedModes": ["IMPLEMENT"]
+      },
+      "enforcement": "suggest",
+      "priority": "medium",
+      "promptTriggers": {
+        "keywords": ["skill system", "create skill", "skill architecture"],
+        "intentPatterns": [
+          "(create|add|modify|build).*?skill",
+          "skill.*?(development|creation|building)"
+        ]
+      }
+    },
+    "cc-sessions-core": {
+      "type": "domain",
+      "skillType": "WRITE-CAPABLE",
+      "daicMode": {
+        "allowedModes": ["IMPLEMENT"]
+      },
+      "enforcement": "suggest",
+      "priority": "high",
+      "promptTriggers": {
+        "keywords": [
+          "hook",
+          "session",
+          "task",
+          "middleware",
+          "route handler",
+          "api endpoint",
+          "cc-sessions"
+        ],
+        "intentPatterns": [
+          "(create|modify|refactor).*?(hook|session|task)",
+          "sessions.*?development",
+          "api.*?(implementation|development)"
+        ]
+      },
+      "fileTriggers": {
+        "pathPatterns": [
+          "sessions/**/*.js",
+          "sessions/hooks/**/*.js",
+          "sessions/api/**/*.js"
+        ]
+      }
+    },
+    "error-tracking": {
+      "type": "domain",
+      "skillType": "ANALYSIS-ONLY",
+      "daicMode": {
+        "allowedModes": ["DISCUSS", "ALIGN", "IMPLEMENT", "CHECK"]
+      },
+      "enforcement": "suggest",
+      "priority": "medium",
+      "promptTriggers": {
+        "keywords": [
+          "error handling",
+          "sentry",
+          "error tracking",
+          "captureException",
+          "captureMessage"
+        ],
+        "intentPatterns": [
+          "(add|implement|configure).*?sentry",
+          "error.*?(tracking|monitoring|handling)"
+        ]
+      },
+      "fileTriggers": {
+        "pathPatterns": [
+          "**/instrument.ts",
+          "**/sentry*.ts"
+        ]
+      }
+    },
+    "framework_version_check": {
+      "type": "domain",
+      "skillType": "ANALYSIS-ONLY",
+      "daicMode": {
+        "allowedModes": ["DISCUSS", "ALIGN", "IMPLEMENT", "CHECK"]
+      },
+      "enforcement": "suggest",
+      "priority": "medium",
+      "promptTriggers": {
+        "keywords": [
+          "framework version",
+          "claude.md version",
+          "version mismatch",
+          "version sync",
+          "framework sync"
+        ],
+        "intentPatterns": [
+          "check.*?framework.*?version",
+          "version.*?(mismatch|sync|drift)"
+        ]
+      }
+    },
+    "framework_health_check": {
+      "type": "domain",
+      "skillType": "ANALYSIS-ONLY",
+      "daicMode": {
+        "allowedModes": ["DISCUSS", "ALIGN", "IMPLEMENT", "CHECK"]
+      },
+      "enforcement": "suggest",
+      "priority": "medium",
+      "promptTriggers": {
+        "keywords": [
+          "framework health",
+          "run health check",
+          "validate framework",
+          "framework test",
+          "check framework"
+        ],
+        "intentPatterns": [
+          "(run|execute|perform).*?health.*?check",
+          "validate.*?framework",
+          "framework.*?health"
+        ]
+      }
+    },
+    "framework_repair_suggester": {
+      "type": "domain",
+      "skillType": "ANALYSIS-ONLY",
+      "daicMode": {
+        "allowedModes": ["DISCUSS", "ALIGN", "IMPLEMENT", "CHECK"]
+      },
+      "enforcement": "suggest",
+      "priority": "high",
+      "promptTriggers": {
+        "keywords": [
+          "REPAIR task",
+          "framework issue",
+          "broken gating",
+          "framework bug",
+          "framework broken"
+        ],
+        "intentPatterns": [
+          "create.*?REPAIR.*?task",
+          "framework.*(issue|bug|broken|problem)",
+          "REPAIR-"
+        ]
+      }
+    },
+    "lcmp_recommendation": {
+      "type": "domain",
+      "skillType": "ANALYSIS-ONLY",
+      "daicMode": {
+        "allowedModes": ["DISCUSS", "ALIGN", "IMPLEMENT", "CHECK"]
+      },
+      "enforcement": "suggest",
+      "priority": "low",
+      "promptTriggers": {
+        "keywords": [
+          "/squish",
+          "compaction",
+          "LCMP",
+          "context cleanup",
+          "context compaction"
+        ],
+        "intentPatterns": [
+          "compact.*?context",
+          "LCMP.*(compaction|cleanup)",
+          "/squish"
+        ]
+      }
+    },
+    "daic_mode_guidance": {
+      "type": "domain",
+      "skillType": "ANALYSIS-ONLY",
+      "daicMode": {
+        "allowedModes": ["DISCUSS", "ALIGN", "IMPLEMENT", "CHECK"]
+      },
+      "enforcement": "suggest",
+      "priority": "medium",
+      "promptTriggers": {
+        "keywords": [
+          "what mode",
+          "DAIC",
+          "can I write",
+          "implement mode",
+          "current mode",
+          "DISCUSS mode",
+          "ALIGN mode",
+          "CHECK mode"
+        ],
+        "intentPatterns": [
+          "what.*(mode|DAIC)",
+          "can.*?(write|edit|modify)",
+          "(current|which).*?mode"
+        ]
+      }
+    },
+    "cc-sessions-hooks": {
+      "type": "domain",
+      "skillType": "WRITE-CAPABLE",
+      "daicMode": {
+        "allowedModes": ["IMPLEMENT"]
+      },
+      "enforcement": "suggest",
+      "priority": "high",
+      "promptTriggers": {
+        "keywords": [
+          "hook",
+          "sessions_enforce",
+          "post_tool_use",
+          "user_messages",
+          "subagent_hooks",
+          "shared_state"
+        ],
+        "intentPatterns": [
+          "(create|modify|fix).*?hook",
+          "hook.*?(enforcement|validation)"
+        ]
+      },
+      "fileTriggers": {
+        "pathPatterns": [
+          "sessions/hooks/**/*.js"
+        ]
+      }
+    },
+    "cc-sessions-api": {
+      "type": "domain",
+      "skillType": "WRITE-CAPABLE",
+      "daicMode": {
+        "allowedModes": ["IMPLEMENT"]
+      },
+      "enforcement": "suggest",
+      "priority": "high",
+      "promptTriggers": {
+        "keywords": [
+          "session command",
+          "task command",
+          "state command",
+          "protocol command",
+          "config command"
+        ],
+        "intentPatterns": [
+          "(create|modify|fix).*?(command|api)",
+          "sessions.*?api"
+        ]
+      },
+      "fileTriggers": {
+        "pathPatterns": [
+          "sessions/api/**/*.js"
+        ]
+      }
+    },
+    "skill-assessor": {
+      "type": "domain",
+      "skillType": "ANALYSIS-ONLY",
+      "daicMode": {
+        "allowedModes": ["DISCUSS", "ALIGN", "IMPLEMENT", "CHECK"]
+      },
+      "enforcement": "suggest",
+      "priority": "medium",
+      "promptTriggers": {
+        "keywords": [
+          "assess skill",
+          "skill assessment",
+          "evaluate skill",
+          "should this skill auto-trigger",
+          "add skill to rules",
+          "analyze skill",
+          "skill auto-invoke"
+        ],
+        "intentPatterns": [
+          "(assess|evaluate|analyze).*?skill",
+          "skill.*?(assessment|evaluation|analysis)",
+          "auto.*?trigger.*?skill",
+          "should.*?skill.*?(auto|trigger)"
+        ]
+      }
+    }
+  }
+}

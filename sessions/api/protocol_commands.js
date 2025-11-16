@@ -5,10 +5,11 @@
 // ===== STDLIB ===== //
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 //--//
 
 // ===== LOCAL ===== //
-const { loadState, editState, TaskState, SessionsProtocol, PROJECT_ROOT } = require('../hooks/shared_state.js');
+const { loadState, editState, TaskState, SessionsProtocol, PROJECT_ROOT, loadConfig } = require('../hooks/shared_state.js');
 //--//
 
 //-#
@@ -167,6 +168,179 @@ function handleStartupLoad(args, jsonOutput = false) {
             taskData.started = `${year}-${month}-${day}`;
         }
 
+        // Create/checkout task branch as part of task initialization
+        let branchStatus = '';
+        if (taskData.branch) {
+            try {
+                const config = loadConfig();
+                const defaultBranch = config.git_preferences.default_branch || 'main';
+                
+                // Check current branch
+                let currentBranch;
+                try {
+                    currentBranch = execSync('git branch --show-current', { 
+                        cwd: PROJECT_ROOT, 
+                        encoding: 'utf8' 
+                    }).trim();
+                } catch (e) {
+                    currentBranch = null;
+                }
+
+                // Check if task branch exists
+                let branchExists = false;
+                try {
+                    execSync(`git show-ref --verify --quiet refs/heads/${taskData.branch}`, { 
+                        cwd: PROJECT_ROOT 
+                    });
+                    branchExists = true;
+                } catch (e) {
+                    // Branch doesn't exist locally
+                }
+
+                // Check if branch exists on remote
+                let remoteBranchExists = false;
+                try {
+                    execSync(`git show-ref --verify --quiet refs/remotes/origin/${taskData.branch}`, { 
+                        cwd: PROJECT_ROOT 
+                    });
+                    remoteBranchExists = true;
+                } catch (e) {
+                    // Branch doesn't exist on remote
+                }
+
+                if (currentBranch !== taskData.branch) {
+                    if (branchExists) {
+                        // Branch exists locally, just checkout
+                        execSync(`git checkout ${taskData.branch}`, { 
+                            cwd: PROJECT_ROOT,
+                            stdio: 'pipe'
+                        });
+                        // Ensure upstream tracking is set up if remote branch exists
+                        if (remoteBranchExists) {
+                            try {
+                                execSync(`git branch --set-upstream-to=origin/${taskData.branch} ${taskData.branch}`, { 
+                                    cwd: PROJECT_ROOT,
+                                    stdio: 'pipe'
+                                });
+                            } catch (e) {
+                                // Upstream might already be set, ignore
+                            }
+                        }
+                        branchStatus = `Checked out existing branch: ${taskData.branch}${remoteBranchExists ? ' (tracking remote)' : ''}`;
+                    } else if (remoteBranchExists) {
+                        // Branch exists on remote, create local tracking branch
+                        execSync(`git checkout -b ${taskData.branch} origin/${taskData.branch}`, { 
+                            cwd: PROJECT_ROOT,
+                            stdio: 'pipe'
+                        });
+                        branchStatus = `Created local branch tracking remote: ${taskData.branch}`;
+                    } else {
+                        // Create new branch from default branch
+                        // First ensure we're on default branch
+                        if (currentBranch !== defaultBranch) {
+                            execSync(`git checkout ${defaultBranch}`, { 
+                                cwd: PROJECT_ROOT,
+                                stdio: 'pipe'
+                            });
+                        }
+                        // Pull latest changes
+                        try {
+                            execSync(`git pull origin ${defaultBranch}`, { 
+                                cwd: PROJECT_ROOT,
+                                stdio: 'pipe'
+                            });
+                        } catch (e) {
+                            // Ignore pull errors (might be offline or no remote)
+                        }
+                        // Create new branch
+                        execSync(`git checkout -b ${taskData.branch}`, { 
+                            cwd: PROJECT_ROOT,
+                            stdio: 'pipe'
+                        });
+                        // Push and set upstream tracking for new branch
+                        try {
+                            execSync(`git push -u origin ${taskData.branch}`, { 
+                                cwd: PROJECT_ROOT,
+                                stdio: 'pipe'
+                            });
+                            branchStatus = `Created new branch: ${taskData.branch} from ${defaultBranch} (pushed to remote with tracking)`;
+                        } catch (e) {
+                            // Push failed (might be offline or no remote), but branch is created
+                            branchStatus = `Created new branch: ${taskData.branch} from ${defaultBranch} (local only - push manually to set up tracking)`;
+                        }
+                    }
+                } else {
+                    // Already on the branch, but ensure upstream is set if remote exists
+                    if (remoteBranchExists) {
+                        try {
+                            execSync(`git branch --set-upstream-to=origin/${taskData.branch} ${taskData.branch}`, { 
+                                cwd: PROJECT_ROOT,
+                                stdio: 'pipe'
+                            });
+                        } catch (e) {
+                            // Upstream might already be set, ignore
+                        }
+                    }
+                    branchStatus = `Already on branch: ${taskData.branch}${remoteBranchExists ? ' (tracking remote)' : ''}`;
+                }
+
+                // Handle submodules if configured
+                if (config.git_preferences.has_submodules && taskData.submodules && Array.isArray(taskData.submodules)) {
+                    for (const submodule of taskData.submodules) {
+                        const submodulePath = path.join(PROJECT_ROOT, submodule);
+                        if (fs.existsSync(submodulePath)) {
+                            try {
+                                // Check if submodule branch exists
+                                let subBranchExists = false;
+                                try {
+                                    execSync(`git show-ref --verify --quiet refs/heads/${taskData.branch}`, { 
+                                        cwd: submodulePath 
+                                    });
+                                    subBranchExists = true;
+                                } catch (e) {
+                                    // Branch doesn't exist
+                                }
+
+                                if (!subBranchExists) {
+                                    // Get submodule default branch
+                                    let subDefaultBranch = defaultBranch;
+                                    try {
+                                        const result = execSync('git symbolic-ref refs/remotes/origin/HEAD | sed "s@^refs/remotes/origin/@@"', { 
+                                            cwd: submodulePath,
+                                            encoding: 'utf8',
+                                            stdio: 'pipe'
+                                        }).trim();
+                                        if (result) {
+                                            subDefaultBranch = result;
+                                        }
+                                    } catch (e) {
+                                        // Use default branch if detection fails
+                                    }
+                                    
+                                    // Create branch in submodule
+                                    execSync(`git checkout -b ${taskData.branch} ${subDefaultBranch}`, { 
+                                        cwd: submodulePath,
+                                        stdio: 'pipe'
+                                    });
+                                    branchStatus += `\nCreated branch in submodule ${submodule}: ${taskData.branch}`;
+                                } else {
+                                    execSync(`git checkout ${taskData.branch}`, { 
+                                        cwd: submodulePath,
+                                        stdio: 'pipe'
+                                    });
+                                    branchStatus += `\nChecked out branch in submodule ${submodule}: ${taskData.branch}`;
+                                }
+                            } catch (e) {
+                                branchStatus += `\nWarning: Could not create branch in submodule ${submodule}: ${e.message}`;
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                branchStatus = `Warning: Branch creation failed: ${error.message}. You may need to create the branch manually.`;
+            }
+        }
+
         // Update the current task in state
         editState(s => {
             s.current_task = taskData;
@@ -183,11 +357,17 @@ function handleStartupLoad(args, jsonOutput = false) {
                     branch: taskData.branch,
                     status: taskData.status
                 },
+                branch_status: branchStatus,
                 next_steps: 'If the user has not already shown you the task file with @task-name syntax, read the task file before you continue. Otherwise, you may proceed with the task startup protocol.'
             };
         }
 
-        return `Your task data has been loaded into the session state:\nTask Name: ${taskData.name}\nTask File: ${taskData.file}\nBranch To Use: ${taskData.branch}\nTask Status: ${taskData.status}\nIf the user has not already shown you the task file with @task-name syntax, read the task file before you continue. Otherwise, you may proceed with the task startup protocol.`;
+        let output = `Your task data has been loaded into the session state:\nTask Name: ${taskData.name}\nTask File: ${taskData.file}\nBranch To Use: ${taskData.branch}\nTask Status: ${taskData.status}\n`;
+        if (branchStatus) {
+            output += `\nBranch Status:\n${branchStatus}\n`;
+        }
+        output += `\nIf the user has not already shown you the task file with @task-name syntax, read the task file before you continue. Otherwise, you may proceed with the task startup protocol.`;
+        return output;
 
     } catch (error) {
         // Differentiate between FileNotFoundError and other exceptions

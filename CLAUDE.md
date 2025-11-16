@@ -178,7 +178,7 @@ Details and example wording live in `claude-reference.md`.
 
 ### 4.1 Skill System Overview
 
-The framework includes **11 operational skills** in `.claude/skills/` that provide specialized guidance and automation:
+The framework includes **20 operational skills** in `.claude/skills/` that provide specialized guidance and automation:
 
 **WRITE-CAPABLE Skills (4)** – Only run in IMPLEMENT mode:
 - `cc-sessions-core` – Core cc-sessions development
@@ -194,6 +194,17 @@ The framework includes **11 operational skills** in `.claude/skills/` that provi
 - `lcmp_recommendation` – LCMP compaction recommendations
 - `daic_mode_guidance` – DAIC mode navigation help
 - `skill-assessor` – Automated skill assessment for auto-invocation decisions
+
+**Workflow-Trigger Skills (9)** – Natural language wrappers for slash commands (ANALYSIS-ONLY):
+- `code-review-trigger` – Natural language for /code-review command
+- `research-trigger` – Natural language for /research command
+- `pm-workflow-trigger` – Natural language for PM commands (epic/issue/PRD)
+- `pm-status-trigger` – Natural language for project status queries
+- `git-workflow-trigger` – Natural language for git operations
+- `contextkit-planning-trigger` – Natural language for ContextKit planning
+- `testing-trigger` – Natural language for test execution
+- `validation-trigger` – Natural language for quality checks
+- `checkpoint-trigger` – Natural language for checkpoint operations
 
 ### 4.2 Skill Rules
 

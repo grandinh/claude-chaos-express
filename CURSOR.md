@@ -115,13 +115,23 @@ For any non-trivial change (beyond a single-line fix):
 1. **Commit to a branch**:
    - Use a descriptive name, e.g. `feature/<issue-id>-short-description`.
 
-2. **Update the GitHub Issue**:
+2. **Create a code review task**:
+   - **Whenever you make actual code changes** (not just documentation or config), create a low-priority task in `sessions/tasks/` for Claude to review:
+     - Task name format: `l-review-<descriptive-name>.md`
+     - Include:
+       - What code was changed and why
+       - Files modified
+       - What should be reviewed (error handling, edge cases, best practices, etc.)
+       - Related files and context
+   - This helps catch issues early and keeps changes documented.
+
+3. **Update the GitHub Issue**:
    - Add a brief comment:
      - What you changed
      - Files touched
      - Any TODOs or follow-ups
 
-3. **Optional:** append a short note to `/logs/ai-handoffs.md` (if it exists), for Claude Code's benefit:
+4. **Optional:** append a short note to `/logs/ai-handoffs.md` (if it exists), for Claude Code's benefit:
    - Include:
      - `issue_id`
      - `branch`
