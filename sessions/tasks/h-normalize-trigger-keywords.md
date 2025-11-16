@@ -1,8 +1,9 @@
 ---
-name: m-normalize-trigger-keywords
-branch: feature/m-normalize-trigger-keywords
+name: h-normalize-trigger-keywords
+branch: feature/h-normalize-trigger-keywords
 status: pending
 created: 2025-01-15
+priority: high
 ---
 
 # Normalize cc-sessions Trigger Keywords
@@ -85,4 +86,5 @@ NO keyword can trigger cc-sessions actions unless it is explicitly declared in `
 
 ## Work Log
 - [2025-01-15] Task created based on user request to normalize trigger keywords across systems
+- [2025-01-15] **NEXT TASK FOR CLAUDE**: Review this task to fix the issue where Claude suggests generic trigger phrases (like "lgtm, go, proceed, or execute") instead of only referencing the user's configured trigger phrases from `sessions/sessions-config.json`. The problem is Claude inferring common alternatives rather than strictly using configured phrases.
 

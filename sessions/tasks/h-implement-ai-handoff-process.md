@@ -1,8 +1,9 @@
 ---
-name: m-implement-ai-handoff-process
-branch: feature/m-implement-ai-handoff-process
+name: h-implement-ai-handoff-process
+branch: feature/h-implement-ai-handoff-process
 status: pending
 created: 2025-11-15
+priority: high
 ---
 
 # Initialize AI Handoff Process
@@ -746,7 +747,7 @@ Within cc-sessions:
 
 #### Task Creation
 - Task created following Task Creation Protocol
-- Priority: medium (m-) - infrastructure for agent collaboration
+- Priority: high (h-) - infrastructure for agent collaboration
 - Type: implement - new functionality for handoff tracking
 - Structure: FILE - focused deliverable, < 3 days estimated
 - Success criteria defined with 9 major categories covering implementation, safety, and validation
