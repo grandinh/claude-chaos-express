@@ -308,13 +308,14 @@ Otherwise, Cursor should:
 
 For Claude ↔ Cursor handoffs, append a concise YAML block to `docs/ai_handoffs.md` that includes:
 
-- `timestamp`
+- `timestamp` (ISO-8601 format)
 - `from`, `to` (claude|cursor)
 - `issue_id` (or equivalent task ID)
 - `branch` (if relevant)
 - `completed` – bullets with file paths and actions
 - `next` – concrete tasks with acceptance criteria
 - `context_files` – relevant Tier-1/2 docs
+- `schema_version` (currently 1.0, for future schema evolution)
 
 Exact examples and formatting live in `claude-reference.md`.
 

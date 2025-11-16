@@ -798,6 +798,38 @@
           "(save|restore).*?state"
         ]
       }
+    },
+    "handoff-receiver": {
+      "type": "workflow",
+      "skillType": "WRITE-CAPABLE",
+      "daicMode": {
+        "allowedModes": ["IMPLEMENT"]
+      },
+      "enforcement": "suggest",
+      "priority": "medium",
+      "promptTriggers": {
+        "keywords": [
+          "check handoffs",
+          "execute handoff",
+          "handoff from cursor",
+          "what did cursor",
+          "cursor handed off",
+          "receive handoff",
+          "parse handoff",
+          "read handoff",
+          "process handoff",
+          "handoff log",
+          "cursor handoff",
+          "ai handoff"
+        ],
+        "intentPatterns": [
+          "(check|view|read|parse).*?handoff",
+          "handoff.*?(cursor|from cursor)",
+          "what.*?(cursor|handed off)",
+          "(execute|process|handle).*?handoff",
+          "cursor.*?(handed|handoff)"
+        ]
+      }
     }
   }
 }

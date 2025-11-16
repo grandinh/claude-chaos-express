@@ -1,3 +1,11 @@
+---
+title: Tiers of Context
+summary: File hierarchy and protection rules (Tier-0/1/2/3)
+tier: 2
+tags: [context, hierarchy, protection, sot, tiers]
+last_updated: 2025-11-15
+---
+
 # Tiers of Context
 
 This document defines the file hierarchy and protection rules for the repository.

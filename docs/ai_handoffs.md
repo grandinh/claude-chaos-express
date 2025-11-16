@@ -1,3 +1,13 @@
+---
+title: AI Handoffs Log
+summary: Agent coordination YAML entries (Cursor ↔ Claude)
+tier: 2
+schema: from/to/next
+schema_version: "1.0"
+tags: [handoff, coordination, yaml, cursor, claude]
+last_updated: 2025-11-15
+---
+
 # AI Handoffs Log
 
 This file records structured handoffs between Cursor and Claude Code.
@@ -45,19 +55,20 @@ When Cursor creates a plan or spec for a large feature:
 ## Handoff Entry Schema
 
 ```yaml
+schema_version: "1.0"
 timestamp: ISO-8601
-from_agent: claude|cursor
-to_agent: claude|cursor
+from: claude|cursor
+to: claude|cursor
 issue_id: <GitHub Issue number or "none">
 branch: <current branch>
-repo_state:
+repo_state:  # Optional - git repository state
   branch: <branch>
   last_commit: <hash>
   dirty_files: [...]
   changed_files: [...]
 completed:
   - <completed task with file paths>
-needed:
+next:
   - <specific next actions with acceptance criteria>
 context_files:
   - <paths to Tier-2 docs>
@@ -70,9 +81,36 @@ context_files:
 <!-- Entries appear below in reverse chronological order -->
 
 ```yaml
+schema_version: "1.0"
+timestamp: 2025-11-15T20:00:00Z
+from: claude
+to: cursor
+issue_id: none
+branch: feature/h-implement-ai-handoff-process
+completed:
+  - Normalized handoff schema to use from/to/next fields
+  - Updated claude.md Section 5.3 with schema_version field
+  - Created handoff-receiver skill for parsing handoffs
+  - Created validation script at scripts/validate-handoffs.sh
+  - Added frontmatter metadata to all handoff docs
+  - Configured handoff-receiver for auto-invocation
+next:
+  - Review handoff system implementation
+  - Test handoff-receiver skill with a real handoff
+  - Merge changes to main branch
+context_files:
+  - docs/ai_handoffs.md
+  - docs/agent_bridge_protocol.md
+  - claude.md
+  - .claude/skills/handoff-receiver.md
+  - scripts/validate-handoffs.sh
+```
+
+```yaml
+schema_version: "1.0"
 timestamp: 2025-01-20T12:00:00Z
-from_agent: cursor
-to_agent: claude
+from: cursor
+to: claude
 issue_id: 1
 branch: feature/h-align-claude-cursor-systems
 repo_state:
@@ -93,7 +131,7 @@ completed:
   - Recommended lightweight run tracking (recent 10-20 runs only)
   - Drafted comprehensive GitHub Issue with phased implementation plan
   - Created GitHub Issue #1: "Implement Agent Registry System and Cloud Agent Infrastructure"
-needed:
+next:
   - Implement Phase 1: Registry foundation (repo_state/agent-registry.json + scripts/agent-registry.js)
   - Implement Phase 2: Cloud Agent infrastructure (6 configs in .cursor/cloud-agents/)
   - Implement Phase 3: Documentation automation (auto-generate audit from registry)
@@ -110,9 +148,10 @@ context_files:
 ```
 
 ```yaml
+schema_version: "1.0"
 timestamp: 2025-01-20T00:00:00Z
-from_agent: cursor
-to_agent: claude
+from: cursor
+to: claude
 issue_id: none
 branch: feature/h-align-claude-cursor-systems
 repo_state:
@@ -127,7 +166,7 @@ completed:
   - Created high-priority task manifest: sessions/tasks/h-enhance-handoff-for-cursor-independence.md
   - Defined spec for Cursor Coordination Guide to enable Cursor independence from CLAUDE.md
   - Identified coordination-relevant information to extract from CLAUDE.md
-needed:
+next:
   - Create docs/cursor-coordination-guide.md with all coordination-relevant information (DAIC workflow, write-gating, tier rules, handoff format, decision priority, boundaries, shared SoT)
   - Update .cursor/rules/cursor-agent-operating-spec.mdc to remove @CLAUDE.md reference and replace with @docs/cursor-coordination-guide.md
   - Update docs/agent_bridge_protocol.md to reference coordination guide

@@ -454,8 +454,24 @@ Or, feel free to yell at me or redirect me like I'm a 5 year old child.
 
 After the user approves with a trigger phrase, you may re-submit the updated todo list using TodoWrite.`;
 
+            // Log to stderr for debugging/visibility
             console.error(message);
-            process.exit(2);
+
+            // Also emit structured JSON so Claude actually stops and waits
+            // for user approval before proceeding (see hooks-reference.md).
+            const output = {
+                continue: false,
+                stopReason: "Todo list change requires user approval before continuing.",
+                hookSpecificOutput: {
+                    hookEventName: "PreToolUse",
+                    permissionDecision: "deny",
+                    permissionDecisionReason: message
+                }
+            };
+
+            console.log(JSON.stringify(output));
+            // Exit 0 when using JSON control; exit code 2 is reserved for plain-error paths.
+            process.exit(0);
         }
     }
 

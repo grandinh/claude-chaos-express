@@ -1,3 +1,11 @@
+---
+title: Agent Bridge Protocol
+summary: Coordination rules between Cursor and Claude Code
+tier: 2
+tags: [coordination, cursor, claude, protocol, handoff]
+last_updated: 2025-11-15
+---
+
 # Agent Bridge Protocol
 
 This document defines the rules for inter-agent operations between Cursor (local authority) and Claude Code (high-reasoning executor).

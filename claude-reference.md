@@ -509,3 +509,174 @@ if (["Edit", "Write", "MultiEdit"].includes(toolName)) {
 3. **Token cost awareness** - Always calculate and report value score
 4. **LCMP logging** - Every assessment logged for pattern learning
 5. **User approval required** - No automatic configuration changes
+
+---
+
+## 5. Handoffs – Schema & Examples
+
+This section provides concrete examples and formatting for AI agent handoffs between Cursor and Claude Code (see `claude.md` Section 5.3).
+
+### 5.1 Normalized Schema (v1.0)
+
+All new handoff entries MUST use this normalized schema:
+
+```yaml
+schema_version: "1.0"
+timestamp: ISO-8601 format (e.g., 2025-11-15T20:00:00Z)
+from: claude|cursor
+to: claude|cursor
+issue_id: GitHub Issue number or "none"
+branch: feature branch name
+completed:
+  - Bullet point with file paths and actions
+  - Example: "Updated schema in docs/ai_handoffs.md"
+next:
+  - Specific task with acceptance criteria
+  - Example: "Review schema normalization and approve PR"
+context_files:
+  - Relative paths from repo root
+  - Example: "docs/ai_handoffs.md"
+repo_state:  # Optional - git repository state
+  branch: branch name
+  last_commit: git commit hash
+  dirty_files: [array of uncommitted changes]
+  changed_files: [array of staged changes]
+```
+
+### 5.2 Example: Cursor → Claude Handoff
+
+```yaml
+schema_version: "1.0"
+timestamp: 2025-11-15T10:30:00Z
+from: cursor
+to: claude
+issue_id: 42
+branch: feature/add-authentication
+repo_state:
+  branch: feature/add-authentication
+  last_commit: abc123def456
+  dirty_files: []
+  changed_files: []
+completed:
+  - Created task manifest: sessions/tasks/h-add-authentication.md
+  - Defined success criteria for JWT authentication
+  - Researched auth libraries (Passport.js vs jose)
+  - Drafted architecture in docs/auth-design.md
+next:
+  - Implement JWT authentication middleware in src/auth/jwt-middleware.ts
+  - Add token validation route at POST /api/auth/verify
+  - Write unit tests in tests/auth/jwt-middleware.test.ts (min 90% coverage)
+  - Update API documentation in docs/api.md
+  - Acceptance: Tests pass, coverage ≥90%, docs updated
+context_files:
+  - sessions/tasks/h-add-authentication.md
+  - docs/auth-design.md
+  - src/auth/types.ts
+```
+
+### 5.3 Example: Claude → Cursor Handoff
+
+```yaml
+schema_version: "1.0"
+timestamp: 2025-11-15T15:45:00Z
+from: claude
+to: cursor
+issue_id: 42
+branch: feature/add-authentication
+completed:
+  - Implemented JWT middleware in src/auth/jwt-middleware.ts (120 lines)
+  - Added token validation route at POST /api/auth/verify
+  - Wrote comprehensive unit tests in tests/auth/jwt-middleware.test.ts (95% coverage)
+  - Updated API documentation in docs/api.md with new endpoints
+  - All tests passing (jest ran 45 tests, 45 passed)
+next:
+  - Review implementation for security best practices
+  - Test authentication flow end-to-end in staging
+  - Update deployment docs if config changes needed
+  - Acceptance: Code review approved, E2E tests pass
+context_files:
+  - src/auth/jwt-middleware.ts
+  - tests/auth/jwt-middleware.test.ts
+  - docs/api.md
+```
+
+### 5.4 Legacy Schema Support
+
+For backward compatibility, the handoff-receiver skill and validation script support the legacy schema:
+
+**Legacy Fields:** `from_agent`, `to_agent`, `needed` (instead of `from`, `to`, `next`)
+
+**Dual-Schema Parsing Example:**
+```python
+# Python example of graceful dual-schema parsing
+from_agent = entry.get('from') or entry.get('from_agent')
+to_agent = entry.get('to') or entry.get('to_agent')
+next_tasks = entry.get('next') or entry.get('needed')
+schema_version = entry.get('schema_version', 'legacy')
+```
+
+**Migration:** All existing entries have been migrated to normalized schema. Legacy field names are supported for read compatibility but should not be used in new entries.
+
+### 5.5 Validation
+
+Use the validation script to check handoff correctness:
+
+```bash
+./scripts/validate-handoffs.sh
+```
+
+**What it checks:**
+- YAML syntax validity
+- Required fields present (`from`, `to`, `completed`, `next`, `timestamp`)
+- Schema version present (warns if missing, required for new entries)
+- Supports both legacy and normalized schemas
+
+**Example output:**
+```
+🔍 Validating handoff entries in docs/ai_handoffs.md...
+
+✅ Entry 1: Valid
+   Schema version: 1.0
+⚠️  Entry 2: Valid but missing schema_version
+   WARNING: schema_version field is required for new entries
+   Legacy entries without schema_version are accepted for backward compatibility
+
+✅ All 2 entries validated successfully
+```
+
+### 5.6 Handoff Workflow
+
+**RECEIVE (Cursor → Claude):**
+1. Parse YAML from `docs/ai_handoffs.md`
+2. Validate schema and required fields
+3. Restate `next` tasks for user confirmation
+4. Check for clear acceptance criteria
+5. Execute work in IMPLEMENT mode (respects DAIC discipline)
+6. Update handoff entry's `completed` field with results + file paths
+
+**SEND (Claude → Cursor):**
+1. Create new YAML entry with `schema_version: "1.0"`
+2. Populate `completed` with work done + file paths touched
+3. Populate `next` with specific tasks + acceptance criteria
+4. Include `context_files` pointing to relevant docs
+5. Optional: Add `repo_state` if useful for Cursor
+6. Append to `docs/ai_handoffs.md` (preserve existing entries)
+
+### 5.7 Best Practices
+
+**Clear Acceptance Criteria:**
+- ✅ GOOD: "Tests pass with ≥90% coverage, API docs updated with new endpoints"
+- ❌ BAD: "Make it work"
+
+**Specific File Paths:**
+- ✅ GOOD: "Updated schema in docs/ai_handoffs.md lines 47-65"
+- ❌ BAD: "Updated some files"
+
+**Actionable Next Tasks:**
+- ✅ GOOD: "Implement JWT middleware in src/auth/jwt-middleware.ts with token validation and expiry checking"
+- ❌ BAD: "Do the auth thing"
+
+**Context Files:**
+- Include all relevant docs/code the receiving agent needs to read
+- Use relative paths from repo root
+- Keep list focused (5-10 files max)
