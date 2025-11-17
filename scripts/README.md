@@ -396,3 +396,156 @@ Tests use Jest and cover:
   - Enhanced duplicate detection (semantic similarity)
   - Agent usage analytics
   - Automated archival process
+
+---
+
+## Task Detection & Orchestration Scripts
+
+The multi-agent orchestration system includes automated task detection and distribution scripts.
+
+### Task Detection Watcher
+
+**Script:** `watch-cursor-automation.js`
+
+**Purpose:** Automatically detect new task files and feed them into the queue system.
+
+**Usage:**
+```bash
+# Start watcher (foreground)
+npm run watch-automation
+
+# Start watcher (background with pm2)
+pm2 start scripts/watch-cursor-automation.js --name task-watcher
+pm2 save
+
+# Check watcher status
+npm run automation-status
+
+# Stop watcher
+pm2 stop task-watcher
+```
+
+**Features:**
+- Monitors `sessions/tasks/` directory for new `.md` files
+- Desktop notifications on task detection
+- Logs to `sessions/tasks/.new-tasks.log`
+- Excludes TEMPLATE.md, done/, indexes/, archive/
+- Three log files in `.cursor/automation-logs/`:
+  - `watch.log` - General watcher activity
+  - `detection.log` - Task detection events
+  - `errors.log` - Error messages and stack traces
+
+**Environment:**
+- **CLAUDE_PROJECT_DIR**: Project root (auto-detected if not set)
+
+### Agent Orchestrator
+
+**Script:** `agent-orchestrator.js`
+
+**Purpose:** Distribute tasks across a pool of 3 Claude Code agents.
+
+**Usage:**
+```bash
+# Start orchestrator (foreground)
+npm run orchestrator
+
+# Start orchestrator (background with pm2)
+pm2 start scripts/agent-orchestrator.js --name orchestrator
+pm2 save
+
+# Check orchestrator status
+npm run orchestrator-status
+
+# Stop orchestrator
+pm2 stop orchestrator
+```
+
+**Features:**
+- 3-agent pool with concurrent execution
+- Local (Claude CLI) and cloud (Cursor Cloud Agent API) modes
+- Dual-queue routing (context vs implementation)
+- Dependency resolution and topological sort
+- Multi-factor priority scoring
+
+**Environment Variables:**
+- **AGENT_MODE**: `local` (Claude CLI, default) or `cloud` (Cursor Cloud Agent API)
+- **CLAUDE_CMD**: Path to Claude CLI (default: `claude` in PATH)
+- **CURSOR_API_TOKEN**: Required for cloud mode
+- **GITHUB_REPO**: Required for cloud mode (e.g., `username/repo`)
+- **GITHUB_REF**: Branch/tag for cloud mode (default: `main`)
+
+### Task Queue Manager
+
+**Script:** `task-queue-manager.js`
+
+**Purpose:** Manage dual queues for context gathering and implementation.
+
+**Usage:**
+```bash
+# View queue state
+node scripts/task-queue-manager.js
+
+# Manual queue operations (advanced)
+node scripts/task-queue-manager.js --add <task-file>
+node scripts/task-queue-manager.js --remove <task-file>
+```
+
+**Features:**
+- Routes tasks based on `context_gathered` frontmatter flag
+- Validates context manifest exists before implementation routing
+- Priority scoring with multi-factor algorithm
+- Dependency tracking and circular dependency detection
+
+### Dependency Graph
+
+**Script:** `dependency-graph.js`
+
+**Purpose:** Visualize and validate task dependencies.
+
+**Usage:**
+```bash
+# View dependency graph
+node scripts/dependency-graph.js
+
+# Check for circular dependencies
+node scripts/dependency-graph.js --check-cycles
+```
+
+**Features:**
+- Builds dependency graph from `depends_on` frontmatter fields
+- Topological sort for execution order
+- Circular dependency detection
+- Visual ASCII graph output
+
+### State Files
+
+**`.new-tasks.log`** (`sessions/tasks/`)
+- Task detection log (written by file watcher)
+- One entry per new task file
+
+**`.orchestrator-state.json`** (`sessions/tasks/`)
+- Agent pool state (status, current task, completed count)
+- Completed tasks set
+- Last updated timestamp
+
+**`.task-queues.json`** (`sessions/tasks/`)
+- Context queue tasks
+- Implementation queue tasks
+- Processed tasks set
+- Dependency graph data
+
+### Documentation
+
+- **Task Detection Guide**: `docs/task-detection-guide.md`
+- **Orchestrator Config**: `scripts/ORCHESTRATOR_CONFIG.md`
+- **Orchestrator Testing**: `scripts/ORCHESTRATOR_TESTING.md`
+- **Operator Manual**: `docs/multi-agent-orchestration-operator-guide.md`
+- **Framework Integration**: `CLAUDE.md` Section 7
+
+### Integration with cc-sessions
+
+The orchestration system respects cc-sessions framework rules:
+- **Write Gating**: Agents only write during IMPLEMENT mode
+- **DAIC Discipline**: Each agent follows DISCUSS → ALIGN → IMPLEMENT → CHECK
+- **State Persistence**: Uses `sessions/sessions-state.json` for task resumption
+- **LCMP Logging**: Agent failures logged to `context/gotchas.md`

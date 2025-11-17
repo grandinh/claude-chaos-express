@@ -5,7 +5,9 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "watch-automation": "node watch-cursor-automation.js",
+    "automation-status": "node automation-status.js"
   },
   "jest": {
     "testEnvironment": "node",
@@ -27,6 +29,7 @@
   "dependencies": {
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
+    "chokidar": "^3.5.3",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {

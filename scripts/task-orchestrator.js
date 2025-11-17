@@ -25,21 +25,7 @@
 const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
-
-// Find project root
-function findProjectRoot() {
-    if (process.env.CLAUDE_PROJECT_DIR) {
-        return process.env.CLAUDE_PROJECT_DIR;
-    }
-    let cur = process.cwd();
-    while (cur !== path.dirname(cur)) {
-        if (fs.existsSync(path.join(cur, '.claude'))) {
-            return cur;
-        }
-        cur = path.dirname(cur);
-    }
-    throw new Error('Could not find project root (no .claude directory)');
-}
+const { findProjectRoot } = require('./utils');
 
 const PROJECT_ROOT = findProjectRoot();
 const DEFAULT_TASKS_DIR = path.join(PROJECT_ROOT, 'sessions', 'tasks');

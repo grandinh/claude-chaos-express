@@ -1,7 +1,7 @@
 # claude.md – AI Operator Framework
 # Framework Version: 2.0
 # Last Updated: 2025-11-16
-# Recent Changes: Agent Registry System (2025-11-16) - Added section 4.6 documenting centralized agent registry system
+# Recent Changes: Unified Cursor Automation & Multi-Agent Orchestration (2025-11-16) - Added section 7 for multi-agent orchestration system with task detection watcher
 
 You are the primary AI operator for this repo, running inside Claude Code with **cc-sessions** as the execution spine and **Cursor** as a secondary editor.
 
@@ -521,7 +521,7 @@ Use **REPAIR-** tasks when the framework/tooling is misbehaving (hooks, prompts,
 - Scope limited to framework/tooling changes.
 - Within IMPLEMENT, you may modify framework/Tier-1 docs as needed, still respecting write gating.
 - After changes:
-  - Run targeted framework health checks (see Section 8).
+  - Run targeted framework health checks (see Section 9).
   - Log:
     - what broke,
     - the apparent root cause,
@@ -534,7 +534,211 @@ Templates and examples are in `claude-reference.md`.
 
 ---
 
-## 7. LCMP & Compaction (Manual Only)
+## 7. Multi-Agent Orchestration System
+
+The framework includes an automated multi-agent orchestration system that distributes task execution across a pool of Claude Code agents, with automatic task detection via file watcher.
+
+### 7.1 System Components
+
+**File Watcher** (`scripts/watch-cursor-automation.js`)
+- Monitors `sessions/tasks/` directory for new `.md` files
+- Desktop notifications on task detection
+- Logs to `.new-tasks.log` for queue manager consumption
+- Excludes TEMPLATE.md, done/, indexes/, archive/ directories
+- Runs as background service (pm2, LaunchAgent, systemd)
+
+**Agent Orchestrator** (`scripts/agent-orchestrator.js`)
+- Manages pool of 3 Claude Code agents
+- Assigns tasks with load balancing
+- Supports local (Claude CLI) and cloud (Cursor Cloud Agent API) execution modes
+- Enforces context gathering before implementation
+
+**Task Queue Manager** (`scripts/task-queue-manager.js`)
+- Maintains dual queues: context gathering and implementation
+- Routes tasks based on `context_gathered` frontmatter flag
+- Implements multi-factor priority scoring (priority × leverage + bonuses/penalties)
+- Validates context manifest exists before implementation routing
+
+**Dependency Graph** (`scripts/dependency-graph.js`)
+- Builds task dependency graph from `depends_on` frontmatter fields
+- Performs topological sort for execution order
+- Detects circular dependencies
+- Blocks task assignment until dependencies satisfied
+
+**Orchestrator Status** (`scripts/orchestrator-status.js`)
+- Real-time monitoring dashboard
+- Displays agent pool state, queue status, and statistics
+- Run via `npm run orchestrator-status`
+
+### 7.2 Task Detection Workflow
+
+When new task files are created:
+1. File watcher detects new `.md` file in `sessions/tasks/`
+2. Desktop notification appears
+3. Task logged to `sessions/tasks/.new-tasks.log`
+4. Task queue manager picks up new task from log
+5. Task routed to context or implementation queue based on `context_gathered` flag
+6. Orchestrator assigns task to idle agent from pool
+7. Agent executes task following cc-sessions DAIC workflow
+8. Agent returns to idle state on completion
+
+**Options after detection:**
+- Let multi-agent orchestrator handle it automatically (recommended)
+- Manually start task in Claude Code: `@sessions/tasks/[filename]`
+
+### 7.3 Queue Routing Logic
+
+Tasks are routed to queues based on `context_gathered` frontmatter flag:
+
+```yaml
+# Context Queue (context_gathered: false or missing)
+---
+name: example-task
+context_gathered: false
+priority: high
+leverage: medium
+---
+```
+
+```yaml
+# Implementation Queue (context_gathered: true)
+---
+name: example-task
+context_gathered: true
+priority: high
+leverage: medium
+---
+# Context Manifest
+... context gathered by agent ...
+```
+
+**CRITICAL Validation:** Implementation queue routing validates:
+1. `context_gathered: true` in frontmatter
+2. "Context Manifest" section exists in task file
+
+If validation fails, task is forced to context queue with `validationIssue` flag.
+
+### 7.4 Operating the System
+
+**Start File Watcher (Foreground):**
+```bash
+cd scripts
+npm run watch-automation
+```
+
+**Start File Watcher (Background with pm2):**
+```bash
+cd scripts
+pm2 start watch-cursor-automation.js --name task-watcher
+pm2 save
+```
+
+**Start Orchestrator (Foreground):**
+```bash
+cd scripts
+npm run orchestrator
+```
+
+**Start Orchestrator (Background with pm2):**
+```bash
+pm2 start scripts/agent-orchestrator.js --name orchestrator
+pm2 save
+```
+
+**Monitor Status:**
+```bash
+npm run automation-status    # File watcher status
+npm run orchestrator-status  # Orchestrator status
+```
+
+**Stop Services:**
+```bash
+pm2 stop task-watcher orchestrator
+# OR Ctrl+C in foreground mode
+```
+
+### 7.5 State Files
+
+**`.new-tasks.log`** (`sessions/tasks/`)
+- Task detection log (written by file watcher)
+- One entry per new task file
+
+**`.orchestrator-state.json`** (`sessions/tasks/`)
+- Agent pool state (status, current task, completed count)
+- Completed tasks set
+- Last updated timestamp
+
+**`.task-queues.json`** (`sessions/tasks/`)
+- Context queue tasks
+- Implementation queue tasks
+- Processed tasks set
+- Dependency graph data
+
+### 7.6 Log Files
+
+**Automation Logs** (`.cursor/automation-logs/`)
+- `watch.log` - General watcher activity (start/stop events)
+- `detection.log` - Task detection events with timestamps
+- `errors.log` - Error messages and stack traces
+
+### 7.7 Configuration
+
+**Environment Variables:**
+- `AGENT_MODE`: `local` (Claude CLI, default) or `cloud` (Cursor Cloud Agent API)
+- `CLAUDE_CMD`: Path to Claude CLI (default: `claude` in PATH)
+- `CURSOR_API_TOKEN`: Required for cloud mode
+- `GITHUB_REPO`: Required for cloud mode (e.g., `username/repo`)
+- `GITHUB_REF`: Branch/tag for cloud mode (default: `main`)
+
+**Exclusion Patterns:**
+Edit constants in `scripts/watch-cursor-automation.js`:
+```javascript
+const EXCLUDED_TASK_FILES = ['TEMPLATE.md'];
+const EXCLUDED_TASK_DIRS = ['done', 'indexes', 'archive'];
+```
+
+### 7.8 Integration with cc-sessions
+
+The orchestration system respects cc-sessions framework rules:
+
+- **Write Gating:** Agents only write during IMPLEMENT mode within their assigned tasks
+- **DAIC Discipline:** Each agent follows DISCUSS → ALIGN → IMPLEMENT → CHECK workflow
+- **State Persistence:** Uses `sessions/sessions-state.json` for task resumption
+- **LCMP Logging:** Agent failures logged to `context/gotchas.md`
+- **Tier Respect:** Agents modify Tier-2 (task manifests) freely, Tier-1 only in REPAIR tasks
+
+### 7.9 Troubleshooting
+
+**File watcher not detecting tasks:**
+- Check if watcher is running: `npm run automation-status`
+- Check logs: `.cursor/automation-logs/watch.log`
+- Restart watcher: `pm2 restart task-watcher`
+
+**Tasks being ignored:**
+- Check if file matches excluded patterns (TEMPLATE.md, done/, indexes/, archive/)
+- Check `.cursor/automation-logs/detection.log` for details
+
+**Agents not picking up tasks:**
+- Check queue state: `cat sessions/tasks/.task-queues.json | jq`
+- Verify frontmatter valid: `npm run validate-frontmatter`
+- Check dependencies: `node scripts/dependency-graph.js`
+- Ensure context_gathered tasks have Context Manifest section
+
+**Desktop notifications not working:**
+- macOS: Ensure Terminal has notification permissions
+- Linux: Install `notify-send` package
+- Windows: Not currently supported
+
+**See also:**
+- `docs/task-detection-guide.md` - Comprehensive setup and usage guide
+- `scripts/ORCHESTRATOR_CONFIG.md` - Detailed configuration guide
+- `scripts/ORCHESTRATOR_TESTING.md` - Runtime testing procedures
+- `docs/multi-agent-orchestration-operator-guide.md` - Operator manual
+- `context/gotchas.md` - Known issues and race condition documentation
+
+---
+
+## 8. LCMP & Compaction (Manual Only)
 
 LCMP files:
 
@@ -560,7 +764,7 @@ You may suggest compaction (e.g. after a big epic completes), but must not perfo
 
 ---
 
-## 8. Framework Health Checks (On-Demand)
+## 9. Framework Health Checks (On-Demand)
 
 Run framework health checks only when:
 
