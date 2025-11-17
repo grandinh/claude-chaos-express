@@ -263,3 +263,420 @@ When encountering apparent system conflicts:
 - `sessions/hooks/post_tool_use.js` - Hook system (mechanical layer)
 - `sessions/protocols/` - Protocol files (instructional layer)
 
+---
+
+## Continuous Worker False Positive Pattern
+
+**Date:** 2025-11-16
+**Context:** Multi-agent task distribution investigation and automation simplification
+**Impact:** Identified critical pattern for evaluating automation systems
+
+### Key Insight: Task Assignment Tracking ≠ Task Execution Automation
+
+Systems can appear fully operational while accomplishing zero actual work. The continuous worker system demonstrated this perfectly:
+
+**What Appeared Functional:**
+- ✓ Agents assigned to tasks
+- ✓ Lock files created correctly
+- ✓ Progress tracking updated
+- ✓ Assignment queue managed
+- ✓ Notification files generated
+
+**What Actually Happened:**
+- ❌ Zero commits from agents
+- ❌ Zero file modifications
+- ❌ Zero completed tasks
+- ❌ 4+ hours with no progress
+
+### Pattern Discovered
+
+**The False Automation Pattern:**
+```
+System tracks WHAT should happen
+    ↓
+Creates metadata about work
+    ↓
+Updates status files
+    ↓
+Appears operational (metrics look good)
+    ↓
+But NEVER triggers actual execution
+```
+
+**vs. Real Automation:**
+```
+System detects trigger
+    ↓
+Actually starts execution
+    ↓
+Work happens (commits, changes, outputs)
+    ↓
+Evidence-based progress (not just metadata)
+```
+
+### Why This Matters
+
+**False automation is worse than no automation:**
+1. **False Confidence** - Appears working, so problems go undetected
+2. **Wasted Resources** - Maintaining broken system costs time
+3. **Confused Users** - "Why is nothing happening?" despite status showing "in progress"
+4. **Delayed Detection** - Can run for hours/days before someone checks actual output
+
+**Real automation has evidence:**
+- Commits with timestamps
+- File modifications
+- Created artifacts (PRs, builds, deployments)
+- Observable side effects
+
+### How to Detect False Automation
+
+**1. Time-Box Verification**
+```bash
+# If >1 hour with "in-progress" status but no output → broken
+git log --since="1 hour ago" --oneline
+# Empty = broken automation
+
+ls -lt <work-directory> | head -5
+# No recent files = broken automation
+```
+
+**2. Evidence-Based Metrics**
+```
+❌ Don't trust: "Task assigned", "In progress", "Agent working"
+✅ Do verify: Commits, file changes, PRs created, tests run
+```
+
+**3. Mechanism vs. Outcome**
+```
+❌ Mechanism metrics: "Assigned 10 tasks", "3 agents active"
+✅ Outcome metrics: "5 PRs created", "20 tests passing", "3 features deployed"
+```
+
+### Application: Evaluating Any Automation
+
+**Before trusting automation:**
+1. **Check the evidence** - What actual work artifacts does it produce?
+2. **Time-box test** - Run for 30-60 minutes, verify real output
+3. **Trace the execution** - Does it actually trigger work or just track assignments?
+4. **Compare metrics** - Are "in progress" counts growing faster than "completed" counts?
+
+**Red flags for false automation:**
+- Status tracking without execution triggering
+- Metadata updates without file changes
+- "Assignment" logic without "execution" logic
+- Hours of "in progress" with zero commits
+
+### Real-World Example: Continuous Worker
+
+**System Design:**
+```javascript
+// Continuous worker ONLY did this:
+function assignNextTask(agentId) {
+    const task = getNextTask();
+    createLockFile(task);
+    updateProgressJson(agentId, task);
+    writeNotificationFile(agentId, task);
+    // ❌ Missing: Actually start Cursor with this task!
+}
+```
+
+**What It Should Have Done:**
+```javascript
+function assignAndExecuteTask(agentId, task) {
+    createLockFile(task);
+    updateProgressJson(agentId, task);
+
+    // ✅ Actually trigger work:
+    createTriggerFile(task);  // Cursor detects → auto-starts
+    // or
+    triggerCursorAgent(task); // API call → starts implementation
+}
+```
+
+### Lessons for Future Automation
+
+**When designing automation:**
+1. **Start with execution** - How does work actually happen?
+2. **Then add tracking** - Metadata comes second, not first
+3. **Verify end-to-end** - Test that work completes, not just starts
+4. **Evidence-based monitoring** - Track outcomes, not just assignments
+
+**When evaluating existing automation:**
+1. **Demand evidence** - Don't trust status files, check actual output
+2. **Time-box tests** - If no output after reasonable time, it's broken
+3. **Trace execution path** - Follow code from trigger to work completion
+4. **Ask "What if it fails?"** - Does silence mean success or failure?
+
+### Related Files
+
+- `sessions/tasks/m-unified-cursor-automation.md` - Replacement automation that works
+- `context/decisions.md` - "Deprecate Continuous Worker System" decision
+- `context/gotchas.md` - "Continuous Worker Appears Active But Does Nothing"
+- `docs/automation-strategy.md` - Contrast with broken continuous worker
+
+---
+
+## Trigger File Pattern for IDE Automation
+
+**Date:** 2025-11-16
+**Context:** Unified cursor automation design
+**Impact:** Established superior pattern for cross-tool automation
+
+### Key Insight: Explicit Trigger Files > Polling/Daemons for IDE Automation
+
+When automating work handoffs between tools (e.g., Claude → Cursor), trigger files provide a superior mechanism to polling, daemons, or webhooks.
+
+### Pattern
+
+**Trigger File Workflow:**
+```
+Tool A (Claude) completes planning
+    ↓
+Creates handoff.json (work specification)
+    ↓
+Creates trigger.md (notification + pointer)
+    ↓
+Tool B (Cursor) detects trigger on workspace open
+    ↓
+Reads handoff.json → starts work
+    ↓
+Archives trigger.md after processing
+```
+
+**vs. Polling Approach:**
+```
+Background daemon polls for new handoffs every N seconds
+    ↓
+Resource intensive, can miss events if daemon crashes
+    ↓
+Hard to debug (no visible state)
+```
+
+**vs. Webhook Approach:**
+```
+Tool A sends HTTP request to Tool B
+    ↓
+Requires Tool B running HTTP server
+    ↓
+Network dependency, firewall issues
+    ↓
+Lost if Tool B not running
+```
+
+### Why Trigger Files Work Better
+
+**1. Explicit and Visible**
+```bash
+# Easy to debug: "Does trigger file exist?"
+ls .cursor/triggers/
+# implement-auth-2025-11-16.md
+
+# Easy to inspect:
+cat .cursor/triggers/implement-auth-2025-11-16.md
+# See exactly what's queued
+```
+
+**2. Natural Queue Mechanism**
+```bash
+# Multiple triggers = natural queue
+ls .cursor/triggers/
+# implement-auth.md
+# implement-logging.md
+# implement-tests.md
+
+# Process in order (FIFO)
+```
+
+**3. Human-Cancellable**
+```bash
+# Cancel automation: just delete trigger
+rm .cursor/triggers/implement-auth.md
+# Done! No API calls, no daemon to stop
+```
+
+**4. Survives Restarts**
+```bash
+# Cursor crashed? No problem
+# Trigger file persists on disk
+# Will be picked up on next workspace open
+```
+
+**5. No Background Processes**
+```
+# IDE workspace initialization hook detects triggers
+# No polling daemon needed
+# No resource overhead when idle
+```
+
+**6. Debuggable State**
+```bash
+# What's queued?
+ls .cursor/triggers/
+
+# What failed?
+ls .cursor/triggers/failed/
+
+# What completed?
+ls .cursor/triggers/archive/
+
+# Full audit trail on filesystem
+```
+
+### Implementation Pattern
+
+**Trigger File Format:**
+```markdown
+---
+task_id: m-implement-auth
+handoff: ../handoffs/active/m-implement-auth.json
+created: 2025-11-16T10:00:00Z
+auto_implement: true
+priority: high
+---
+
+# AUTO-IMPLEMENT: Implement Authentication
+
+This is an automated implementation trigger.
+Cursor will detect this file and begin work.
+
+## Instructions
+1. Read handoff JSON for full spec
+2. Implement todos sequentially
+3. Commit after each module
+4. Archive this trigger when done
+```
+
+**IDE Detection (Cursor Rules):**
+```markdown
+## Automated Implementation Detection
+
+On workspace open, check for:
+- Pattern: `.cursor/triggers/implement-*.md`
+
+If found:
+1. Read trigger frontmatter
+2. Load handoff JSON
+3. Start Composer with spec
+4. Archive trigger to `.cursor/triggers/archive/`
+```
+
+**Handoff Creation:**
+```javascript
+function createHandoff(taskId, spec) {
+    // Create handoff JSON (data)
+    const handoffPath = `.cursor/handoffs/active/${taskId}.json`;
+    fs.writeFileSync(handoffPath, JSON.stringify(spec));
+
+    // Create trigger file (notification)
+    const triggerPath = `.cursor/triggers/implement-${taskId}.md`;
+    const trigger = generateTriggerMarkdown(taskId, handoffPath);
+    fs.writeFileSync(triggerPath, trigger);
+
+    console.log(`🚀 Trigger created: ${triggerPath}`);
+}
+```
+
+### When to Use Trigger Files
+
+**Good For:**
+- Handing off work between AI tools (Claude → Cursor)
+- Queueing automation tasks
+- Triggering IDE-based workflows
+- Any scenario where:
+  - Work can wait until tool opens
+  - Explicit > implicit preferred
+  - Human oversight desired
+
+**Not Good For:**
+- Real-time critical operations (use webhooks/API)
+- High-frequency events (use event streams)
+- Cross-network coordination (use proper messaging)
+
+### Application Examples
+
+**1. Claude → Cursor Handoff**
+```
+Claude (ALIGN phase) → Creates handoff + trigger
+Cursor (workspace open) → Detects trigger → Implements
+```
+
+**2. CI/CD Trigger**
+```
+CI passes → Creates deploy-trigger.md
+Deployment tool → Detects trigger → Deploys
+```
+
+**3. Code Review Queue**
+```
+Developer → Creates review-request-trigger.md
+Reviewer → Opens IDE → Sees trigger → Reviews
+```
+
+**4. Task Assignment**
+```
+PM → Creates task-trigger.md
+Developer → Opens IDE → Gets notification → Starts work
+```
+
+### Comparison with Other Patterns
+
+| Pattern | Visibility | Survivability | Resource Use | Debuggability |
+|---------|-----------|---------------|--------------|---------------|
+| **Trigger Files** | ✅ Explicit | ✅ Persists | ✅ Zero overhead | ✅ Filesystem audit trail |
+| Polling Daemon | ❌ Hidden | ❌ Lost if crashes | ❌ Constant CPU/mem | ❌ Check logs |
+| Webhooks | ❌ Network only | ❌ Lost if offline | ✅ Event-driven | ❌ Check server logs |
+| Database Queue | ⚠️ Query needed | ✅ Persists | ⚠️ DB overhead | ⚠️ Query logs |
+
+### Related Files
+
+- `sessions/tasks/m-unified-cursor-automation.md` - Uses trigger file pattern
+- `.cursor/plans/cursor-automation-flow-spec-9b54aa1a.plan.md` - Architectural analysis
+- `context/decisions.md` - "Unified Cursor Automation" decision
+
+## Three-Task Decomposition Pattern for Multi-Component Systems
+
+**Date:** 2025-11-16
+**Context:** Multi-agent orchestration architecture design
+**Impact:** Reusable pattern for breaking down complex automation systems
+
+### Key Insight: Detection → Enforcement → Orchestration Pattern
+
+Complex automation systems benefit from three-layer decomposition that separates input detection, validation/gating, and work coordination into independent components.
+
+### The Pattern
+
+```
+Layer 1: Detection (Input Layer)
+    ↓ Feeds
+Layer 2: Enforcement (Gating Layer)
+    ↓ Routes
+Layer 3: Orchestration (Coordination Layer)
+```
+
+**Layer Responsibilities:**
+
+1. **Detection** - Single responsibility: detect new work, minimal logic, no decision-making
+2. **Enforcement** - Validates prerequisites, framework-level gating, determines routing  
+3. **Orchestration** - Manages distribution, coordinates workers, depends on both layers
+
+### Real-World Application
+
+**Multi-Agent Task Automation (3 independent tasks):**
+- Task 1 (Detection): File watcher monitors for new tasks
+- Task 2 (Enforcement): `context_gathered` flag validation and queue routing
+- Task 3 (Orchestration): 3-agent pool with dual queues and load balancing
+
+### Why This Works
+
+**Clear Separation:** "What work?" → "Ready?" → "Who does it?"
+**Independent Development:** Each layer has standalone value
+**Scalability:** Easy to swap or enhance individual layers
+**Testability:** Each layer testable independently
+
+### Related Files
+
+- `sessions/tasks/m-unified-cursor-automation.md` - Detection layer
+- `sessions/tasks/h-enforce-context-gathering.md` - Enforcement layer
+- `sessions/tasks/h-multi-agent-orchestration.md` - Orchestration layer
+
+---

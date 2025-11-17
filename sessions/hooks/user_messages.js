@@ -641,6 +641,10 @@ if (!isApiCommand && compactionDetected) {
         new CCTodo({
             content: 'Run service-documentation agent if service interfaces changed',
             activeForm: 'Running service-documentation agent if service interfaces changed'
+        }),
+        new CCTodo({
+            content: 'Run LCMP compaction agent to promote durable information to Tier-1 docs',
+            activeForm: 'Running LCMP compaction agent to promote durable information to Tier-1 docs'
         })
     ];
 

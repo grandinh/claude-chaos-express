@@ -1,10 +1,13 @@
+#!/usr/bin/env node
+
 /**
- * Shared utility functions for orchestrator scripts
+ * Shared utility functions for orchestrator and automation scripts
  *
  * @module utils
  * @version 1.0.0
  */
 
+const fs = require('fs');
 const path = require('path');
 
 /**
@@ -29,6 +32,26 @@ function detectProjectRoot() {
     return cwd;
 }
 
+/**
+ * Find the project root directory by looking for .claude directory
+ * @returns {string} Absolute path to project root
+ * @throws {Error} If project root cannot be found
+ */
+function findProjectRoot() {
+    if (process.env.CLAUDE_PROJECT_DIR) {
+        return process.env.CLAUDE_PROJECT_DIR;
+    }
+    let cur = process.cwd();
+    while (cur !== path.dirname(cur)) {
+        if (fs.existsSync(path.join(cur, '.claude'))) {
+            return cur;
+        }
+        cur = path.dirname(cur);
+    }
+    throw new Error('Could not find project root (no .claude directory)');
+}
+
 module.exports = {
-    detectProjectRoot
+    detectProjectRoot,
+    findProjectRoot
 };

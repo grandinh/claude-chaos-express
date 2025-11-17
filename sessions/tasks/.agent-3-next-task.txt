@@ -1,0 +1,13 @@
+Agent 3: Next Task Assigned
+
+📋 Task: REPAIR-context-lcmp-path-sync.md
+🕐 Assigned: Sun Nov 16 21:49:11 PST 2025
+
+📝 Instructions:
+Prepare the task in sessions/tasks/REPAIR-context-lcmp-path-sync.md following TASK-PREPARATION-GUIDE.md.
+Add complete implementation code (not pseudocode).
+Include file paths, error handling, dependencies, and testing steps.
+
+Run this in your Cursor window:
+  git checkout agent-3/task-preparation
+  # Then tell Cursor to prepare the task

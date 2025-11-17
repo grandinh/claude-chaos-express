@@ -1,0 +1,23 @@
+{
+  "agent-1": {
+    "current_task": "REPAIR-pause-detection-robustness.md",
+    "status": "in-progress",
+    "started": "2025-11-17T05:49:11Z",
+    "completed": [],
+    "blocked": []
+  },
+  "agent-2": {
+    "current_task": "REPAIR-code-review-findings-workflow.md",
+    "status": "in-progress",
+    "started": "2025-11-17T05:49:11Z",
+    "completed": [],
+    "blocked": []
+  },
+  "agent-3": {
+    "current_task": "REPAIR-context-lcmp-path-sync.md",
+    "status": "in-progress",
+    "started": "2025-11-17T05:49:11Z",
+    "completed": [],
+    "blocked": []
+  }
+}

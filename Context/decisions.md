@@ -140,5 +140,434 @@ This blocked agent management workflows and prevented documentation auto-generat
 
 ---
 
+## Unified Cursor Automation vs. Separate Watchers
+
+**Decision Date:** 2025-11-16
+**Context:** Cursor automation simplification and continuous worker investigation
+**Decision Made By:** Framework implementation
+
+### The Problem
+
+Three overlapping automation approaches created confusion and duplication:
+1. **m-implement-cursor-automation** - Trigger-based handoff execution
+2. **m-implement-cursor-auto-task-pickup** - File watcher for new tasks
+3. **agent-continuous-worker.sh** - Task assignment tracking (non-functional)
+
+Each had different infrastructure and approaches, creating maintenance burden.
+
+### Options Considered
+
+**Option A: Unified Watcher (Chosen)**
+- Single file watcher monitors both patterns
+- Shared infrastructure (logging, notifications, error handling)
+- Single process, lower resource overhead
+
+**Option B: Separate Watchers**
+- Two independent watchers for each pattern
+- Separate logging and notification systems
+- Higher resource usage but simpler individual components
+
+**Option C: Keep Continuous Worker**
+- Continue using agent-continuous-worker.sh
+- Add file watching on top
+- Preserve existing assignment tracking
+
+### Decision
+
+**Chose Option A: Unified Watcher**
+
+### Rationale
+
+1. **Shared Infrastructure** - Logging, notifications, error handling used by both patterns
+2. **Lower Resource Overhead** - One chokidar instance vs. two separate processes
+3. **Easier Maintenance** - Single codebase for file watching logic
+4. **Natural Fit** - Both patterns are file-based detection, similar architecture
+5. **Proven Non-Functional** - Continuous worker (Option C) was broken (see Gotchas)
+
+**Trade-offs Accepted:**
+- Slightly more complex routing logic (pattern detection)
+- Single point of failure (watcher down = both patterns fail)
+- More complex testing (must verify both patterns work together)
+
+### Implementation
+
+**File:** `scripts/watch-cursor-automation.js`
+**Watches:**
+- `sessions/tasks/*.md` → New task detection workflow
+- `.cursor/triggers/implement-*.md` → Handoff auto-implementation workflow
+
+**Shared Infrastructure:**
+- chokidar watcher with awaitWriteFinish
+- Unified logging system (.cursor/automation-logs/)
+- Desktop notification system
+- Error handling and archiving
+
+### Consequences
+
+**Positive:**
+- Eliminated duplication between two automation tasks
+- Deprecated broken continuous worker system
+- Reduced complexity from 3 systems → 1 system
+- Complete implementation code already written
+
+**Negative:**
+- Must verify both patterns don't conflict
+- Failure affects both workflows
+- Slightly harder to debug (must identify which pattern triggered)
+
+### Future Considerations
+
+If patterns diverge significantly:
+- Easy to split back into separate watchers
+- Shared infrastructure can remain as library
+- Pattern detection already modular
+
+### Related Files
+
+- `sessions/tasks/m-unified-cursor-automation.md` - Implementation spec
+- `sessions/tasks/m-implement-cursor-automation.md` - Deprecated (merged)
+- `sessions/tasks/m-implement-cursor-auto-task-pickup.md` - Deprecated (merged)
+- `sessions/tasks/l-document-continuous-worker-scope.md` - Deprecated (system non-functional)
+- `.cursor/plans/cursor-automation-flow-spec-9b54aa1a.plan.md` - Architectural analysis
+
+---
+
+## Cursor Automation: Sequential vs. Concurrent Trigger Processing
+
+**Decision Date:** 2025-11-16
+**Context:** Cursor automation flow design
+**Decision Made By:** Framework implementation
+
+### The Problem
+
+When multiple handoff triggers exist simultaneously, system must decide: process them all at once (concurrent) or one at a time (sequential)?
+
+### Decision
+
+**Sequential (FIFO) processing for MVP, with priority support deferred to future phase**
+
+### Rationale
+
+1. **Safety** - Prevents file editing conflicts when multiple triggers modify same files
+2. **Predictability** - FIFO order is simple to understand and debug
+3. **Simplicity** - Easier error handling (one failure doesn't cascade)
+4. **Sufficient for MVP** - Most workflows don't generate simultaneous triggers
+5. **Future-Proof** - Can add priority queue or concurrency later without breaking changes
+
+**Trade-offs Accepted:**
+- Slower processing when multiple triggers exist
+- No priority support initially (all triggers equal priority)
+- Can't parallelize independent tasks (even if safe)
+
+### Implementation
+
+**Processing Order:** FIFO (alphabetical by trigger filename)
+**Concurrency:** 1 trigger at a time
+**Future Extension Point:** Add priority field to trigger frontmatter
+
+### Consequences
+
+**Positive:**
+- No race conditions or file conflicts
+- Easy to debug (linear execution trace)
+- Predictable behavior for users
+
+**Negative:**
+- Suboptimal for high-volume scenarios
+- Can't prioritize urgent triggers
+- Slower than parallel processing
+
+### Future Enhancements
+
+**Phase 2 (if needed):**
+- Add `priority: high|medium|low` to trigger frontmatter
+- Process high-priority triggers first
+- Still sequential, but priority-ordered
+
+**Phase 3 (if needed):**
+- Analyze trigger dependencies (which files they touch)
+- Allow concurrent processing of independent triggers
+- Requires dependency analysis and conflict detection
+
+### Related Files
+
+- `sessions/tasks/m-unified-cursor-automation.md` - Implementation spec
+- `.cursor/plans/cursor-automation-flow-spec-9b54aa1a.plan.md` - Architectural analysis (Q2)
+
+---
+
+## Deprecate Continuous Worker System
+
+**Decision Date:** 2025-11-16
+**Context:** Multi-agent task distribution investigation revealed system non-functional
+**Decision Made By:** Framework implementation
+
+### The Problem
+
+The `agent-continuous-worker.sh` system appeared functional but was proven non-functional:
+- **Symptom:** 3 agents assigned to tasks for 4+ hours with zero progress
+- **Evidence:** No commits, no file modifications, no actual work
+- **Root Cause:** System only tracked assignment, didn't automate implementation
+
+### Decision
+
+**Archive continuous worker system, start fresh with unified automation**
+
+### Rationale
+
+1. **Proven Non-Functional** - Real-world test showed zero work output after 4+ hours
+2. **Fundamental Limitation** - Only tracks "who should work on what", doesn't trigger actual work
+3. **False Automation** - Appears operational (progress tracking, lock files) but does nothing
+4. **Clean Slate** - Existing assignments are stale and meaningless
+5. **Better Replacement** - Unified automation actually automates work execution
+
+**Evidence:**
+```bash
+# Agent status after 4+ hours
+Agent 1: 0 tasks completed (working on first task)
+Agent 2: 0 tasks completed (working on first task)
+Agent 3: 0 tasks completed (working on first task)
+
+# No evidence of work:
+- 0 commits from agents
+- 0 task files modified
+- 0 help requests
+- All still locked on first assigned tasks
+```
+
+### Migration Strategy
+
+**Archive, don't migrate:**
+```bash
+mkdir -p scripts/archive/continuous-worker
+mv scripts/agent-continuous-worker.sh scripts/archive/
+mv scripts/agent-workflow.sh scripts/archive/
+mv sessions/tasks/agent-assignments.json sessions/tasks/archive/
+mv sessions/tasks/agent-progress.json sessions/tasks/archive/
+```
+
+**No data migration:**
+- Existing agent assignments are stale (4+ hours, no progress)
+- Fresh start prevents confusion from broken state
+- New unified automation works differently (trigger-based, not assignment-based)
+
+### Replacement
+
+**New System:** `m-unified-cursor-automation.md`
+- Actually automates implementation (trigger → Cursor auto-start → work happens)
+- File watcher detects triggers and handoffs
+- Cursor rules trigger real execution
+- Evidence of work: commits, file changes, PRs
+
+### Consequences
+
+**Positive:**
+- Eliminates false sense of automation
+- Removes broken, confusing system
+- Unified automation actually works
+- Simpler mental model (trigger-based vs. assignment-based)
+
+**Negative:**
+- Existing agent assignments lost (acceptable, they were broken)
+- Scripts archived (may reference in future for ideas)
+
+### Lessons Learned
+
+**Automation That Tracks ≠ Automation That Executes** (see Gotchas)
+- Systems can appear operational while doing nothing
+- Metrics like "task assigned" don't indicate progress
+- Real evidence: commits, file changes, completed work
+- Time-box verification (if >1 hour, no progress = broken)
+
+### Related Files
+
+- `sessions/tasks/m-unified-cursor-automation.md` - Replacement system
+- `sessions/tasks/l-document-continuous-worker-scope.md` - Deprecated (system archived)
+- `context/insights.md` - "Automation That Tracks But Doesn't Execute" pattern
+- `context/gotchas.md` - "Continuous Worker Appears Active But Does Nothing"
+
+---
+
+## Multi-Agent Role Separation: Context-Gathering XOR Implementation
+
+**Decision Date:** 2025-11-16
+**Context:** m-unified-cursor-automation task refinement and three-task architecture
+**Decision Made By:** Framework implementation
+
+### The Problem
+
+Initial automation design mixed context-gathering and implementation work within single agent sessions, creating unclear responsibility boundaries and potential for role confusion.
+
+### Decision
+
+**Enforce strict role separation: context-gathering XOR implementation (never both)**
+
+### Rationale
+
+1. **Clear Responsibility** - Each agent has single, well-defined purpose
+2. **Prevents Role Confusion** - Agent never switches between gathering context and implementing
+3. **Clean Agent Lifecycle** - Spawn → single duty → terminate pattern
+4. **Queue-Based Orchestration** - Enables dual-queue system (context queue vs. implementation queue)
+5. **Error Isolation** - Context gathering failures don't block implementation agents
+
+**Trade-offs Accepted:**
+- More agent spawns (one for context, one for implementation)
+- Slightly more complex orchestration logic
+- Queue transition overhead (context → implementation)
+
+### Implementation
+
+**Agent Lifecycle:**
+```
+Context-Gathering Agent:
+    Initialize → Read task → Gather context → Update manifest → Set flag to true → Terminate
+
+Implementation Agent:
+    Initialize → Verify context → Implement task → Complete work → Terminate
+```
+
+**Enforcement Points:**
+1. **Task-level flag:** `context_gathered: true|false` gates which queue
+2. **Queue separation:** Context queue vs. implementation queue
+3. **Agent termination:** Agents exit after single duty completion
+4. **No role switching:** Once assigned role (context or implementation), agent never changes
+
+### Consequences
+
+**Positive:**
+- Clear separation of concerns
+- Enables load balancing based on queue depth
+- Prevents context/implementation mixing errors
+- Scalable (easy to add specialized agent types)
+
+**Negative:**
+- Higher overhead (2 agents per task minimum)
+- Queue transition adds latency
+- More complex orchestration required
+
+### Future Considerations
+
+Could extend pattern to:
+- Testing agents (separate from implementation)
+- Documentation agents (separate from testing)
+- Review agents (separate from implementation)
+
+### Related Files
+
+- `sessions/tasks/m-unified-cursor-automation.md` - Task detection (Task 1)
+- `sessions/tasks/h-enforce-context-gathering.md` - Context enforcement (Task 2)
+- `sessions/tasks/h-multi-agent-orchestration.md` - Orchestration system (Task 3)
+
+---
+
+## Handoff Protocol: YAML Log + Ephemeral Triggers
+
+**Decision Date:** 2025-11-16
+**Context:** Cursor automation protocol alignment and hybrid approach
+**Decision Made By:** Framework implementation
+
+### The Problem
+
+Initial automation spec assumed JSON handoff files + trigger files, but actual handoff protocol uses YAML entries in `docs/ai_handoffs.md`. Had to reconcile trigger file pattern with existing YAML log approach.
+
+### Options Considered
+
+**Option A: Monitor YAML Log Only**
+- Watch `docs/ai_handoffs.md` for new entries
+- Parse YAML to detect Claude → Cursor handoffs
+- No trigger files needed
+
+**Option B: Trigger Files Only**
+- Keep trigger file pattern as proposed
+- Ignore YAML log for automation
+- Document as protocol extension
+
+**Option C: Hybrid (Chosen)**
+- YAML log remains canonical source of truth
+- Ephemeral trigger files act as automation signals
+- Best of both: structured log + file-based triggering
+
+### Decision
+
+**Chose Option C: Hybrid Approach**
+
+### Rationale
+
+1. **Preserves SoT** - YAML log in `docs/ai_handoffs.md` remains canonical handoff record
+2. **Enables Automation** - Trigger files provide simple detection mechanism for IDE
+3. **Minimal Bloat** - Triggers are ephemeral (deleted after processing)
+4. **Backward Compatible** - Doesn't break existing YAML log consumers
+5. **Debuggable** - Both structured log (YAML) and visible triggers (files) for troubleshooting
+
+**Trade-offs Accepted:**
+- Slight duplication (YAML entry + trigger file both created)
+- Cleanup required (archive triggers after processing)
+- Two systems to maintain (YAML log + trigger detection)
+
+### Implementation
+
+**Creation Flow:**
+```
+Claude ALIGN Phase
+    ↓
+1. Append YAML entry to docs/ai_handoffs.md (canonical record)
+    ↓
+2. Create trigger file in .cursor/triggers/ (automation signal)
+    ↓
+Watcher detects trigger → Cursor auto-starts → Work happens
+    ↓
+Archive trigger to .cursor/triggers/archive/ (cleanup)
+```
+
+**YAML Log (Canonical):**
+```yaml
+timestamp: 2025-11-16T10:00:00Z
+from: claude
+to: cursor
+completed: [...]
+next: [...]
+context_files: [...]
+```
+
+**Trigger File (Ephemeral):**
+```markdown
+---
+task_id: example
+handoff: docs/ai_handoffs.md#entry-123
+created: 2025-11-16T10:00:00Z
+---
+# AUTO-IMPLEMENT: Example Task
+[Cursor will detect and process this]
+```
+
+### Consequences
+
+**Positive:**
+- Clean protocol alignment (YAML log preserved)
+- Practical automation (file-based triggers work well)
+- No protocol breaking changes
+- Easy to debug (both log and triggers visible)
+
+**Negative:**
+- Creates temporary files (cleanup overhead)
+- Two representations of same handoff
+- Potential drift if trigger/log mismatch
+
+### Prevention of Drift
+
+**Synchronization rules:**
+1. Always create trigger from YAML entry (not vice versa)
+2. Include YAML entry reference in trigger (handoff field)
+3. Archive trigger immediately after processing
+4. YAML log is authoritative if discrepancy exists
+
+### Related Files
+
+- `sessions/tasks/m-unified-cursor-automation.md` - Scope reduced to detection only (Task 1)
+- `docs/ai_handoffs.md` - Canonical YAML handoff log
+- `context/insights.md` - "Trigger File Pattern for IDE Automation"
+
+---
+
 *Decisions will be added here as they are made and documented during framework development and usage.*
 

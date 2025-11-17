@@ -1,0 +1,56 @@
+# Manual Task Dependencies
+#
+# This file allows you to declare task dependencies that may not be
+# explicitly stated in task frontmatter. This is useful for:
+# - Implicit dependencies discovered during analysis
+# - Cross-references between tasks
+# - Legacy task relationships
+#
+# Format:
+#   task-id:
+#     - dependency-task-id-1
+#     - dependency-task-id-2
+#
+# Task IDs should match the task filename without the .md extension.
+# You can also use task names if they're unique.
+
+# ============================================================================
+# CRITICAL DEPENDENCIES (Discovered 2025-01-27)
+# ============================================================================
+
+# Skill System Chain
+h-implement-skill-validation-script:
+  - REPAIR-skill-invocation-mechanism
+
+# Conflict Resolution Chain (must sequence to avoid file conflicts)
+REPAIR-pause-detection-robustness:
+  - REPAIR-code-review-findings-workflow
+
+# Documentation Chain (must sequence to avoid conflicts)
+h-quick-framework-fixes:
+  - REPAIR-consolidate-tier-docs
+
+# Release Blocker Chain (explicit requirement from PRD)
+m-release-v0.1.0-installable-package:
+  - h-create-health-check-script
+  - m-create-integration-tests
+  - h-create-quick-start-guide
+  - h-create-troubleshooting-guide
+
+# ============================================================================
+# NOTES
+# ============================================================================
+# 
+# CONSOLIDATION (2025-01-27):
+# - h-implement-conflict-resolution is superseded by REPAIR-code-review-findings-workflow
+#   (both modify same files, address same issue - agent instructions vs hooks)
+#
+# FILE CONFLICTS (must sequence, not parallelize):
+# - REPAIR-code-review-findings-workflow and REPAIR-pause-detection-robustness
+#   both modify: post_tool_use.js, user_messages.js, sessions_enforce.js, shared_state.js
+#
+# PARALLELIZATION OPPORTUNITIES:
+# - REPAIR-agent-registry-sot + REPAIR-context-lcmp-path-sync (different files)
+# - h-implement-code-search-parallelization + h-implement-parallel-agent-invocation (different files)
+# - All Phase 4 release blockers (different files, can all run in parallel)
+
