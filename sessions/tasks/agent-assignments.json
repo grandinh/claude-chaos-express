@@ -1,0 +1,73 @@
+{
+  "agent-1": {
+    "tasks": [
+      "REPAIR-pause-detection-robustness.md",
+      "h-breach-telemetry-ledger.md",
+      "h-create-troubleshooting-guide.md",
+      "h-implement-automation-strategy.md",
+      "h-implement-parallel-agent-invocation.md",
+      "h-remove-claudekit-hook-dependency.md",
+      "h-test-cloud-agent-infrastructure.md",
+      "l-create-agents-documentation.md",
+      "l-implement-agent-registry-caching.md",
+      "l-implement-performance-dashboard-v2.md",
+      "l-review-branch-creation-in-task-init.md",
+      "m-create-error-recovery-guide.md",
+      "m-create-integration-tests.md",
+      "m-implement-artifact-lifecycle.md",
+      "m-implement-custom-skill-rules.md",
+      "m-implement-task-registry.md",
+      "m-investigate-optional-sot-files.md",
+      "m-reconcile-task-reference-drift.md"
+    ],
+    "status": "pending"
+  },
+  "agent-2": {
+    "tasks": [
+      "REPAIR-code-review-findings-workflow.md",
+      "REPAIR-skill-invocation-mechanism.md",
+      "h-create-health-check-script.md",
+      "h-eldritch-commit-composer.md",
+      "h-implement-code-search-parallelization.md",
+      "h-implement-skill-validation-script.md",
+      "h-rightsize-contextkit-footprint.md",
+      "h-track-telemetry-ritual-map.md",
+      "l-create-configuration-wizard.md",
+      "l-implement-context-gathering-cache.md",
+      "l-implement-state-persistence-batching.md",
+      "l-review-task-dependency-graph-implementation.md",
+      "m-create-examples-directory.md",
+      "m-create-visual-workflow-examples.md",
+      "m-implement-cursor-auto-task-pickup.md",
+      "m-implement-plugin-backlinking.md",
+      "m-implement-user-onboarding.md",
+      "m-optimize-skill-directory-mapping.md",
+      "m-release-v0.1.0-installable-package.md"
+    ],
+    "status": "pending"
+  },
+  "agent-3": {
+    "tasks": [
+      "REPAIR-context-lcmp-path-sync.md",
+      "h-align-cursor-claude-logging-standards.md",
+      "h-create-quick-start-guide.md",
+      "h-enhance-handoff-for-cursor-independence.md",
+      "h-implement-numeric-impact-priority-system.md",
+      "h-normalize-trigger-keywords.md",
+      "h-stationmaster-control-plane.md",
+      "h-vision-codex-progress-ledger.md",
+      "l-create-success-metrics-dashboard.md",
+      "l-implement-context-window-budgeting.md",
+      "l-implement-task-template-generation.md",
+      "m-add-code-review-auto-invoke-triggers.md",
+      "m-create-handoff-protocol.md",
+      "m-ensure-backlinking-in-task-creation.md",
+      "m-implement-cursor-automation.md",
+      "m-implement-task-dependency-graph-v2.md",
+      "m-integrate-agent-registry-with-skill-rules.md",
+      "m-prune-skill-trigger-noise.md",
+      "m-simplify-handoff-process.md"
+    ],
+    "status": "pending"
+  }
+}

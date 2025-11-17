@@ -350,4 +350,364 @@ if (typeof toolResponse === "string") {
 
 ---
 
+## Continuous Worker Appears Active But Does Nothing
+
+**Issue Discovered:** 2025-11-16
+**Context:** Multi-agent task distribution testing
+
+### The Problem
+
+The `agent-continuous-worker.sh` system tracked task progress correctly but produced zero actual work output after 4+ hours of operation.
+
+**Symptom:**
+- 3 agents showing "in-progress" status for 4+ hours
+- `agent-progress.json` updating correctly
+- Lock files created properly
+- Task assignments correct in `agent-assignments.json`
+- **Zero commits from agents**
+- **Zero file modifications**
+- **Zero evidence of actual work**
+
+**What It Looked Like:**
+```bash
+$ cat sessions/tasks/agent-progress.json
+{
+  "agent-1": {
+    "current_task": "h-implement-code-search.md",
+    "status": "in-progress",
+    "started": "2025-11-16T10:00:00Z"
+  },
+  "agent-2": { "status": "in-progress", ... },
+  "agent-3": { "status": "in-progress", ... }
+}
+
+$ git log --since="4 hours ago" --oneline
+# Empty - no commits!
+
+$ ls -lt sessions/tasks/*.md | head -5
+# No recent modifications except one manually prepared task
+```
+
+### Root Cause
+
+**The continuous worker only manages task assignment, not task execution:**
+
+```javascript
+// What the worker DID:
+function assignNextTask(agentId) {
+    const task = getNextAvailableTask();
+
+    // Create lock file
+    fs.writeFileSync(`.lock-${task}`, agentId);
+
+    // Update progress tracking
+    updateProgressJson(agentId, task, 'in-progress');
+
+    // Create notification file
+    fs.writeFileSync(`.agent-${agentId}-next-task.txt`, task);
+
+    // ❌ MISSING: Actually start Cursor or trigger implementation!
+}
+```
+
+**What agents were expected to do manually:**
+1. Check for `.agent-N-next-task.txt` notification file
+2. Open Cursor manually
+3. Start chat manually
+4. Reference task file manually
+5. Actually work on task manually
+6. Run `agent-workflow.sh complete` when done manually
+
+**None of this manual workflow happened**, so the agents appeared assigned but did nothing.
+
+### The Fix
+
+**Deprecated continuous worker entirely, replaced with unified automation:**
+
+```javascript
+// New unified automation DOES:
+function handleTrigger(triggerFile) {
+    // Read trigger → extract task ID
+    const { taskId, handoff } = parseTrigger(triggerFile);
+
+    // ✅ Actually trigger Cursor to start work:
+    // Cursor rules detect trigger file → auto-start Composer
+    // (No manual intervention needed)
+
+    // Archive trigger after detection
+    archiveTrigger(triggerFile);
+}
+```
+
+**Key Difference:**
+- Old system: Track assignment, **hope** agents work manually
+- New system: Detect trigger → **actually start** Cursor implementation
+
+### Prevention
+
+**1. Demand Evidence-Based Verification**
+```bash
+# Don't trust status files - verify actual output
+git log --since="1 hour ago" --oneline
+# Should show commits if work is happening
+
+ls -lt <work-directory> | head -5
+# Should show recent file modifications
+```
+
+**2. Time-Box Verification**
+- If >1 hour "in-progress" with no commits → system is broken
+- Real automation produces evidence quickly
+- Silence is failure, not success
+
+**3. Distinguish Mechanism from Outcome**
+```
+❌ Mechanism metrics: "Task assigned", "Agent working", "In progress"
+✅ Outcome metrics: Commits, PRs, file changes, tests passing
+```
+
+**4. Test End-to-End Before Trusting**
+```bash
+# Create test task
+touch sessions/tasks/test-automation.md
+
+# Wait 5-10 minutes
+# Check for actual work output
+git log | grep "test-automation"
+
+# If nothing → automation is broken
+```
+
+**5. Trace Execution Path**
+```bash
+# Follow the code: Where does work actually happen?
+# If answer is "manually by human" → not automation!
+```
+
+### Evidence of Broken System
+
+**After 4+ hours:**
+```bash
+# Agent status
+Agent 1: 0 tasks completed (working on first task)
+Agent 2: 0 tasks completed (working on first task)
+Agent 3: 0 tasks completed (working on first task)
+
+# Git log
+$ git log --since="4 hours ago" --oneline
+# (empty)
+
+# File modifications
+$ find sessions/tasks -type f -mmin -240
+# Only files: agent-assignments.json, agent-progress.json, lock files
+# NO task file modifications
+
+# Commits from agents
+$ git log --all --author="Agent" --since="4 hours ago"
+# (empty)
+```
+
+### Replacement System
+
+**New unified automation (`m-unified-cursor-automation.md`):**
+- **Actually triggers work** via Cursor rules
+- **Evidence-based** - produces commits, file changes, PRs
+- **Verified working** - tested end-to-end before deployment
+
+**Migration:**
+```bash
+# Archive broken system
+mkdir -p scripts/archive/continuous-worker
+mv scripts/agent-continuous-worker.sh scripts/archive/
+mv scripts/agent-workflow.sh scripts/archive/
+mv sessions/tasks/agent-assignments.json sessions/tasks/archive/
+mv sessions/tasks/agent-progress.json sessions/tasks/archive/
+
+# Start fresh with unified automation (no data migration)
+```
+
+### Related Files
+
+- `sessions/tasks/m-unified-cursor-automation.md` - Replacement system
+- `context/decisions.md` - "Deprecate Continuous Worker System" decision
+- `context/insights.md` - "Continuous Worker False Positive Pattern"
+- `docs/automation-strategy.md` - Automated task pickup strategies
+
+---
+
+## File Watcher Partial Read Race Condition
+
+**Issue Discovered:** 2025-11-16
+**Context:** Unified cursor automation implementation
+
+### The Problem
+
+File watchers can detect new files before they're fully written to disk, leading to partial reads and processing failures.
+
+**Symptom:**
+- File watcher detects new `.md` file
+- Immediately reads file → empty content or partial content
+- Processing fails due to incomplete frontmatter/data
+- Works inconsistently (race condition)
+
+**Example:**
+```javascript
+// Watcher detects file creation
+watcher.on('add', (filePath) => {
+    // ❌ RACE CONDITION: File may not be fully written yet
+    const content = fs.readFileSync(filePath, 'utf8');
+    // content might be "" or partial!
+
+    processTrigger(content);  // Fails on incomplete data
+});
+```
+
+### Root Cause
+
+**Filesystem I/O buffering creates timing gap:**
+1. File creation event fires (filesystem reports file exists)
+2. Node.js/OS buffered I/O still writing content
+3. `fs.readFileSync` reads before buffer flushes
+4. Result: Partial or empty content
+
+**Timing:**
+- Large files: >100ms write time
+- Small files: 10-50ms write time
+- Race window: 10-100ms depending on file size and disk speed
+
+### The Fix
+
+**Use chokidar with `awaitWriteFinish`:**
+
+```javascript
+const chokidar = require('chokidar');
+
+const watcher = chokidar.watch(path, {
+    awaitWriteFinish: {
+        stabilityThreshold: 500,  // Wait 500ms after last change
+        pollInterval: 100          // Check every 100ms
+    }
+});
+
+watcher.on('add', (filePath) => {
+    // ✅ File is guaranteed to be fully written
+    const content = fs.readFileSync(filePath, 'utf8');
+    processTrigger(content);  // Always complete data
+});
+```
+
+**How `awaitWriteFinish` works:**
+1. File creation detected
+2. chokidar polls file size every 100ms
+3. When size stable for 500ms → triggers 'add' event
+4. File is fully written by the time event fires
+
+**Alternative (manual delay):**
+```javascript
+watcher.on('add', (filePath) => {
+    // Wait 500ms before reading
+    setTimeout(() => {
+        if (fs.existsSync(filePath)) {
+            const content = fs.readFileSync(filePath, 'utf8');
+            processTrigger(content);
+        }
+    }, 500);
+});
+```
+
+### Prevention
+
+**1. Always use `awaitWriteFinish` for file watchers**
+```javascript
+// ✅ CORRECT - Safe for all file sizes
+chokidar.watch(path, {
+    awaitWriteFinish: {
+        stabilityThreshold: 500,
+        pollInterval: 100
+    }
+});
+
+// ❌ WRONG - Race condition risk
+fs.watch(path, (event, filename) => {
+    // Immediately reads - unsafe!
+});
+```
+
+**2. Or add manual delay**
+```javascript
+// If not using chokidar, add delay
+setTimeout(() => processFile(path), 500);
+```
+
+**3. Test with large files**
+```bash
+# Create 1MB test file to verify watcher waits
+dd if=/dev/zero of=sessions/tasks/large-test.md bs=1M count=1
+
+# Watcher should wait until fully written
+# Verify by checking file size in logs
+```
+
+**4. Validate content before processing**
+```javascript
+function processTrigger(content) {
+    // Defensive check
+    if (!content || content.length < 10) {
+        throw new Error('File appears incomplete');
+    }
+
+    // Validate frontmatter exists
+    if (!content.startsWith('---')) {
+        throw new Error('Invalid trigger file format');
+    }
+
+    // Process...
+}
+```
+
+### Configuration Tuning
+
+**Stability threshold vs. file size:**
+```javascript
+// Small files (< 10KB): 200-300ms sufficient
+awaitWriteFinish: { stabilityThreshold: 200 }
+
+// Medium files (10-100KB): 500ms safe default
+awaitWriteFinish: { stabilityThreshold: 500 }
+
+// Large files (> 100KB): 1000ms+ recommended
+awaitWriteFinish: { stabilityThreshold: 1000 }
+```
+
+**Poll interval:**
+```javascript
+// Faster polling = quicker detection, higher CPU
+pollInterval: 50   // Check every 50ms (more responsive)
+
+// Slower polling = lower CPU, slightly slower detection
+pollInterval: 200  // Check every 200ms (more efficient)
+```
+
+### Testing
+
+**Verify `awaitWriteFinish` works:**
+```bash
+# Start watcher
+npm run watch-automation
+
+# In another terminal, create large file slowly
+dd if=/dev/zero of=sessions/tasks/test.md bs=1K count=100
+
+# Watcher should NOT trigger until write completes
+# Check logs - should show ~500ms delay after creation
+```
+
+### Related Files
+
+- `scripts/watch-cursor-automation.js` - Uses `awaitWriteFinish` (line 150-183)
+- `sessions/tasks/m-unified-cursor-automation.md` - Implementation spec
+- `context/insights.md` - "Trigger File Pattern for IDE Automation"
+
+---
+
 *More gotchas will be added as they are discovered during framework development and usage.*
