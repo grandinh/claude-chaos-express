@@ -89,7 +89,7 @@ File Watcher → Task Queue Manager → [Context Queue | Implementation Queue]
 **agent-orchestrator.js**
 - Manages pool of 3 Claude Code agents
 - Assigns tasks with load balancing
-- Supports local (Claude CLI) and cloud (Cursor Cloud Agent API) modes
+- Uses Cursor Cloud Agent API for task execution
 - Enforces context gathering before implementation
 
 **task-queue-manager.js**
@@ -179,11 +179,9 @@ pm2 stop orchestrator
 ### Configuration
 
 **Environment Variables:**
-- `AGENT_MODE`: `local` (default) or `cloud`
-- `CLAUDE_CMD`: Path to Claude CLI (default: `claude`)
-- `CURSOR_API_TOKEN`: Required for cloud mode
-- `GITHUB_REPO`: Required for cloud mode
-- `GITHUB_REF`: Branch/tag for cloud mode (default: `main`)
+- `CURSOR_API_TOKEN`: Required (Cursor Cloud Agent API key)
+- `GITHUB_REPO`: Required (e.g., `username/repo` or full GitHub URL)
+- `GITHUB_REF`: Branch/tag (default: `main`)
 
 **Agent Pool Size:**
 Edit `AGENT_POOL_SIZE` in `agent-orchestrator.js` (default: 3)
@@ -240,8 +238,21 @@ npm test  # 152 tests (all passing)
 - Queue routing and priority scoring
 - Context manifest validation
 
+**Test Fixture Requirements:**
+- Tasks with `context_gathered: true` in frontmatter MUST include a "## Context Manifest" section in the task content
+- The validation logic (see `task-queue-manager.js:validateContextManifest()`) checks for this section using regex `/##\s+Context Manifest|## Context Manifest/i`
+- Test fixtures should match production task structure to ensure accurate validation testing
+
+**Agent Registry Test Setup:**
+- Tests that use write operations (create, sync, link, etc.) require the schema file to exist
+- Schema path: `repo_state/agent-registry-schema.json`
+- Test suites automatically initialize schema via `beforeAll` hooks if missing (runs `agent-registry.js init`)
+- Schema initialization is idempotent and safe to run multiple times
+- **Test Isolation:** Registry state is backed up before each test (`beforeEach`) and restored after (`afterEach`) to prevent test pollution
+- This ensures agents created in one test don't persist into subsequent tests, preventing false failures
+
 **Runtime Testing:**
-See `ORCHESTRATOR_TESTING.md` for end-to-end testing procedures with real Claude CLI agents.
+See `ORCHESTRATOR_TESTING.md` for end-to-end testing procedures with cloud agents.
 
 ### Documentation
 
@@ -678,14 +689,12 @@ pm2 stop orchestrator
 
 **Features:**
 - 3-agent pool with concurrent execution
-- Local (Claude CLI) and cloud (Cursor Cloud Agent API) modes
+- Uses Cursor Cloud Agent API for task execution
 - Dual-queue routing (context vs implementation)
 - Dependency resolution and topological sort
 - Multi-factor priority scoring
 
 **Environment Variables:**
-- **AGENT_MODE**: `local` (Claude CLI, default) or `cloud` (Cursor Cloud Agent API)
-- **CLAUDE_CMD**: Path to Claude CLI (default: `claude` in PATH)
 - **CURSOR_API_TOKEN**: Required for cloud mode
 - **GITHUB_REPO**: Required for cloud mode (e.g., `username/repo`)
 - **GITHUB_REF**: Branch/tag for cloud mode (default: `main`)

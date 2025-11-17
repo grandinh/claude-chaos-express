@@ -172,6 +172,9 @@ depends_on: []
 ---
 
 # ${name}
+
+## Context Manifest
+Context has been gathered for this task.
 `;
                 fs.writeFileSync(path.join(TASKS_DIR, `${name}.md`), content);
                 fs.appendFileSync(TASK_LOG, `[${new Date().toISOString()}] New task detected: ${name}.md\n`);
@@ -198,6 +201,9 @@ depends_on: []
 ---
 
 # Task A
+
+## Context Manifest
+Context has been gathered for this task.
 `;
             const taskB = `---
 name: task-b
@@ -208,6 +214,9 @@ depends_on: [task-a.md]
 ---
 
 # Task B
+
+## Context Manifest
+Context has been gathered for this task.
 `;
             const taskC = `---
 name: task-c
@@ -218,6 +227,9 @@ depends_on: [task-b.md]
 ---
 
 # Task C
+
+## Context Manifest
+Context has been gathered for this task.
 `;
 
             fs.writeFileSync(path.join(TASKS_DIR, 'task-a.md'), taskA);
@@ -334,6 +346,9 @@ depends_on: []
 ---
 
 # Implementation Task ${i}
+
+## Context Manifest
+Context has been gathered for this task.
 `;
                 fs.writeFileSync(path.join(TASKS_DIR, `impl-task-${i}.md`), content);
                 fs.appendFileSync(TASK_LOG, `[${new Date().toISOString()}] New task detected: impl-task-${i}.md\n`);
@@ -466,6 +481,9 @@ depends_on: [missing-dependency.md]
 ---
 
 # Blocked Task
+
+## Context Manifest
+Context has been gathered for this task.
 `;
             // Create another unblocked task with lower priority
             const unblockedTaskContent = `---
@@ -477,6 +495,9 @@ depends_on: []
 ---
 
 # Unblocked Task
+
+## Context Manifest
+Context has been gathered for this task.
 `;
             fs.writeFileSync(path.join(TASKS_DIR, 'blocked-task.md'), blockedTaskContent);
             fs.writeFileSync(path.join(TASKS_DIR, 'unblocked-task.md'), unblockedTaskContent);

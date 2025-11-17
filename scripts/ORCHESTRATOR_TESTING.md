@@ -2,12 +2,12 @@
 
 ## Overview
 
-This guide covers end-to-end testing of the multi-agent orchestration system with real Claude CLI agents.
+This guide covers end-to-end testing of the multi-agent orchestration system with cloud agents.
 
 ## Prerequisites
 
 1. **Task Watcher NOT Required** - Test tasks are pre-logged in `.new-tasks.log`
-2. **Claude CLI Available** - Ensure `claude` command is in PATH
+2. **Cloud Agent API Configuration** - `CURSOR_API_TOKEN` and `GITHUB_REPO` must be set
 3. **Node.js Dependencies Installed** - Run `npm install` in `scripts/`
 4. **Test Tasks Created:**
    - `sessions/tasks/orchestrator-test-context.md` (context_gathered: false)
@@ -28,7 +28,7 @@ node agent-orchestrator.js
 🤖 Agent Orchestrator Started
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🚀 Initializing Agent Pool (3 agents, mode: local)
+🚀 Initializing Agent Pool (3 agents)
 
   💤 agent-1: idle (0 tasks completed)
   💤 agent-2: idle (0 tasks completed)
@@ -41,14 +41,15 @@ node agent-orchestrator.js
   Task: orchestrator-test-context.md
   Queue: context
 
-⏱️  agent-1 starting work (local mode)
+⏱️  agent-1 starting work (cloud mode)
 ```
 
 ### 2. Monitor Agent Execution
 
 Watch console output for:
-- Agent spawning (`claude` process starts)
-- Context gathering completion
+- Cloud agent spawning (API request to Cursor Cloud Agent API)
+- Cloud agent ID assignment
+- Context gathering completion (via PR)
 - Flag update (`context_gathered: false` → `true`)
 - Queue transition (context → implementation)
 - Implementation agent assignment
@@ -170,33 +171,21 @@ After successful test run:
 
 ## Failure Testing
 
-### Test Agent Crash Recovery
+### Test Agent Failure Recovery
 
-1. While an agent is running, manually kill the Claude process:
-
-```bash
-# Find Claude process PID
-ps aux | grep "claude.*orchestrator-test"
-
-# Kill process
-kill -9 <PID>
-```
-
-2. Verify orchestrator detects failure and logs to `context/gotchas.md`
-3. Verify task is NOT marked complete in queue
-4. Verify agent is marked idle and available for reassignment
+1. While an agent is running, verify cloud agent failure handling:
+   - Cloud agents handle failures via API status (`FAILED`, `CANCELLED`)
+   - Orchestrator polls agent status and detects failures
+   - Verify orchestrator logs failure to `context/gotchas.md`
+   - Verify task is NOT marked complete in queue
+   - Verify agent is marked idle and available for reassignment
 
 ### Test Agent Timeout
 
-Modify CONFIG in agent-orchestrator.js:
-```javascript
-contextTaskTimeout: 5000,  // 5 seconds for testing
-```
-
-Create a task that will exceed timeout and verify:
-- Agent is killed after timeout
-- SIGTERM sent first, SIGKILL after 5 seconds if still alive
-- Failure logged to gotchas.md
+Cloud agents handle timeouts via API. Verify:
+- Orchestrator monitors agent status and detects timeout states
+- Timeout failures logged to gotchas.md
+- Failed agents return to idle state
 
 ### Test State Recovery
 
@@ -260,7 +249,7 @@ The fix moves `removeFromQueue()` from `handleAgentCompletion()` to `assignTaskT
 3. **Warning signs of regression:**
    - Multiple agents show same `currentTask` in orchestrator-status.js
    - Queue still contains task after "🎯 Assigning Task to..." message
-   - Same task PID appears multiple times in process list: `ps aux | grep "claude.*orchestrator-test"`
+   - Same cloud agent ID appears multiple times in orchestrator state
 
 ### Testing for Duplicate Assignment
 
@@ -308,24 +297,28 @@ node agent-orchestrator.js
 
 ## Success Criteria
 
-- [x] Orchestrator spawns real Claude CLI agents
-- [x] Context-gathering agent completes and updates flag
+- [x] Orchestrator spawns cloud agents via API
+- [x] Context-gathering agent completes and updates flag (via PR)
 - [x] Task transitions from context → implementation queue
 - [x] Implementation agent picks up and completes task
 - [x] State persists across orchestrator restarts
 - [x] **No duplicate task assignments** (race condition fix verified)
-- [ ] Agent crash recovery works correctly
-- [ ] Agent timeout handling works correctly
+- [ ] Cloud agent failure recovery works correctly
+- [ ] Cloud agent timeout handling works correctly
 - [ ] All agents return to idle after completion
 
 ## Troubleshooting
 
 **Orchestrator doesn't start:**
-- Check `claude` is in PATH: `which claude`
+- Check `CURSOR_API_TOKEN` is set: `echo $CURSOR_API_TOKEN`
+- Check `GITHUB_REPO` is set: `echo $GITHUB_REPO`
 - Verify Node.js dependencies: `npm install` in scripts/
-- Check for port conflicts or locked state files
+- Check for locked state files
 
 **Agents don't spawn:**
+- Verify API token is valid and has necessary permissions
+- Verify GitHub repository is accessible
+- Check API connection: verify network access to `api.cursor.com`
 - Verify test tasks exist in `sessions/tasks/`
 - Check `.new-tasks.log` has task entries
 - Verify queue routing logic (check console output)
@@ -334,8 +327,10 @@ node agent-orchestrator.js
 - Check agent status: `node orchestrator-status.js`
 - Verify no agents in 'failed' state
 - Check task frontmatter for dependency issues
+- Verify cloud agent status via API (check orchestrator logs)
 
-**Context gathering doesn't update flag:**
-- Manually verify agent actually runs
-- Check agent stdout/stderr for errors
-- Verify file permissions on task files
+**Context gathering doesn't complete:**
+- Verify cloud agent was successfully spawned (check cloud agent ID)
+- Check cloud agent status via API
+- Review PR created by cloud agent for context gathering results
+- Verify GitHub repository access and branch permissions

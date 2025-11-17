@@ -140,6 +140,110 @@ This blocked agent management workflows and prevented documentation auto-generat
 
 ---
 
+## Test Isolation Strategy: Per-Test vs Per-Suite
+
+**Decision Date:** 2025-11-17
+**Context:** m-fix-test-failures-orchestrator-agent-registry task
+**Decision Made By:** Test infrastructure design
+
+### The Problem
+
+Agent registry tests were failing due to state pollution between tests. Tests that created agents caused subsequent tests to fail because the registry wasn't reset between individual tests.
+
+### Options Considered
+
+**Option A: Per-Suite Isolation (Original)**
+```javascript
+beforeAll(() => backupRegistry());
+afterAll(() => restoreRegistry());
+```
+- Backup/restore once per test suite
+- Tests run faster (less I/O)
+- State persists across tests (causes pollution)
+
+**Option B: Per-Test Isolation (Chosen)**
+```javascript
+beforeEach(() => backupRegistry());
+afterEach(() => restoreRegistry());
+```
+- Backup/restore before/after each test
+- Tests fully isolated
+- Slightly slower (more I/O)
+
+### Decision
+
+**Chose Option B: Per-Test Isolation**
+
+### Rationale
+
+1. **Correctness Over Speed** - Test reliability is more important than test speed
+2. **True Independence** - Each test starts with clean state, prevents false failures
+3. **Parallel Safe** - Tests can run in any order without issues
+4. **Prevents Pollution** - Agents created in one test don't affect others
+5. **Easier Debugging** - Failures are isolated to single tests, not cascading
+
+**Trade-offs Accepted:**
+- Slightly slower test runs (acceptable - tests still run in <10 seconds)
+- More I/O operations (minimal impact with modern SSDs)
+- Slightly more complex test setup (worth it for reliability)
+
+### Implementation
+
+**Per-Test Backup/Restore:**
+```javascript
+let testRegistryBackup;
+
+beforeEach(() => {
+    if (fs.existsSync(REGISTRY_PATH)) {
+        testRegistryBackup = fs.readFileSync(REGISTRY_PATH, 'utf8');
+    }
+});
+
+afterEach(() => {
+    if (testRegistryBackup) {
+        fs.writeFileSync(REGISTRY_PATH, testRegistryBackup, 'utf8');
+        testRegistryBackup = null;
+    }
+    cleanupTestFiles(testFiles);
+    testFiles = [];
+});
+```
+
+### Guidelines for Other Tests
+
+**Use per-test isolation when tests:**
+- Modify files (registry, configs, state files)
+- Create/delete resources (agents, tasks, locks)
+- Change global state (environment variables, singletons)
+- Have order-dependent assertions (expect specific counts)
+
+**Use per-suite isolation when tests:**
+- Only read data (no modifications)
+- Use mocks/stubs (no real file I/O)
+- Are truly stateless (no side effects)
+
+### Results
+
+**Before fix:**
+- 9 test failures in agent-registry.test.js
+- Tests passed individually but failed in suite
+- 13 orphaned test agents in registry
+
+**After fix:**
+- All 163 tests passing consistently
+- Tests pass in any order
+- No orphaned test agents
+- Clean test runs (can run multiple times without issues)
+
+### Related Files
+
+- `scripts/__tests__/agent-registry.test.js` - Implements per-test isolation (lines 88-99)
+- `scripts/README.md` - Documents test isolation requirement (lines 251-252)
+- `context/gotchas.md` - "Test Pollution: Agent Registry Tests" entry
+- `sessions/tasks/m-fix-test-failures-orchestrator-agent-registry.md` - Task that made this decision
+
+---
+
 ## Unified Cursor Automation vs. Separate Watchers
 
 **Decision Date:** 2025-11-16
@@ -566,6 +670,341 @@ created: 2025-11-16T10:00:00Z
 - `sessions/tasks/m-unified-cursor-automation.md` - Scope reduced to detection only (Task 1)
 - `docs/ai_handoffs.md` - Canonical YAML handoff log
 - `context/insights.md` - "Trigger File Pattern for IDE Automation"
+
+---
+
+## Mandatory Backlinking in Task Creation Protocol
+
+**Decision Date:** 2025-11-17
+**Context:** m-ensure-backlinking-in-task-creation task
+**Decision Made By:** Framework implementation
+
+### The Problem
+
+Tasks were duplicating large chunks of context from framework docs, LCMP files, and related tasks instead of linking to canonical sources. This created:
+
+- **Context bloat** - Task files grew unnecessarily large with copied content
+- **Maintenance burden** - Updates to canonical docs didn't propagate to tasks
+- **Navigation difficulty** - Future agents couldn't easily traverse from task to authoritative source
+- **Fidelity drift** - Copied context diverged from canonical sources over time
+
+Without systematic backlinking, tasks became isolated silos of information rather than well-connected nodes in the knowledge graph.
+
+### Decision
+
+**Add mandatory backlinking step to task-creation protocol as step 4** (after spec writing, before context-gathering agent).
+
+### Implementation
+
+**Modified File:** `sessions/protocols/task-creation/task-creation.md`
+
+**New Step 4: Add backlinks to relevant resources**
+
+Task creators must review six categories and add backlinks to directly relevant resources:
+
+1. **Framework & Vision** - `CLAUDE.md`, `claude-reference.md`, vision docs
+2. **LCMP Knowledge** - `decisions.md`, `insights.md`, `gotchas.md`
+3. **Protocols & Systems** - Protocols, SoT reference map, tiers of context
+4. **Related Work** - Related tasks, RFCs, feature specs
+5. **Architecture & Systems** - Agent registry, skills, hooks, orchestration
+6. **Technical References** - Specific files/functions/line numbers (if known)
+
+**Backlinking Principles:**
+- Reference, don't duplicate
+- Be specific (include section references where helpful)
+- Explain relevance (why each link matters)
+- Keep it lean (only include what adds value)
+
+**Format:**
+```markdown
+## Context Manifest
+
+### Framework & Vision
+- `CLAUDE.md` Section X - [Why relevant]
+
+### LCMP Knowledge
+- `Context/decisions.md` - [Which decisions are relevant]
+
+### Protocols & Systems
+- `sessions/protocols/task-creation/` - [Why relevant]
+
+### Related Work
+- `sessions/tasks/example-task.md` - [How it relates]
+
+### Technical References
+- [Specific files/functions/line numbers if known]
+```
+
+### Rationale
+
+1. **Minimize Duplication** - Link to canonical sources instead of copying large blocks
+2. **Maximize Fidelity** - Single source of truth (canonical docs) prevents drift
+3. **Enable Navigation** - Backlinks create knowledge graph, making it easy to traverse
+4. **Two-Phase Context** - Manual backlinks (conceptual) + context-gathering agent (technical) = comprehensive manifest
+5. **Enforce Discipline** - Systematic review of six categories prevents missing critical references
+
+**Trade-offs Accepted:**
+- Slight increase in task-creation time (reviewing categories, adding links)
+- Requires discipline to maintain (easy to skip or do poorly)
+- Backlinking quality varies by task creator's familiarity with codebase
+
+### Consequences
+
+**Positive:**
+- Tasks reference canonical sources instead of copying
+- Context Manifest serves as knowledge graph hub
+- Future agents can navigate from task → authoritative docs
+- Updates to canonical docs benefit all referencing tasks
+- Reduces task file size and context bloat
+
+**Negative:**
+- Extra step in task-creation workflow
+- Requires understanding of SoT tiers and canonical sources
+- Backlinking quality depends on task creator's diligence
+- May feel redundant when context-gathering agent also adds references
+
+### Two-Phase Context Strategy
+
+The backlinking step (step 4) complements the context-gathering agent (step 5):
+
+**Step 4 (Manual Backlinking):**
+- Adds conceptual/architectural links
+- Links to framework docs, LCMP files, protocols
+- Human judgment about relevance and relationships
+- Provides "why" context
+
+**Step 5 (Context-Gathering Agent):**
+- Adds technical details (code references, function signatures)
+- Discovers implementation-level connections
+- Analyzes codebase structure
+- Provides "how" context
+
+**Result:** Comprehensive Context Manifest with both high-level understanding (backlinks) and technical depth (agent-gathered code context).
+
+### Example Implementation
+
+From this task's own Context Manifest:
+
+```markdown
+### Framework & Vision
+- `CLAUDE.md` Section 2.1 - SoT Tiers define which files are canonical
+
+### LCMP Knowledge
+- `Context/gotchas.md` - "Documentation Path Inconsistency" shows importance of proper referencing
+
+### Protocols & Systems
+- `sessions/protocols/task-creation/task-creation.md` - Protocol being modified
+- `docs/sot-reference-map.md` - Maps SoT files for backlinking targets
+
+### Related Work
+- `sessions/tasks/REPAIR-queue-data-integrity-log-pollution.md` - Example of proper Context Manifest
+```
+
+### Related Files
+
+- `sessions/protocols/task-creation/task-creation.md` - Protocol with new step 4
+- `sessions/tasks/m-ensure-backlinking-in-task-creation.md` - Task implementing this decision
+- `docs/sot-reference-map.md` - Reference for identifying canonical sources
+- `docs/tiers_of_context.md` - File hierarchy guide for backlinking
+
+---
+
+## Skill Rules Customization: DAIC-Aware Skill System
+
+**Decision Date:** 2025-11-16
+**Context:** m-implement-custom-skill-rules task
+**Decision Made By:** Framework implementation
+
+### The Problem
+
+The skill-rules.json system needed customization to match this project's specific patterns:
+- Generic skills (frontend-dev-guidelines, blog-api paths) didn't match project structure
+- No DAIC mode awareness (skills couldn't check if they should run based on workflow mode)
+- No distinction between analysis-only and write-capable skills
+- Missing framework management skills (health check, version sync, REPAIR suggestions)
+
+### Decision
+
+**Implement comprehensive DAIC-aware skill system with explicit skill type classification**
+
+### Implementation
+
+**Enhanced Schema (v3.0.0):**
+- Added `skillType` field: "ANALYSIS-ONLY" | "WRITE-CAPABLE"
+- Added `daicMode.allowedModes` field: array of allowed DAIC modes
+- 140+ trigger keywords, 55+ intent patterns for comprehensive coverage
+
+**Skill Categories:**
+- **9 WRITE-CAPABLE skills** - Only run in IMPLEMENT mode (cc-sessions-core, hooks, API, skill-developer, plus 5 workflow triggers that modify state)
+- **12 ANALYSIS-ONLY skills** - Run in any DAIC mode (framework management, workflow triggers that only read)
+
+**Framework Skills Added:**
+- `framework_version_check` - Validates claude.md ↔ claude-reference.md sync
+- `framework_health_check` - Runs framework health checklist
+- `framework_repair_suggester` - Suggests REPAIR- tasks for framework issues
+- `lcmp_recommendation` - Suggests /squish compaction (never auto-runs)
+- `daic_mode_guidance` - Explains DAIC modes and restrictions
+
+**Validation Scripts Created:**
+- `scripts/validate-skill-daic.js` - Validates DAIC configurations
+- `scripts/validate-skill-paths.js` - Validates file path patterns
+
+### Rationale
+
+1. **Machine-Readable Constraints** - `skillType` and `daicMode` fields enable automatic enforcement
+2. **Safety** - WRITE-CAPABLE skills restricted to IMPLEMENT mode prevents accidental writes in planning/review modes
+3. **Framework Management** - Dedicated skills for health checks, version sync, and repair guidance
+4. **Comprehensive Coverage** - 140+ keywords and 55+ patterns ensure natural language triggers work reliably
+5. **Validation** - Reusable scripts prevent configuration drift
+
+**Trade-offs Accepted:**
+- More complex schema (but machine-readable and enforceable)
+- Must maintain trigger keywords as project evolves
+- Skills must be restarted to be discovered (Claude Code limitation)
+
+### Validation Results
+
+All success criteria met:
+- ✅ JSON syntax valid (21 skills properly configured)
+- ✅ WRITE-CAPABLE skills restricted to IMPLEMENT mode only
+- ✅ ANALYSIS-ONLY skills allow all DAIC modes
+- ✅ File path patterns match project structure (sessions/**, .claude/)
+- ✅ Framework skills properly tagged
+- ✅ Documentation updated (CLAUDE.md Section 4.1)
+
+### Consequences
+
+**Positive:**
+- Skills respect DAIC workflow discipline automatically
+- Framework can suggest health checks and repairs without auto-executing
+- Clear distinction between analysis and modification skills
+- Comprehensive trigger coverage for natural language activation
+- Reusable validation scripts catch configuration errors
+
+**Negative:**
+- Skill trigger maintenance required as project evolves
+- Must restart Claude Code after skill modifications
+- Complex schema may be harder for new contributors to understand
+
+### File Organization Standard
+
+**Each skill MUST follow this structure:**
+- Directory: `.claude/skills/<skill-name>/`
+- File: `SKILL.md` with YAML frontmatter (`name`, `description`)
+- Configuration: Entry in `skill-rules.json` with `skillType` and `daicMode`
+
+**Example:**
+```
+.claude/skills/
+  ├── error-tracking/
+  │   └── SKILL.md (ANALYSIS-ONLY)
+  ├── cc-sessions-core/
+  │   └── SKILL.md (WRITE-CAPABLE)
+  └── skill-rules.json (21 skills configured)
+```
+
+### Related Files
+
+- `.claude/skills/skill-rules.json` - v3.0.0 configuration with DAIC awareness
+- `scripts/validate-skill-daic.js` - DAIC validation script
+- `scripts/validate-skill-paths.js` - Path validation script
+- `CLAUDE.md` Section 4.1 - Updated skill documentation
+- `Context/Features/001-CustomizeSkillRules.md` - ContextKit planning document
+- `sessions/tasks/m-implement-custom-skill-rules.md` - Implementation task
+
+---
+
+## Orchestration: Cloud Agents Only (Removal of Claude CLI Support)
+
+**Decision Date:** 2025-11-17
+**Context:** Orchestration workflow cleanup
+**Decision Made By:** User requirement
+
+### The Problem
+
+The agent orchestration system (`scripts/agent-orchestrator.js`) was incorrectly configured to support both local Claude CLI execution and cloud agent execution via the Cursor Cloud Agent API. However, the workflow was always intended to use only cloud agents. The local mode support was never part of the intended design and added unnecessary complexity.
+
+### Options Considered
+
+**Option A: Remove Claude CLI Support (Chosen)**
+- Remove all local mode code (`spawnLocalAgent` method)
+- Remove `AGENT_MODE` configuration option
+- Remove `CLAUDE_CMD` environment variable
+- Always use cloud agents via Cursor Cloud Agent API
+- Update all documentation to reflect cloud-only execution
+
+**Option B: Keep Both Modes**
+- Maintain dual-mode support for flexibility
+- Keep local mode as development option
+- Continue supporting both execution paths
+
+### Decision
+
+**Chose Option A: Remove Claude CLI Support**
+
+### Rationale
+
+1. **Original Intent** - The orchestration workflow was always designed for cloud agents only
+2. **Simplification** - Removing unused code paths reduces complexity and maintenance burden
+3. **Clarity** - Single execution mode makes documentation and configuration clearer
+4. **Consistency** - All agent execution goes through the same cloud API, ensuring consistent behavior
+5. **Validation** - Orchestrator now fails fast at startup if cloud agent configuration is missing
+
+**Trade-offs Accepted:**
+- No local development option (must use cloud agents for all testing)
+- Requires API token and GitHub repository configuration
+- Cannot test without network access to Cursor API
+
+### Implementation
+
+**Code Changes:**
+- Removed `spawnLocalAgent()` method from `scripts/agent-orchestrator.js`
+- Removed `AGENT_MODE` configuration option
+- Removed `CLAUDE_CMD` environment variable references
+- Removed `spawn` import from `child_process` module
+- Removed conditional mode selection logic
+- Added startup validation for required cloud agent configuration (`CURSOR_API_TOKEN`, `GITHUB_REPO`)
+- Updated `assignTaskToAgent()` to directly call `spawnCloudAgent()` without conditional
+
+**Documentation Updates:**
+- Updated `CLAUDE.md` to remove all local mode references
+- Updated `scripts/README.md` to remove local mode mentions
+- Rewrote `scripts/ORCHESTRATOR_CONFIG.md` for cloud-only configuration
+- Updated `scripts/ORCHESTRATOR_TESTING.md` to remove Claude CLI requirements
+- Updated `docs/multi-agent-orchestration-operator-guide.md` to remove local mode setup
+- Updated `docs/orchestrator-implementation-summary.md` to reflect cloud-only execution
+
+**Preserved:**
+- All cloud agent code (`spawnCloudAgent` method) remains intact
+- Cloud agent API integration fully preserved
+- Cloud agent error handling and lifecycle management unchanged
+
+### Consequences
+
+**Positive:**
+- Simpler codebase with single execution path
+- Clearer documentation and configuration requirements
+- Fail-fast validation prevents misconfiguration
+- Consistent execution model across all agents
+
+**Negative:**
+- Cannot run orchestrator without cloud agent API access
+- Requires API token and GitHub repository setup for all use cases
+- No local development/testing option without network access
+
+### Future Considerations
+
+If local development capability is needed in the future:
+- Could create a separate development orchestrator script
+- Could use cloud agent API with local repository for testing
+- Could implement a mock/test mode that simulates cloud agent responses
+
+### Related Files
+
+- `scripts/agent-orchestrator.js` - Core orchestrator implementation
+- `CLAUDE.md` - Main operator spec (updated)
+- `scripts/ORCHESTRATOR_CONFIG.md` - Configuration guide (rewritten)
+- `docs/orchestrator-implementation-summary.md` - Implementation summary (updated)
 
 ---
 

@@ -27,7 +27,8 @@
 - npm >= v11.6.2
 - Task watcher running (Task 1: `m-unified-cursor-automation.md`)
 - Context enforcement enabled (Task 2: `h-enforce-context-gathering.md`)
-- Claude CLI in PATH
+- `CURSOR_API_TOKEN` environment variable set
+- `GITHUB_REPO` environment variable set
 
 ### Installation
 
@@ -271,8 +272,9 @@ npm run orchestrator-status
 # Check for port conflicts (if applicable)
 lsof -i :3000  # Replace 3000 with actual port if using one
 
-# Check Claude CLI availability
-which claude
+# Check cloud agent configuration
+echo $CURSOR_API_TOKEN
+echo $GITHUB_REPO
 
 # Check permissions
 ls -la sessions/tasks/.orchestrator-state.json
@@ -288,10 +290,11 @@ ls -la sessions/tasks/.orchestrator-state.json
    kill <PID>
    ```
 
-2. **Missing Claude CLI:**
+2. **Missing cloud agent configuration:**
    ```bash
-   # Add to PATH or install Claude Code
-   export PATH="$PATH:/Users/$(whoami)/.local/bin"
+   # Set required environment variables
+   export CURSOR_API_TOKEN=your_token_here
+   export GITHUB_REPO=https://github.com/grandinh/claude-chaos-express.git
    ```
 
 3. **Permission issues:**
@@ -441,6 +444,64 @@ npm run orchestrator-status | grep "ratio"
    - Review context manifests for completeness
    - Consider simplifying context requirements
 
+### Queue Health Validation
+
+The orchestrator employs **3 validation checkpoints** to maintain queue integrity:
+
+#### 1. Routing Validation (Task Entry)
+When tasks are added to queues (`routeTask()`):
+- Validates task file exists before routing
+- Validates frontmatter parseable
+- Logs actionable error messages with remediation guidance
+- **Error format**: `❌ VALIDATION ERROR: Cannot route task - file does not exist`
+
+#### 2. Assignment Validation (Task Selection)
+When agents select tasks from queues (`getNextTask()`):
+- Validates file still exists before assignment
+- Automatically removes stale references from queue
+- Continues to next eligible task if current is invalid
+- **Prevents**: Race conditions from file deletions between routing and assignment
+
+#### 3. Periodic Validation (Manual Cleanup)
+Run manually via CLI to clean up queues:
+```bash
+node scripts/task-queue-manager.js --validate
+```
+
+Checks performed:
+- File existence for all queued tasks
+- Task age (removes tasks >7 days old based on file mtime)
+- Reports systemic issues if >10% invalid (exit code 1)
+
+When to run:
+- Weekly maintenance (recommended)
+- After bulk task deletions or moves
+- When queue behavior seems incorrect
+- Before important orchestrator operations
+
+**Queue Expiration Policy**
+
+7-day expiration based on file modification time (mtime):
+- Tasks unmodified for >7 days are automatically removed during validation
+- Rationale: Stale tasks likely abandoned or moved to done/
+- Override: Touch file to reset timer: `touch sessions/tasks/my-task.md`
+- Check age: `stat -f "%Sm" sessions/tasks/my-task.md`
+
+**Validation Error Thresholds**
+
+- < 5% invalid: Normal (tasks occasionally deleted)
+- 5-10% invalid: Warning (review recent task management practices)
+- > 10% invalid: Systemic issue (exit code 1, rebuild recommended)
+
+**Rebuild procedure:**
+```bash
+# Backup first
+cp sessions/tasks/.task-queues.json sessions/tasks/.task-queues.json.backup
+
+# Rebuild from scratch
+node scripts/task-queue-manager.js --rebuild
+```
+
 ### Agent Failures
 
 **Symptoms:** Agents marked as "failed" in status
@@ -462,7 +523,7 @@ cat sessions/tasks/.orchestrator-state.json | jq '.agents[] | select(.status=="f
    - Default: 30min (context), 60min (implementation)
 
 2. **Agent spawn failure:**
-   - Check Claude CLI is accessible
+   - Check cloud agent API configuration (CURSOR_API_TOKEN, GITHUB_REPO)
    - Verify task files exist
    - Check system resources (CPU, memory)
 
@@ -543,7 +604,7 @@ const AGENT_POOL_SIZE = 3;  // Number of concurrent agents
 
 const CONFIG = {
     // Agent execution mode
-    agentMode: process.env.AGENT_MODE || 'local',  // 'local' or 'cloud'
+    // Cloud agent configuration (required)
 
     // Timeouts (milliseconds)
     contextTaskTimeout: 30 * 60 * 1000,      // 30 minutes
@@ -592,7 +653,8 @@ const LEVERAGE_VALUES = {
 export CLAUDE_PROJECT_DIR=/path/to/claude-chaos-express
 
 # Agent execution mode
-export AGENT_MODE=local  # or 'cloud'
+export CURSOR_API_TOKEN=your_token_here
+export GITHUB_REPO=https://github.com/grandinh/claude-chaos-express.git
 
 # Cloud mode settings (if using cloud agents)
 export CURSOR_API_TOKEN=your-token-here

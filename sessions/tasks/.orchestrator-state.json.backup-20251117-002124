@@ -1,0 +1,36 @@
+{
+  "agents": [
+    {
+      "id": "agent-1",
+      "status": "working",
+      "currentTask": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-enforce-context-gathering.md",
+      "role": "context",
+      "startedAt": "2025-11-17T07:37:58.622Z",
+      "completedTasks": 0,
+      "pid": 9474,
+      "cloudAgentId": null
+    },
+    {
+      "id": "agent-2",
+      "status": "working",
+      "currentTask": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-CODE-REVIEW-critical-yaml-security.md",
+      "role": "context",
+      "startedAt": "2025-11-17T07:38:09.947Z",
+      "completedTasks": 0,
+      "pid": 10483,
+      "cloudAgentId": null
+    },
+    {
+      "id": "agent-3",
+      "status": "working",
+      "currentTask": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/orchestrator-test-impl.md",
+      "role": "context",
+      "startedAt": "2025-11-17T07:38:14.948Z",
+      "completedTasks": 0,
+      "pid": 10583,
+      "cloudAgentId": null
+    }
+  ],
+  "completedTasks": [],
+  "lastUpdated": "2025-11-17T07:38:14.951Z"
+}

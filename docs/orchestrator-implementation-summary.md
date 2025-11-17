@@ -15,9 +15,7 @@ Main orchestrator module that manages agent pool and task assignment.
 
 **Key Features:**
 - 3-agent pool with status tracking (idle, working, failed)
-- Dual execution modes:
-  - **Local mode**: Spawns Claude CLI processes (`claude --dangerously-skip-permissions @sessions/tasks/task.md`)
-  - **Cloud mode**: Uses Cursor Cloud Agent API (`POST /v0/agents`)
+- Uses Cursor Cloud Agent API (`POST /v0/agents`) for task execution
 - Priority-based load balancing with dependency awareness
 - Agent lifecycle management (spawn → work → terminate)
 - State persistence across restarts (`.orchestrator-state.json`)
@@ -25,11 +23,9 @@ Main orchestrator module that manages agent pool and task assignment.
 - Integration with `TaskQueueManager` and `DependencyGraph`
 
 **Configuration:**
-- `AGENT_MODE`: `local` (default) or `cloud`
-- `CURSOR_API_TOKEN`: Required for cloud mode
-- `GITHUB_REPO`: Required for cloud mode
+- `CURSOR_API_TOKEN`: Required (Cursor Cloud Agent API key)
+- `GITHUB_REPO`: Required (e.g., `username/repo` or full GitHub URL)
 - `GITHUB_REF`: Git reference (default: `main`)
-- `CLAUDE_CMD`: Path to Claude CLI (default: `claude`)
 
 ### 2. `scripts/orchestrator-status.js` (164 lines)
 Status dashboard for real-time monitoring of the orchestrator system.
@@ -65,7 +61,7 @@ Added npm scripts:
 - 3-agent pool with individual status tracking
 - Automatic agent assignment based on queue depth and priority
 - Agent lifecycle: idle → working → idle (after task completion)
-- Process monitoring (PID tracking for local mode, cloud agent ID for cloud mode)
+- Process monitoring (cloud agent ID tracking)
 
 ### Load Balancing
 - Priority-based scoring system:
@@ -93,29 +89,25 @@ Added npm scripts:
 - Failure logging: writes to `Context/gotchas.md` with failure details
 - Automatic retry: marks agent idle and attempts next assignment after failures
 
-## Configuration Recommendations
+## Configuration Requirements
 
-### For Local Development (Current Setup)
-**No configuration needed!** Defaults work perfectly:
-- `AGENT_MODE=local` (default)
-- `CLAUDE_CMD=claude` (already in PATH at `/Users/grandinharrison/.local/bin/claude`)
-- No API token needed
-- No GitHub repo needed
-
-### For Cloud Mode (Future)
-When ready to use cloud agents, set:
+### Required Setup
+The orchestrator requires cloud agent configuration:
 ```bash
-AGENT_MODE=cloud
-CURSOR_API_TOKEN=your_token_from_cursor_settings
-GITHUB_REPO=https://github.com/grandinh/claude-chaos-express.git
-GITHUB_REF=main
+export CURSOR_API_TOKEN=your_token_from_cursor_settings
+export GITHUB_REPO=https://github.com/grandinh/claude-chaos-express.git
+export GITHUB_REF=main
 ```
 
 ## Usage
 
 ### Quick Start
 ```bash
-# Start orchestrator (local mode, no config needed)
+# Set required environment variables
+export CURSOR_API_TOKEN=your_token_here
+export GITHUB_REPO=https://github.com/grandinh/claude-chaos-express.git
+
+# Start orchestrator
 cd scripts
 npm run orchestrator
 
@@ -126,16 +118,10 @@ npm run orchestrator-status
 npm run queue-manager
 ```
 
-### Local Mode
-- Spawns Claude CLI processes directly
-- Works with local filesystem
-- No API costs
-- Full control over agent execution
-
-### Cloud Mode
-- Uses Cursor Cloud Agent API
+### Cloud Agent Execution
+- Uses Cursor Cloud Agent API for all task execution
 - Creates feature branches automatically
-- Can auto-create PRs when agents complete
+- Auto-creates PRs when agents complete
 - Requires API token and GitHub repo configuration
 
 ## Integration Points
@@ -238,15 +224,14 @@ node -c orchestrator-status.js  # ✅ Passed
 - `js-yaml`: Already in `package.json` (v4.1.0)
 - `chokidar`: Used by task watcher (v3.5.3)
 - Node.js: v25.1.0 (satisfied)
-- Claude CLI: Available in PATH
+- Cloud Agent API: Requires CURSOR_API_TOKEN and GITHUB_REPO
 
 ## Notes
 
 - Orchestrator runs as foreground process (use pm2/systemd for background)
-- Local mode requires Claude CLI to be in PATH or set `CLAUDE_CMD`
-- Cloud mode requires valid Cursor API token and GitHub repository access
+- Requires valid Cursor API token and GitHub repository access
 - State files are created automatically in `sessions/tasks/`
-- All agent output is logged to stdout/stderr (can be redirected)
+- Cloud agent status is polled via API and logged to orchestrator output
 
 ## Related Documentation
 

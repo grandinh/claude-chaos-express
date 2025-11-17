@@ -4,7 +4,7 @@
  * Agent Orchestrator
  *
  * Manages agent pool and assigns tasks with load balancing.
- * Supports both local Claude CLI and Cursor Cloud Agent API.
+ * Uses Cursor Cloud Agent API for task execution.
  *
  * @module agent-orchestrator
  * @version 1.0.0
@@ -12,7 +12,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const { spawn } = require('child_process');
 const https = require('https');
 const TaskQueueManager = require('./task-queue-manager');
 const { detectProjectRoot } = require('./utils');
@@ -30,9 +29,6 @@ const ORCHESTRATOR_ERROR_LOG = path.join(LOGS_DIR, 'orchestrator-errors.log');
 
 // Configuration
 const CONFIG = {
-    // Agent execution mode: 'local' (Claude CLI) or 'cloud' (Cursor Cloud Agent API)
-    agentMode: process.env.AGENT_MODE || 'local',
-    
     // Cloud Agent API settings
     cursorApiKey: process.env.CURSOR_API_TOKEN || process.env.CURSOR_API_KEY,
     cursorApiUrl: 'https://api.cursor.com',
@@ -121,7 +117,18 @@ class AgentOrchestrator {
      * Initialize agent pool
      */
     initializeAgents() {
-        console.log(`\n🚀 Initializing Agent Pool (${AGENT_POOL_SIZE} agents, mode: ${CONFIG.agentMode})\n`);
+        // Validate required cloud agent configuration
+        if (!CONFIG.cursorApiKey) {
+            console.error('❌ CURSOR_API_TOKEN not set. Cannot start orchestrator without cloud agent API key.');
+            process.exit(1);
+        }
+
+        if (!CONFIG.githubRepo) {
+            console.error('❌ GITHUB_REPO not set. Cannot start orchestrator without GitHub repository.');
+            process.exit(1);
+        }
+
+        console.log(`\n🚀 Initializing Agent Pool (${AGENT_POOL_SIZE} agents)\n`);
         this.agents.forEach(agent => {
             const statusIcon = agent.status === 'working' ? '⚙️' : agent.status === 'failed' ? '❌' : '💤';
             console.log(`  ${statusIcon} ${agent.id}: ${agent.status} (${agent.completedTasks} tasks completed)`);
@@ -281,118 +288,8 @@ class AgentOrchestrator {
 
         this.saveState();
 
-        // Spawn agent based on mode
-        if (CONFIG.agentMode === 'cloud') {
-            this.spawnCloudAgent(agent, task, queueName);
-        } else {
-            this.spawnLocalAgent(agent, task, queueName);
-        }
-    }
-
-    /**
-     * Spawn local Claude CLI agent
-     * @param {Object} agent - Agent object
-     * @param {Object} task - Task object
-     * @param {string} queueName - 'context' or 'implementation'
-     */
-    spawnLocalAgent(agent, task, queueName) {
-        // FAIL-FAST: Final validation before spawning
-        if (!fs.existsSync(task.path)) {
-            console.error(`❌ FAIL-FAST: Task file disappeared before agent spawn: ${task.path}`);
-            this.logFileValidationFailure(task, `File disappeared between assignment and spawn`);
-
-            // Return agent to idle state
-            agent.status = 'idle';
-            agent.currentTask = null;
-            agent.role = null;
-            this.saveState();
-            return;
-        }
-
-        const taskPath = path.relative(PROJECT_ROOT, task.path);
-        const claudeCmd = process.env.CLAUDE_CMD || 'claude';
-
-        console.log(`⏱️  ${agent.id} starting work (local mode)\n`);
-
-        const agentProcess = spawn(claudeCmd, [
-            '--dangerously-skip-permissions',
-            `@sessions/tasks/${task.relativePath}`
-        ], {
-            cwd: PROJECT_ROOT,
-            env: {
-                ...process.env,
-                ORCHESTRATOR_AGENT_ID: agent.id,
-                ORCHESTRATOR_ROLE: queueName,
-                ORCHESTRATOR_TASK_PATH: task.path
-            },
-            stdio: 'pipe'
-        });
-
-        agent.pid = agentProcess.pid;
-
-        // Set startup timeout (10 seconds to detect file read failure)
-        let startupDetected = false;
-        const startupTimeoutId = setTimeout(() => {
-            if (!startupDetected && agentProcess.killed === false) {
-                console.error(`❌ ${agent.id} failed to start processing within 10 seconds - likely file read failure`);
-                agentProcess.kill('SIGTERM');
-                this.handleAgentFailure(agent, task, queueName, 'startup timeout - file likely missing');
-                this.logFileValidationFailure(task, 'Agent failed to read file within 10 seconds');
-            }
-        }, 10000);
-
-        // Set task timeout
-        const timeout = queueName === 'context'
-            ? CONFIG.contextTaskTimeout
-            : CONFIG.implementationTaskTimeout;
-
-        const timeoutId = setTimeout(() => {
-            if (agentProcess.killed === false) {
-                console.error(`⏰ ${agent.id} timed out after ${timeout / 1000 / 60} minutes`);
-                agentProcess.kill('SIGTERM');
-                setTimeout(() => {
-                    if (!agentProcess.killed) {
-                        agentProcess.kill('SIGKILL');
-                    }
-                }, 5000);
-                this.handleAgentFailure(agent, task, queueName, 'timeout');
-            }
-        }, timeout);
-
-        // Handle process exit
-        agentProcess.on('exit', (code, signal) => {
-            clearTimeout(startupTimeoutId);
-            clearTimeout(timeoutId);
-
-            if (code === 0) {
-                this.handleAgentCompletion(agent, task, queueName);
-            } else {
-                console.error(`❌ ${agent.id} exited with code ${code} (signal: ${signal})`);
-                this.handleAgentFailure(agent, task, queueName, `exit code ${code}`);
-            }
-        });
-
-        // Log stdout/stderr
-        agentProcess.stdout.on('data', (data) => {
-            // Mark startup as detected on first output
-            if (!startupDetected) {
-                startupDetected = true;
-                clearTimeout(startupTimeoutId);
-            }
-            // Optionally log agent output
-            // console.log(`[${agent.id}] ${data.toString()}`);
-        });
-
-        agentProcess.stderr.on('data', (data) => {
-            // Mark startup as detected on first output (even stderr)
-            if (!startupDetected) {
-                startupDetected = true;
-                clearTimeout(startupTimeoutId);
-            }
-            console.error(`[${agent.id} stderr] ${data.toString()}`);
-        });
-
-        this.saveState();
+        // Spawn cloud agent
+        this.spawnCloudAgent(agent, task, queueName);
     }
 
     /**

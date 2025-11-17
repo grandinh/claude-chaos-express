@@ -194,7 +194,96 @@ Would you like to adjust or add to these criteria?
 
 Once approved, write the Problem/Goal description and record the success criteria with checkboxes in the task file.
 
-### 4: Run context-gathering agent or mark complete
+### 4: Add backlinks to relevant resources
+
+After writing the spec but **before** running context-gathering, explicitly add a "Context Manifest" section with backlinks to relevant resources.
+
+#### What to Consider for Backlinking
+
+Review each category and link **only** what is directly relevant to this task:
+
+**Framework & Vision (Tier-0/Tier-1):**
+- `CLAUDE.md`, `claude-reference.md` - If task touches framework behavior or SoT tiers
+- `docs/original_vision.md`, `docs/project_goals.md` - If task aligns with vision/goals
+
+**LCMP Knowledge:**
+- `Context/decisions.md` - If related to past decisions or requires new decision
+- `Context/insights.md` - If task leverages or extends known patterns
+- `Context/gotchas.md` - If task addresses or must avoid known pitfalls
+
+**Protocols & Systems:**
+- `sessions/protocols/` - If task modifies or uses specific protocols
+- `docs/sot-reference-map.md` - If task involves SoT alignment or reference paths
+- `docs/tiers_of_context.md` - If task involves file hierarchy or protection rules
+
+**Related Work:**
+- `sessions/tasks/*.md` - Tasks with similar scope or dependencies
+- `docs/rfcs/*.md` - If implementing or modifying an RFC
+- `Context/Features/*.md` - If implementing a feature spec
+
+**Architecture & Systems:**
+- Agent registry (`repo_state/agent-registry.json`) - If creating/modifying agents
+- Skill system (`.claude/skills/`) - If creating/modifying skills
+- Hook system (`sessions/hooks/`) - If creating/modifying hooks
+- Orchestration system (`scripts/*orchestrator*.js`) - If touching multi-agent workflows
+
+#### Backlinking Principles
+
+1. **Reference, don't duplicate** - Link to canonical sources instead of copying large context blocks
+2. **Be specific** - Include file paths and relevant section references where helpful
+3. **Explain relevance** - Brief note on why each link matters to this task
+4. **Update if needed** - If canonical docs are out of date, note that for future LCMP compaction
+
+#### Format
+
+Add a "Context Manifest" section to the task file using this structure:
+
+```markdown
+## Context Manifest
+
+### Framework & Vision
+- `CLAUDE.md` Section X - [Why relevant]
+- `docs/original_vision.md` - [Why relevant]
+
+### LCMP Knowledge
+- `Context/decisions.md` - [Which decisions are relevant]
+- `Context/gotchas.md` - [Which gotchas to avoid]
+
+### Protocols & Systems
+- `sessions/protocols/task-creation/` - [Why relevant]
+
+### Related Work
+- `sessions/tasks/example-task.md` - [How it relates]
+
+### Technical References
+- [List specific files/functions/line numbers if known]
+```
+
+**Keep it lean:** Only include what adds value. If no relevant resources in a category, omit the category entirely.
+
+#### Example: Good Backlinking
+
+From `REPAIR-queue-data-integrity-log-pollution.md`:
+
+```markdown
+## Context Manifest
+
+### Narrative
+This repair task addressed data integrity issues discovered during orchestrator validation.
+The fix separates concerns: durable knowledge (LCMP) vs transient operational data (logs).
+
+### Technical References
+- `scripts/agent-orchestrator.js:656-662` - Modified handleAgentFailure()
+- `scripts/agent-orchestrator.js:24-29` - Added log directory setup
+
+### Related Files
+- `scripts/watch-cursor-automation.js` - Reference for log directory structure
+- `Context/gotchas.md` - LCMP documentation (clean of transient logs)
+```
+
+**Note:** If the context-gathering agent runs in step 5, it will **add to** this Context Manifest section with discovered code references. Your backlinks provide the **conceptual** grounding; the agent adds the **technical** details.
+
+### 5: Run context-gathering agent or mark complete
 
 Present the decision to the user:
 
@@ -212,7 +301,7 @@ Your choice:
   - If no: Mark this step complete and continue
   - Context manifest MUST be complete before work begins (if not now, during task startup)
 
-### 5: Update service index files if applicable
+### 6: Update service index files if applicable
   - Check if task relates to any task indexes (sessions/tasks/indexes)
   - If not, present a structured decision:
 
@@ -240,7 +329,7 @@ Your choice:
     - For directory tasks, append `/` to the filename
   - Skip if no relevant index exists and user declines to create one
 
-### 6: Commit the new task file
+### 7: Commit the new task file
 - Stage the task file and any updated index files
 - Commit with descriptive message about the new task
 
@@ -263,7 +352,15 @@ If a file task needs subtasks during work:
 
 ## Important Note on Context
 
-The context-gathering agent is responsible for creating a complete, self-contained context manifest. This replaces the deprecated patterns system. If the context proves insufficient during implementation, the agent's prompt should be improved rather than adding workarounds or modifying the context manifest manually.
+The task-creation process now includes **mandatory backlinking** (step 4) to ensure tasks reference canonical sources instead of duplicating context. This happens **before** the context-gathering agent runs in step 5.
+
+**Two-Phase Context Strategy:**
+1. **Step 4 (Manual Backlinking):** You add conceptual/architectural links to framework docs, LCMP files, protocols, and related tasks
+2. **Step 5 (Context-Gathering Agent):** Agent adds technical details (code references, function signatures, file structures)
+
+The result is a comprehensive Context Manifest that combines high-fidelity references (backlinks) with technical depth (agent-gathered code context), minimizing duplication while maximizing clarity.
+
+If context proves insufficient during implementation, improve the agent's prompt or add missing backlinks to the task file—never duplicate large context blocks into the task itself.
 
 ## Philosophy: Smart Contextual Questions
 

@@ -1,0 +1,32 @@
+{
+  "name": "claude-chaos-express",
+  "version": "1.0.0",
+  "description": "Multi-agent orchestration framework with agent registry",
+  "private": true,
+  "scripts": {
+    "orchestrator": "npm run orchestrator --prefix scripts",
+    "orchestrator-status": "npm run orchestrator-status --prefix scripts",
+    "queue-manager": "npm run queue-manager --prefix scripts",
+    "queue-status": "npm run queue-status --prefix scripts",
+    "queue-validate": "npm run queue-validate --prefix scripts",
+    "queue-rebuild": "npm run queue-rebuild --prefix scripts",
+    "dependency-graph": "npm run dependency-graph --prefix scripts",
+    "dependency-check": "npm run dependency-check --prefix scripts",
+    "agent-registry": "npm run agent-registry --prefix scripts",
+    "watch-automation": "npm run watch-automation --prefix scripts",
+    "automation-status": "npm run automation-status --prefix scripts",
+    "test": "npm test --prefix scripts",
+    "test:watch": "npm run test:watch --prefix scripts",
+    "test:coverage": "npm run test:coverage --prefix scripts",
+    "validate-all": "npm run validate-all --prefix scripts"
+  },
+  "keywords": [
+    "multi-agent",
+    "orchestration",
+    "agent-registry",
+    "task-queue",
+    "claude-code"
+  ],
+  "author": "",
+  "license": "ISC"
+}

@@ -1041,3 +1041,375 @@ pm2 restart orchestrator
 - Documented recovery procedure in operator guide and CLAUDE.md troubleshooting section
 
 **Context:** REPAIR-orchestrator-health-2025-11-16, affects h-multi-agent-orchestration.md
+
+## 2025-11-17T08:21:47.524Z - File Validation Failure
+
+- Task: h-enforce-context-gathering.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-enforce-context-gathering.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:21:52.524Z - File Validation Failure
+
+- Task: orchestrator-test-impl.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/orchestrator-test-impl.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:21:57.524Z - File Validation Failure
+
+- Task: orchestrator-test-context.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/orchestrator-test-context.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:02.524Z - File Validation Failure
+
+- Task: m-add-code-review-auto-invoke-triggers.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-add-code-review-auto-invoke-triggers.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:02.526Z - File Validation Failure
+
+- Task: m-CODE-REVIEW-orchestrator-queue-enhancements.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-CODE-REVIEW-orchestrator-queue-enhancements.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:02.536Z - File Validation Failure
+
+- Task: h-rightsize-contextkit-footprint.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-rightsize-contextkit-footprint.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:07.528Z - File Validation Failure
+
+- Task: h-remove-claudekit-hook-dependency.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-remove-claudekit-hook-dependency.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:12.522Z - File Validation Failure
+
+- Task: h-refactor-claudekit-hooks-to-proper-setup.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-refactor-claudekit-hooks-to-proper-setup.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:12.526Z - File Validation Failure
+
+- Task: h-normalize-trigger-keywords.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-normalize-trigger-keywords.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:12.537Z - File Validation Failure
+
+- Task: h-implement-parallel-agent-invocation.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-implement-parallel-agent-invocation.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:17.526Z - File Validation Failure
+
+- Task: h-implement-automation-strategy.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-implement-automation-strategy.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:17.530Z - File Validation Failure
+
+- Task: h-implement-code-search-parallelization.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-implement-code-search-parallelization.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:17.530Z - File Validation Failure
+
+- Task: h-enhance-handoff-for-cursor-independence.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-enhance-handoff-for-cursor-independence.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:17.548Z - File Validation Failure
+
+- Task: h-documentation-consolidation-alignment.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-documentation-consolidation-alignment.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:22.533Z - File Validation Failure
+
+- Task: h-create-troubleshooting-guide.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-create-troubleshooting-guide.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:22.541Z - File Validation Failure
+
+- Task: h-create-health-check-script.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-create-health-check-script.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:27.526Z - File Validation Failure
+
+- Task: h-create-quick-start-guide.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-create-quick-start-guide.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:27.528Z - File Validation Failure
+
+- Task: h-align-cursor-claude-logging-standards.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-align-cursor-claude-logging-standards.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:27.530Z - File Validation Failure
+
+- Task: h-CODE-REVIEW-warning-cloud-timeout.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-CODE-REVIEW-warning-cloud-timeout.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:27.539Z - File Validation Failure
+
+- Task: REPAIR-pm-command-script-paths.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-pm-command-script-paths.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:27.541Z - File Validation Failure
+
+- Task: REPAIR-context-lcmp-path-sync.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-context-lcmp-path-sync.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:27.552Z - File Validation Failure
+
+- Task: m-simplify-handoff-process.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-simplify-handoff-process.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:27.552Z - File Validation Failure
+
+- Task: m-reconcile-task-reference-drift.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-reconcile-task-reference-drift.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:32.528Z - File Validation Failure
+
+- Task: m-optimize-skill-directory-mapping.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-optimize-skill-directory-mapping.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:32.544Z - File Validation Failure
+
+- Task: m-prune-skill-trigger-noise.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-prune-skill-trigger-noise.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:32.547Z - File Validation Failure
+
+- Task: m-integrate-agent-registry-with-skill-rules.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-integrate-agent-registry-with-skill-rules.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+## 2025-11-17T08:22:32.561Z - File Validation Failure
+
+- Task: m-investigate-optional-sot-files.md
+- Path: /Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-investigate-optional-sot-files.md
+- Reason: Agent failed to read file within 10 seconds
+- Action: Task removed from queue, agent returned to idle
+- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.
+
+---
+
+## Test Pollution: Agent Registry Tests
+
+**Issue Discovered:** 2025-11-17
+**Context:** m-fix-test-failures-orchestrator-agent-registry task
+**Severity:** Medium - Caused 9 test failures
+
+### The Problem
+
+Agent registry tests were creating test agents that persisted across test runs, causing false test failures:
+
+```bash
+# Initial test run:
+✓ create claude command works (creates test-agent-1)
+✗ create claude command fails (expects 24 agents, finds 25 - previous test's agent still in registry!)
+```
+
+**Impact:**
+- 9 test failures in agent-registry.test.js
+- Tests passed individually but failed when run in suite
+- Orphaned test agents accumulated (13 found in registry after debugging)
+- False positives masked real test issues
+
+### Root Cause
+
+**Registry backup/restore happened once per test suite, not per test:**
+
+```javascript
+// BEFORE (wrong):
+beforeAll(() => {
+    // Backup registry once
+    originalRegistry = fs.readFileSync(REGISTRY_PATH, 'utf8');
+});
+
+afterAll(() => {
+    // Restore registry once
+    fs.writeFileSync(REGISTRY_PATH, originalRegistry, 'utf8');
+});
+
+// Test 1 creates agent → agent persists
+// Test 2 runs → sees agent from Test 1 → FAILS
+```
+
+**Why It Happened:**
+1. `beforeAll`/`afterAll` run once per test suite
+2. Individual tests modify registry (create agents)
+3. Registry changes persist across tests in same suite
+4. Subsequent tests see previous test's agents
+5. Assertions fail due to unexpected agent count
+
+### The Fix
+
+**Applied:** 2025-11-17 in m-fix-test-failures-orchestrator-agent-registry task
+
+**Added per-test backup/restore:**
+
+```javascript
+// AFTER (correct):
+beforeEach(() => {
+    // Backup registry state before each test
+    if (fs.existsSync(REGISTRY_PATH)) {
+        testRegistryBackup = fs.readFileSync(REGISTRY_PATH, 'utf8');
+    }
+});
+
+afterEach(() => {
+    // Restore registry state after each test
+    if (testRegistryBackup) {
+        fs.writeFileSync(REGISTRY_PATH, testRegistryBackup, 'utf8');
+        testRegistryBackup = null;
+    }
+    // Clean up test files
+    cleanupTestFiles(testFiles);
+    testFiles = [];
+});
+```
+
+**Result:**
+- Each test starts with clean registry state
+- Test agents cleaned up immediately after each test
+- No cross-test pollution
+- All 163 tests now pass (43 agent-registry tests + 120 other tests)
+
+### Prevention
+
+**1. Always use per-test isolation for stateful resources**
+
+```javascript
+// ✅ CORRECT - Per-test isolation
+beforeEach(() => backupState());
+afterEach(() => restoreState());
+
+// ❌ WRONG - Per-suite isolation (allows cross-test pollution)
+beforeAll(() => backupState());
+afterAll(() => restoreState());
+```
+
+**2. Identify stateful test resources**
+
+Resources requiring per-test backup/restore:
+- Databases (SQLite, JSON files)
+- File systems (agent files, configs)
+- Process state (environment variables)
+- Global state (singletons, caches)
+
+**3. Test isolation checklist**
+
+When writing tests that modify state:
+- [ ] Backup state in `beforeEach`
+- [ ] Restore state in `afterEach`
+- [ ] Clean up created files/resources
+- [ ] Verify tests pass individually AND in suite
+- [ ] Check for state leakage (run tests multiple times)
+
+**4. Verify no state leakage**
+
+```bash
+# Run tests multiple times to detect pollution
+npm test -- agent-registry.test.js
+npm test -- agent-registry.test.js  # Should pass again
+
+# Run tests in random order
+npm test -- --randomize
+
+# Check for orphaned test data after suite
+ls .claude/agents/test-*.md  # Should be empty
+```
+
+### Verification
+
+**After fix:**
+
+```bash
+# All tests pass
+$ npm test
+✓ 163 tests passing (5 test suites)
+
+# No orphaned agents
+$ grep -c '"type": "claude"' repo_state/agent-registry.json
+18  # Correct count (0 test agents)
+
+# Clean test runs
+$ npm test && npm test && npm test
+✓ All runs pass consistently
+```
+
+### Related Files
+
+- `scripts/__tests__/agent-registry.test.js` - Fixed with per-test backup/restore (lines 88-99)
+- `scripts/README.md` - Updated test documentation (lines 251-252)
+- `sessions/tasks/m-fix-test-failures-orchestrator-agent-registry.md` - Task that discovered and fixed this
+- `context/gotchas.md` - This entry
+
+---

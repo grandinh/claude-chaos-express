@@ -69,13 +69,41 @@ function cleanupTestFiles(files) {
 
 describe('Agent Registry CLI', () => {
   let originalRegistry;
+  let testRegistryBackup;
   let testFiles = [];
 
   beforeAll(() => {
+    // Ensure schema exists before any tests run
+    const SCHEMA_PATH = path.join(REPO_ROOT, 'repo_state', 'agent-registry-schema.json');
+    if (!fs.existsSync(SCHEMA_PATH)) {
+      runCLI('init');
+    }
+
     // Backup original registry
     if (fs.existsSync(REGISTRY_PATH)) {
       originalRegistry = fs.readFileSync(REGISTRY_PATH, 'utf8');
     }
+  });
+
+  beforeEach(() => {
+    // Backup registry state before each test to prevent test pollution.
+    // Tests that create agents (e.g., create, warn, deprecate) modify the registry,
+    // and without per-test cleanup, agents created in test 1 persist into test 2.
+    if (fs.existsSync(REGISTRY_PATH)) {
+      testRegistryBackup = fs.readFileSync(REGISTRY_PATH, 'utf8');
+    }
+  });
+
+  afterEach(() => {
+    // Restore registry state after each test
+    if (testRegistryBackup) {
+      fs.writeFileSync(REGISTRY_PATH, testRegistryBackup, 'utf8');
+      testRegistryBackup = null;
+    }
+
+    // Clean up test files after each test
+    cleanupTestFiles(testFiles);
+    testFiles = [];
   });
 
   afterAll(() => {
@@ -86,12 +114,6 @@ describe('Agent Registry CLI', () => {
 
     // Clean up test files
     cleanupTestFiles(testFiles);
-  });
-
-  afterEach(() => {
-    // Clean up test files after each test
-    cleanupTestFiles(testFiles);
-    testFiles = [];
   });
 
   describe('sync command', () => {
@@ -211,6 +233,14 @@ describe('Agent Registry CLI', () => {
   });
 
   describe('create claude command', () => {
+    beforeEach(() => {
+      // Ensure schema exists before running create commands
+      const SCHEMA_PATH = path.join(REPO_ROOT, 'repo_state', 'agent-registry-schema.json');
+      if (!fs.existsSync(SCHEMA_PATH)) {
+        runCLI('init');
+      }
+    });
+
     test('should create new Claude agent file and registry entry', () => {
       const agentName = 'test-new-agent';
       const agentFile = path.join(REPO_ROOT, '.claude', 'agents', `${agentName}.md`);
@@ -245,6 +275,14 @@ describe('Agent Registry CLI', () => {
   });
 
   describe('create cloud command', () => {
+    beforeEach(() => {
+      // Ensure schema exists before running create commands
+      const SCHEMA_PATH = path.join(REPO_ROOT, 'repo_state', 'agent-registry-schema.json');
+      if (!fs.existsSync(SCHEMA_PATH)) {
+        runCLI('init');
+      }
+    });
+
     test('should create new Cloud Agent config and registry entry', () => {
       const agentName = 'test-cloud-agent';
       const configFile = path.join(REPO_ROOT, '.cursor', 'cloud-agents', `${agentName}.json`);
@@ -274,6 +312,11 @@ describe('Agent Registry CLI', () => {
 
   describe('link command', () => {
     beforeEach(() => {
+      // Ensure schema exists before running write operations
+      const SCHEMA_PATH = path.join(REPO_ROOT, 'repo_state', 'agent-registry-schema.json');
+      if (!fs.existsSync(SCHEMA_PATH)) {
+        runCLI('init');
+      }
       runCLI('sync');
     });
 
@@ -308,6 +351,11 @@ describe('Agent Registry CLI', () => {
 
   describe('deprecate command', () => {
     beforeEach(() => {
+      // Ensure schema exists before running write operations
+      const SCHEMA_PATH = path.join(REPO_ROOT, 'repo_state', 'agent-registry-schema.json');
+      if (!fs.existsSync(SCHEMA_PATH)) {
+        runCLI('init');
+      }
       runCLI('sync');
     });
 
@@ -340,6 +388,11 @@ describe('Agent Registry CLI', () => {
 
   describe('warn command', () => {
     beforeEach(() => {
+      // Ensure schema exists before running write operations
+      const SCHEMA_PATH = path.join(REPO_ROOT, 'repo_state', 'agent-registry-schema.json');
+      if (!fs.existsSync(SCHEMA_PATH)) {
+        runCLI('init');
+      }
       runCLI('sync');
     });
 
@@ -399,6 +452,11 @@ describe('Agent Registry CLI', () => {
 
   describe('archive command', () => {
     beforeEach(() => {
+      // Ensure schema exists before running write operations
+      const SCHEMA_PATH = path.join(REPO_ROOT, 'repo_state', 'agent-registry-schema.json');
+      if (!fs.existsSync(SCHEMA_PATH)) {
+        runCLI('init');
+      }
       runCLI('sync');
     });
 

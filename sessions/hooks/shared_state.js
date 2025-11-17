@@ -5,6 +5,10 @@ const path = require('path');
 const os = require('os');
 const { execSync } = require('child_process');
 
+// Task registry imports
+const taskRegistry = require('../lib/task-registry.js');
+const frontmatterSync = require('../lib/frontmatter-sync.js');
+
 // ==== EXCEPTIONS ===== //
 class StateError extends Error {
     constructor(message) {
@@ -1169,6 +1173,63 @@ function listOpenTasks() {
     return taskStartupHelp + "\n";
 }
 
+// ==== TASK REGISTRY FUNCTIONS ===== //
+
+/**
+ * Get task status from registry
+ */
+function getTaskStatus(taskId) {
+    const task = taskRegistry.getTask(taskId);
+    return task ? task.status : null;
+}
+
+/**
+ * Update task status in registry
+ */
+function updateTaskStatus(taskId, status, actor = null) {
+    return taskRegistry.updateTask(taskId, { status }, actor);
+}
+
+/**
+ * Sync task frontmatter from registry
+ */
+function syncTaskFrontmatter(taskId) {
+    try {
+        return frontmatterSync.syncFrontmatter(taskId);
+    } catch (error) {
+        console.error(`Failed to sync frontmatter for ${taskId}:`, error.message);
+        return false;
+    }
+}
+
+/**
+ * Get all tasks from registry
+ */
+function getAllTasksFromRegistry() {
+    return taskRegistry.getAllTasks();
+}
+
+/**
+ * Get single task from registry
+ */
+function getTaskFromRegistry(taskId) {
+    return taskRegistry.getTask(taskId);
+}
+
+/**
+ * Create task in registry
+ */
+function createTaskInRegistry(taskId, initial = {}) {
+    return taskRegistry.createTask(taskId, initial);
+}
+
+/**
+ * Update task in registry
+ */
+function updateTaskInRegistry(taskId, updates, actor = null) {
+    return taskRegistry.updateTask(taskId, updates, actor);
+}
+
 // Export everything
 module.exports = {
     // Constants
@@ -1222,5 +1283,14 @@ module.exports = {
     isDirectoryTask,
     getTaskFilePath,
     isSubtask,
-    isParentTask
+    isParentTask,
+
+    // Task Registry Functions
+    getTaskStatus,
+    updateTaskStatus,
+    syncTaskFrontmatter,
+    getAllTasksFromRegistry,
+    getTaskFromRegistry,
+    createTaskInRegistry,
+    updateTaskInRegistry
 };

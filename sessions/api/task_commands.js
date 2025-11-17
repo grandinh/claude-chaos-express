@@ -448,6 +448,46 @@ To restore the previous task later:
         return errorMsg;
     }
 
+    // Create or update task in registry
+    const taskId = taskName.replace(/\.md$/, '');
+    try {
+        const {
+            createTaskInRegistry,
+            updateTaskInRegistry,
+            getTaskFromRegistry,
+            syncTaskFrontmatter
+        } = require('../hooks/shared_state.js');
+
+        const existing = getTaskFromRegistry(taskId);
+        const now = new Date().toISOString();
+
+        if (existing) {
+            // Update existing task
+            updateTaskInRegistry(taskId, {
+                status: 'in-progress',
+                assigned_to: 'claude',
+                updated: now
+            }, 'claude');
+        } else {
+            // Create new task in registry
+            createTaskInRegistry(taskId, {
+                status: 'in-progress',
+                mode: frontmatter.mode || 'full',
+                assigned_to: 'claude',
+                risk_level: frontmatter.risk_level || 'medium',
+                created: frontmatter.created || now,
+                file_path: `sessions/tasks/${taskName}`,
+                last_actor: 'claude'
+            });
+        }
+
+        // Sync frontmatter after registry update
+        syncTaskFrontmatter(taskId);
+    } catch (e) {
+        // Registry operations failed, log but continue
+        console.warn(`Registry update failed for ${taskId}:`, e.message);
+    }
+
     // Load and compose protocol based on config
     let protocolContent = loadProtocolFile('task-startup/task-startup.md');
 
@@ -594,11 +634,78 @@ function handleTaskCommand(args, jsonOutput = false, fromSlash = false) {
         const taskName = args[1];
         return handleTaskStart(taskName, jsonOutput, fromSlash);
 
+    } else if (action === 'list') {
+        // List all tasks from registry
+        const { getAllTasksFromRegistry } = require('../hooks/shared_state.js');
+        const tasks = getAllTasksFromRegistry();
+
+        if (jsonOutput) {
+            return { tasks };
+        }
+
+        const lines = ['Tasks in Registry:', ''];
+        for (const task of tasks) {
+            lines.push(`  ${task.id} (${task.status}) - ${task.assigned_to || 'unassigned'}`);
+        }
+        return lines.join('\n');
+
+    } else if (action === 'assign') {
+        if (args.length < 3) {
+            if (fromSlash) {
+                return "assign command requires task ID and actor.\n\nUsage:\n  /sessions tasks assign <task-id> <actor>";
+            }
+            throw new Error("assign command requires task ID and actor");
+        }
+
+        const taskId = args[1];
+        const actor = args[2];
+
+        const { updateTaskInRegistry } = require('../hooks/shared_state.js');
+        try {
+            updateTaskInRegistry(taskId, { assigned_to: actor }, actor);
+            if (jsonOutput) {
+                return { message: `Task ${taskId} assigned to ${actor}` };
+            }
+            return `Task ${taskId} assigned to ${actor}`;
+        } catch (e) {
+            if (jsonOutput) {
+                return { error: e.message };
+            }
+            return `Error: ${e.message}`;
+        }
+
+    } else if (action === 'transition') {
+        if (args.length < 3) {
+            if (fromSlash) {
+                return "transition command requires task ID and status.\n\nUsage:\n  /sessions tasks transition <task-id> <status>";
+            }
+            throw new Error("transition command requires task ID and status");
+        }
+
+        const taskId = args[1];
+        const status = args[2];
+        const actor = args[3] || 'claude';
+
+        const { updateTaskStatus, syncTaskFrontmatter } = require('../hooks/shared_state.js');
+        try {
+            updateTaskStatus(taskId, status, actor);
+            syncTaskFrontmatter(taskId);
+            if (jsonOutput) {
+                return { message: `Task ${taskId} transitioned to ${status}` };
+            }
+            return `Task ${taskId} transitioned to ${status}`;
+        } catch (e) {
+            if (jsonOutput) {
+                return { error: e.message };
+            }
+            return `Error: ${e.message}`;
+        }
+
     } else {
         if (fromSlash) {
             return `Unknown tasks action: ${action}\n\n${formatTaskHelp()}`;
         }
-        throw new Error(`Unknown tasks action: ${action}. Valid actions: idx, start`);
+        throw new Error(`Unknown tasks action: ${action}. Valid actions: idx, start, list, assign, transition`);
     }
 }
 
@@ -610,11 +717,17 @@ function formatTaskHelp() {
         "  /sessions tasks idx list        - List all available task indexes",
         "  /sessions tasks idx <name>      - Show pending tasks in specific index",
         "  /sessions tasks start @<name>   - Start working on a task",
+        "  /sessions tasks list            - List all tasks in registry",
+        "  /sessions tasks assign <id> <actor>     - Assign task to actor (claude/cursor/codex)",
+        "  /sessions tasks transition <id> <status> - Change task status",
         "",
         "Examples:",
         "  /sessions tasks idx list                    - See all indexes",
         "  /sessions tasks idx architecture            - View architecture tasks",
         "  /sessions tasks start @m-refactor-commands  - Start a task",
+        "  /sessions tasks list                        - List all registered tasks",
+        "  /sessions tasks assign m-task-1 cursor      - Assign task to Cursor",
+        "  /sessions tasks transition m-task-1 ready-for-review - Mark ready for review",
     ];
     return lines.join('\n');
 }

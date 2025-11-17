@@ -291,6 +291,17 @@ class TaskQueueManager {
     /**
      * Route task to appropriate queue based on context_gathered flag
      * Validates context manifest exists if context_gathered is true
+     * 
+     * **Error Message Format:**
+     * All validation errors follow this structure:
+     * - Line 1: `❌ VALIDATION ERROR: <problem description>`
+     * - Line 2: `   Action: <what happened to the task>`
+     * 
+     * This format enables:
+     * - Easy grep/filtering in logs
+     * - Clear remediation guidance for operators
+     * - Consistent UX across validation checkpoints
+     * 
      * @param {string} taskPath - Path to task file
      * @param {boolean} skipValidation - Skip context manifest validation (for recovery)
      * @returns {Object|null} - Routed task object or null
@@ -873,10 +884,26 @@ if (require.main === module) {
         process.exit(0);
     } else {
         console.log('Task Queue Manager CLI');
+        console.log('');
         console.log('Usage:');
         console.log('  node task-queue-manager.js --validate    Validate and clean queues');
         console.log('  node task-queue-manager.js --status      Show queue status');
         console.log('  node task-queue-manager.js --rebuild     Rebuild queues from scratch');
+        console.log('');
+        console.log('Exit Codes (--validate):');
+        console.log('  0 = Queues healthy (< 10% invalid tasks)');
+        console.log('  1 = Systemic issues detected (> 10% invalid tasks)');
+        console.log('');
+        console.log('Examples:');
+        console.log('  # Weekly maintenance check');
+        console.log('  node task-queue-manager.js --validate');
+        console.log('');
+        console.log('  # Monitor queue state');
+        console.log('  watch -n 30 "node task-queue-manager.js --status"');
+        console.log('');
+        console.log('  # Recovery from queue corruption');
+        console.log('  cp sessions/tasks/.task-queues.json sessions/tasks/.task-queues.json.backup');
+        console.log('  node task-queue-manager.js --rebuild');
         process.exit(0);
     }
 }

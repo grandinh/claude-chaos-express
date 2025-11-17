@@ -9,6 +9,8 @@
     "test:integration": "jest orchestrator-integration.test.js",
     "queue-manager": "node task-queue-manager.js",
     "queue-status": "node task-queue-manager.js --status",
+    "queue-validate": "node task-queue-manager.js --validate",
+    "queue-rebuild": "node task-queue-manager.js --rebuild",
     "orchestrator": "node agent-orchestrator.js",
     "orchestrator-status": "node orchestrator-status.js",
     "dependency-graph": "node dependency-graph.js",

@@ -238,15 +238,20 @@ Your choice:
 
 ### 4.1 Skill System Overview
 
-The framework includes **20 operational skills** in `.claude/skills/` that provide specialized guidance and automation:
+The framework includes **21 operational skills** in `.claude/skills/` that provide specialized guidance and automation:
 
-**WRITE-CAPABLE Skills (4)** – Only run in IMPLEMENT mode:
+**WRITE-CAPABLE Skills (9)** – Only run in IMPLEMENT mode:
 - `cc-sessions-core` – Core cc-sessions development
 - `cc-sessions-hooks` – Hook system development
 - `cc-sessions-api` – API/command development
 - `skill-developer` – Skill system development and self-improvement
+- `pm-workflow-trigger` – Natural language wrapper for PM workflow commands (WRITE-CAPABLE due to task creation)
+- `git-workflow-trigger` – Natural language wrapper for git operations (WRITE-CAPABLE due to commits/pushes)
+- `validation-trigger` – Natural language wrapper for quality checks (WRITE-CAPABLE due to auto-fix)
+- `checkpoint-trigger` – Natural language wrapper for checkpoint operations (WRITE-CAPABLE due to state changes)
+- `handoff-receiver` – Parse and execute handoffs from Cursor (WRITE-CAPABLE during execution phase)
 
-**ANALYSIS-ONLY Skills (7)** – Run in any DAIC mode:
+**ANALYSIS-ONLY Skills (12)** – Run in any DAIC mode:
 - `error-tracking` – Error handling and Sentry integration analysis
 - `framework_version_check` – Framework version sync validation
 - `framework_health_check` – Framework health diagnostics
@@ -254,17 +259,11 @@ The framework includes **20 operational skills** in `.claude/skills/` that provi
 - `lcmp_recommendation` – LCMP compaction recommendations
 - `daic_mode_guidance` – DAIC mode navigation help
 - `skill-assessor` – Automated skill assessment for auto-invocation decisions
-
-**Workflow-Trigger Skills (9)** – Natural language wrappers for slash commands (ANALYSIS-ONLY):
-- `code-review-trigger` – Natural language for /code-review command
-- `research-trigger` – Natural language for /research command
-- `pm-workflow-trigger` – Natural language for PM commands (epic/issue/PRD)
-- `pm-status-trigger` – Natural language for project status queries
-- `git-workflow-trigger` – Natural language for git operations
-- `contextkit-planning-trigger` – Natural language for ContextKit planning
-- `testing-trigger` – Natural language for test execution
-- `validation-trigger` – Natural language for quality checks
-- `checkpoint-trigger` – Natural language for checkpoint operations
+- `code-review-trigger` – Natural language wrapper for /code-review command
+- `research-trigger` – Natural language wrapper for /research command
+- `pm-status-trigger` – Natural language wrapper for project status queries
+- `contextkit-planning-trigger` – Natural language wrapper for ContextKit planning
+- `testing-trigger` – Natural language wrapper for test execution
 
 ### 4.2 Skill Rules
 
@@ -550,7 +549,7 @@ The framework includes an automated multi-agent orchestration system that distri
 **Agent Orchestrator** (`scripts/agent-orchestrator.js`)
 - Manages pool of 3 Claude Code agents
 - Assigns tasks with load balancing
-- Supports local (Claude CLI) and cloud (Cursor Cloud Agent API) execution modes
+- Uses Cursor Cloud Agent API for task execution
 - Enforces context gathering before implementation
 
 **Task Queue Manager** (`scripts/task-queue-manager.js`)
@@ -684,11 +683,9 @@ pm2 stop task-watcher orchestrator
 ### 7.7 Configuration
 
 **Environment Variables:**
-- `AGENT_MODE`: `local` (Claude CLI, default) or `cloud` (Cursor Cloud Agent API)
-- `CLAUDE_CMD`: Path to Claude CLI (default: `claude` in PATH)
-- `CURSOR_API_TOKEN`: Required for cloud mode
-- `GITHUB_REPO`: Required for cloud mode (e.g., `username/repo`)
-- `GITHUB_REF`: Branch/tag for cloud mode (default: `main`)
+- `CURSOR_API_TOKEN`: Required (Cursor Cloud Agent API key)
+- `GITHUB_REPO`: Required (e.g., `username/repo` or full GitHub URL)
+- `GITHUB_REF`: Branch/tag (default: `main`)
 
 **Exclusion Patterns:**
 Edit constants in `scripts/watch-cursor-automation.js`:
@@ -795,7 +792,7 @@ The framework includes an automated multi-agent orchestration system that distri
 **Agent Orchestrator** (`scripts/agent-orchestrator.js`)
 - Manages pool of 3 Claude Code agents
 - Assigns tasks with load balancing
-- Supports local (Claude CLI) and cloud (Cursor Cloud Agent API) execution modes
+- Uses Cursor Cloud Agent API for task execution
 - Enforces context gathering before implementation
 
 **Task Queue Manager** (`scripts/task-queue-manager.js`)
@@ -858,14 +855,14 @@ If validation fails, task is forced to context queue with `validationIssue` flag
 1. Orchestrator finds idle agent
 2. Queue manager selects highest-priority task with satisfied dependencies
 3. Task removed from queue **immediately upon assignment** (prevents race condition)
-4. Agent spawns Claude CLI process with task path
-5. Agent completes work and updates task file
+4. Orchestrator spawns Cursor Cloud Agent via API with task prompt
+5. Cloud agent completes work and updates task file (via PR)
 6. Agent returns to idle, task marked complete
 
 **Timeouts:**
 - Context tasks: 30 minutes
 - Implementation tasks: 60 minutes
-- On timeout: SIGTERM, then SIGKILL after 5 seconds
+- Cloud agents automatically handle timeouts via API
 
 ### 7.4 Priority Scoring Algorithm
 
@@ -912,11 +909,9 @@ pm2 stop orchestrator
 ### 7.6 Configuration
 
 **Environment Variables:**
-- `AGENT_MODE`: `local` (Claude CLI, default) or `cloud` (Cursor Cloud Agent API)
-- `CLAUDE_CMD`: Path to Claude CLI (default: `claude` in PATH)
-- `CURSOR_API_TOKEN`: Required for cloud mode
-- `GITHUB_REPO`: Required for cloud mode (e.g., `username/repo`)
-- `GITHUB_REF`: Branch/tag for cloud mode (default: `main`)
+- `CURSOR_API_TOKEN`: Required (Cursor Cloud Agent API key)
+- `GITHUB_REPO`: Required (e.g., `username/repo` or full GitHub URL)
+- `GITHUB_REF`: Branch/tag (default: `main`)
 
 **Agent Pool Size:**
 Edit `AGENT_POOL_SIZE` constant in `scripts/agent-orchestrator.js` (default: 3)
@@ -942,6 +937,33 @@ Edit `CONFIG` object in `scripts/agent-orchestrator.js`:
 **`.new-tasks.log`** (`sessions/tasks/`)
 - Task detection log (written by file watcher)
 - One entry per new task file
+
+**Queue Management CLI**
+
+**Validate queues** (remove invalid/expired tasks):
+```bash
+node scripts/task-queue-manager.js --validate
+# Exit codes: 0 = healthy, 1 = systemic issues (>10% invalid)
+```
+
+**Check status** (view queue state):
+```bash
+node scripts/task-queue-manager.js --status
+# OR use monitoring dashboard
+npm run orchestrator-status
+```
+
+**Rebuild queues** (from scratch):
+```bash
+node scripts/task-queue-manager.js --rebuild
+# Rescans sessions/tasks/ and rebuilds .task-queues.json
+```
+
+**Validation features:**
+- Removes non-existent task files
+- Removes expired tasks (>7 days unmodified)
+- Reports systemic issues (>10% invalid)
+- Saves cleaned state automatically
 
 ### 7.8 Integration with cc-sessions
 
