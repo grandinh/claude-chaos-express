@@ -1139,5 +1139,99 @@ Always check `sessions/lib/` before implementing parsing/validation in hooks. If
 
 ---
 
+## Protocol Version Tracking and cc-sessions Global SOP Enforcement
+
+**Decision Date:** 2025-11-17
+**Context:** Ensuring Cursor and Claude Code stay synchronized with cc-sessions as global SOP
+**Decision Made By:** Framework implementation
+
+### The Problem
+
+Cursor and Claude Code systems needed stronger synchronization mechanisms to ensure cc-sessions protocols remain the global Standard Operating Procedure. Without explicit version tracking and protocol awareness, systems could drift out of sync when protocols change.
+
+### Decision
+
+**Implement comprehensive protocol version tracking system and explicit SOP declarations in both systems**
+
+### Implementation
+
+**1. Protocol Version Tracking:**
+- Added version frontmatter to all core protocol files (task-completion, task-creation, task-startup, context-compaction)
+- Created `sessions/protocols/PROTOCOL-VERSIONS.md` centralized version registry
+- All protocols now track version (1.0) and last updated dates
+
+**2. Enhanced Cursor Rules:**
+- Added explicit "cc-sessions is Global SOP" declaration in Section 1
+- Added Section 1.5 with protocol references and version tracking awareness
+- Added cross-references to CLAUDE.md and alignment documentation
+
+**3. Enhanced Drift Detection:**
+- Added [6/6] Protocol Synchronization section to `scripts/check-claude-cursor-alignment.sh`
+- Validates protocol files exist and have version frontmatter
+- Checks Cursor rules reference key protocols
+- Verifies SOP declarations in both systems
+
+**4. Explicit SOP Declarations:**
+- CLAUDE.md Section 5.1 now has explicit "cc-sessions is global SOP" statement
+- Cursor rules Section 1 has explicit SOP declaration
+- Both systems clearly state cc-sessions as the global SOP
+
+**5. Protocol Change Propagation:**
+- Added Type 8: Protocol Changes section to `docs/claude-cursor-alignment.md`
+- Step-by-step checklist for protocol updates
+- Examples for both propagating to Cursor and Claude-only changes
+
+**6. Documentation:**
+- Created `docs/cc-sessions-protocol-reference.md` quick reference guide
+- Enhanced framework health checks in CLAUDE.md Section 9 with protocol synchronization
+- Added bidirectional cross-references between systems
+
+### Rationale
+
+1. **Version Tracking** - Enables drift detection to validate protocol synchronization
+2. **Explicit SOP Declaration** - Makes it clear that cc-sessions is the global SOP for both systems
+3. **Protocol Awareness** - Cursor rules now explicitly reference protocols they should follow
+4. **Change Propagation** - Documented process ensures protocol changes trigger Cursor rule updates
+5. **Automated Validation** - Drift detection script validates protocol synchronization automatically
+
+**Trade-offs Accepted:**
+- More files to maintain (version registry, protocol frontmatter)
+- Protocol changes require more steps (update protocol, registry, Cursor rules, run validation)
+- Slightly more complex system (but more robust)
+
+### Consequences
+
+**Positive:**
+- Systems stay synchronized through automated checks
+- Protocol changes trigger explicit update procedures
+- Clear documentation of which protocols apply to which systems
+- Drift detection catches synchronization issues early
+
+**Negative:**
+- More maintenance overhead (version tracking, frontmatter updates)
+- Protocol changes require multi-step process
+- Must remember to update version registry when protocols change
+
+### Protocol Change Workflow
+
+When a protocol is updated:
+1. Update protocol file with new version and `last_updated` date in frontmatter
+2. Update `sessions/protocols/PROTOCOL-VERSIONS.md` with new version and date
+3. Assess if change affects Cursor coordination
+4. If YES: Update Cursor rules with new protocol reference or behavior
+5. Run drift detection (`scripts/check-claude-cursor-alignment.sh`) to verify sync
+6. Document change in `context/decisions.md`
+
+### Related Files
+
+- `sessions/protocols/PROTOCOL-VERSIONS.md` - Version registry
+- `.cursor/rules/cursor-agent-operating-spec.mdc` - Enhanced with protocol awareness
+- `CLAUDE.md` Section 5.1 - Explicit SOP declaration
+- `scripts/check-claude-cursor-alignment.sh` - Enhanced drift detection
+- `docs/claude-cursor-alignment.md` - Type 8: Protocol Changes section
+- `docs/cc-sessions-protocol-reference.md` - Quick reference guide
+
+---
+
 *Decisions will be added here as they are made and documented during framework development and usage.*
 
