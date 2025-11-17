@@ -1,3 +1,9 @@
+---
+protocol_version: "1.0"
+last_updated: "2025-11-16"
+protocol_name: "task-completion"
+---
+
 # Task Completion Protocol
 
 When a task meets its success criteria:

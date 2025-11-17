@@ -157,7 +157,7 @@ else
 fi
 
 echo ""
-echo -e "${BLUE}[5/5] Checking CLAUDE.md References to Cursor${NC}"
+echo -e "${BLUE}[5/6] Checking CLAUDE.md References to Cursor${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Check if CLAUDE.md Section 5 references Cursor rules
@@ -172,6 +172,83 @@ if grep -q "## 5. Claude Code vs Cursor" CLAUDE.md 2>/dev/null; then
     report_success "CLAUDE.md has Section 5 (Claude Code vs Cursor)"
 else
     report_warning "CLAUDE.md may be missing Section 5 coordination section"
+fi
+
+# Check if CLAUDE.md has explicit SOP declaration
+if grep -qi "cc-sessions.*global.*standard.*operating\|global.*SOP\|cc-sessions.*SOP" CLAUDE.md 2>/dev/null; then
+    report_success "CLAUDE.md has explicit cc-sessions SOP declaration"
+else
+    report_warning "CLAUDE.md may be missing explicit cc-sessions SOP declaration"
+fi
+
+echo ""
+echo -e "${BLUE}[6/6] Checking Protocol Synchronization${NC}"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Check if protocol versions registry exists
+if [ -f "sessions/protocols/PROTOCOL-VERSIONS.md" ]; then
+    report_success "Protocol versions registry exists"
+else
+    report_issue "Protocol versions registry missing: sessions/protocols/PROTOCOL-VERSIONS.md"
+fi
+
+# Check if Cursor rules reference key protocols
+PROTOCOLS=(
+    "task-completion"
+    "task-creation"
+    "task-startup"
+    "context-compaction"
+)
+
+PROTOCOL_PATHS=(
+    "sessions/protocols/task-completion/task-completion.md"
+    "sessions/protocols/task-creation/task-creation.md"
+    "sessions/protocols/task-startup/task-startup.md"
+    "sessions/protocols/context-compaction/context-compaction.md"
+)
+
+for i in "${!PROTOCOLS[@]}"; do
+    PROTOCOL="${PROTOCOLS[$i]}"
+    PROTOCOL_PATH="${PROTOCOL_PATHS[$i]}"
+    
+    # Check if protocol file exists
+    if [ -f "$PROTOCOL_PATH" ]; then
+        report_success "Protocol file exists: $PROTOCOL_PATH"
+        
+        # Check if Cursor rules reference this protocol
+        if grep -q "$PROTOCOL_PATH\|$PROTOCOL" .cursor/rules/cursor-agent-operating-spec.mdc 2>/dev/null; then
+            report_success "Cursor rules reference $PROTOCOL protocol"
+        else
+            report_warning "Cursor rules may not reference $PROTOCOL protocol"
+        fi
+    else
+        report_issue "Protocol file missing: $PROTOCOL_PATH"
+    fi
+done
+
+# Check if protocol files have version frontmatter
+for PROTOCOL_PATH in "${PROTOCOL_PATHS[@]}"; do
+    if [ -f "$PROTOCOL_PATH" ]; then
+        if head -n 10 "$PROTOCOL_PATH" | grep -q "protocol_version:" 2>/dev/null; then
+            report_success "Protocol has version frontmatter: $PROTOCOL_PATH"
+        else
+            report_warning "Protocol missing version frontmatter: $PROTOCOL_PATH"
+        fi
+    fi
+done
+
+# Check if Cursor rules reference PROTOCOL-VERSIONS.md
+if grep -q "PROTOCOL-VERSIONS\|protocol.*version" .cursor/rules/cursor-agent-operating-spec.mdc 2>/dev/null; then
+    report_success "Cursor rules reference protocol version tracking"
+else
+    report_warning "Cursor rules may not reference protocol version tracking"
+fi
+
+# Check if Cursor rules have explicit SOP declaration
+if grep -qi "cc-sessions.*global.*standard.*operating\|global.*SOP\|cc-sessions.*SOP" .cursor/rules/cursor-agent-operating-spec.mdc 2>/dev/null; then
+    report_success "Cursor rules have explicit cc-sessions SOP declaration"
+else
+    report_issue "Cursor rules missing explicit cc-sessions SOP declaration"
 fi
 
 echo ""

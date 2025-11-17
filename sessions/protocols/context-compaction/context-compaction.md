@@ -1,3 +1,9 @@
+---
+protocol_version: "1.0"
+last_updated: "2025-11-16"
+protocol_name: "context-compaction"
+---
+
 # Context Compaction Protocol
 
 When context window reaches high capacity, you will be instructed to perform these steps:

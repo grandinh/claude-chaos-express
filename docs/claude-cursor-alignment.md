@@ -209,6 +209,47 @@ This guide ensures Claude Code and Cursor Agent systems stay synchronized as the
 
 ---
 
+### Type 8: Protocol Changes
+
+**When:** Modifying cc-sessions protocols (task-completion, task-creation, task-startup, context-compaction, etc.)
+
+**Files Affected:**
+- Protocol files in `sessions/protocols/`
+- `sessions/protocols/PROTOCOL-VERSIONS.md` (version registry)
+- `.cursor/rules/cursor-agent-operating-spec.mdc` (if protocol applies to Cursor)
+- `CLAUDE.md` (if protocol is referenced)
+- `docs/cc-sessions-protocol-reference.md` (quick reference guide)
+
+**Action Required:**
+- [ ] Update protocol file with new version and `last_updated` date in frontmatter
+- [ ] Update `sessions/protocols/PROTOCOL-VERSIONS.md` with new version and date
+- [ ] Assess if change affects Cursor coordination:
+  - Does Cursor reference this protocol in its rules?
+  - Does the change affect how Cursor should behave?
+  - Does the change affect task completion, creation, or handoff patterns?
+- [ ] If YES: Update Cursor rules (`.cursor/rules/cursor-agent-operating-spec.mdc`) with new protocol reference or behavior
+- [ ] If protocol is referenced in quick guide: Update `docs/cc-sessions-protocol-reference.md`
+- [ ] Run drift detection (`scripts/check-claude-cursor-alignment.sh`) to verify protocol synchronization
+- [ ] Document change in `context/decisions.md` with propagation decision
+
+**Example 1 (Propagate to Cursor):** Task completion protocol adds new step
+- Update `sessions/protocols/task-completion/task-completion.md` with new version
+- Update `sessions/protocols/PROTOCOL-VERSIONS.md`
+- Update Cursor rules Section 4.2 to include new step (adapted for Cursor's scope)
+- Update `docs/cc-sessions-protocol-reference.md` if needed
+- Run drift detection
+- Document in `context/decisions.md`
+
+**Example 2 (Claude-only):** Task startup protocol adds internal hook trigger
+- Update protocol file with new version
+- Update `sessions/protocols/PROTOCOL-VERSIONS.md`
+- Cursor rules unchanged (internal mechanism)
+- Document in `context/decisions.md` as Claude-only change
+
+**Critical:** Protocol changes are part of the global SOP. Both systems must stay synchronized when protocols affect coordination.
+
+---
+
 ## Change Propagation Checklist
 
 Use this checklist for ANY framework change:

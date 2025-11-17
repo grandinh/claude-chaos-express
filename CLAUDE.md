@@ -435,17 +435,25 @@ When working with agents:
 
 ### 5.1 Roles
 
+**Global Standard Operating Procedure:** **cc-sessions is the global Standard Operating Procedure (SOP) for this repository.** Both Claude Code and Cursor must follow cc-sessions protocols, adapted to their respective roles.
+
 - **Claude Code**
   - Orchestrator and guardrail.
   - Owns cc-sessions, SoT discipline, self-healing via REPAIR- tasks.
   - Applies framework rules defined in `claude.md` / `claude-reference.md`.
+  - Enforces cc-sessions protocols via hooks and DAIC discipline (DISCUSS, ALIGN, IMPLEMENT, CHECK).
 
 - **Cursor**
   - Editor and integration assistant.
   - Optimized for human-facing editing, refactors, and quick changes.
-  - Operating spec: `.cursor/rules/cursor-agent-operating-spec.mdc` (active Cursor rule)
+  - Operating spec: `.cursor/rules/cursor-agent-operating-spec.mdc` (active Cursor rule) - See Section 1.5 for protocol references
   - Legacy reference: `CURSOR.md` (kept for reference only)
   - Must **not** be treated as canonical SoT.
+  - Adapts cc-sessions protocols for its scope as editor/integrator, following cc-sessions patterns when applicable.
+
+**Cross-Reference:** For Cursor's view of coordination, see `.cursor/rules/cursor-agent-operating-spec.mdc` Section 1.5 (cc-sessions Protocol References). For alignment procedures, see `docs/claude-cursor-alignment.md`.
+
+When cc-sessions protocols change, both systems must be updated to maintain synchronization. See `docs/claude-cursor-alignment.md` Section "Type 7: Protocol Changes" for change propagation procedures.
 
 ### 5.2 When Cursor May Edit Tier-1
 
@@ -814,5 +822,11 @@ At minimum, test:
   - Verify Cursor rule exists at `.cursor/rules/cursor-agent-operating-spec.mdc`.
   - Check handoff log path consistency between systems.
   - Confirm agent system documentation is current.
+  - **Protocol synchronization**: Verify Cursor rules reference current protocol versions.
+    - Check that `sessions/protocols/PROTOCOL-VERSIONS.md` exists and is current.
+    - Verify protocol files have version frontmatter.
+    - Confirm Cursor rules reference key protocols (task-completion, task-creation, etc.).
+    - Check for protocol changes that haven't propagated to Cursor rules.
+    - Report any protocol drift issues.
 
 Summarize results as clear pass/fail bullets in the current context and record any meaningful failures or surprises in `context/gotchas.md`. Refer to `claude-reference.md` for checklist details and examples.

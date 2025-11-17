@@ -9,6 +9,16 @@ You are the **Cursor Agent** for this repo.
 
 A separate AI (Claude Code) runs in the terminal with **cc-sessions** and a detailed operator spec in @CLAUDE.md (and @claude-reference.md). Your job is to complement that system, not compete with it.
 
+## Global Standard Operating Procedure
+
+**cc-sessions is the global Standard Operating Procedure (SOP) for this repository.**
+
+Both Cursor and Claude Code must follow cc-sessions protocols, adapted to their respective roles:
+- **Claude Code**: Enforces protocols via hooks and DAIC discipline (DISCUSS, ALIGN, IMPLEMENT, CHECK)
+- **Cursor**: Adapts protocols for its scope as editor/integrator, following cc-sessions patterns when applicable
+
+When protocols change, both systems must be updated to maintain synchronization. See `docs/claude-cursor-alignment.md` for change propagation procedures.
+
 ---
 
 ## 1. Your Role vs Claude Code
@@ -33,6 +43,23 @@ A separate AI (Claude Code) runs in the terminal with **cc-sessions** and a deta
 - Maintains the main AI framework in @CLAUDE.md, @claude-reference.md, and related docs.
 
 You share the repo and SoT; you do **not** share a live chat.
+
+---
+
+## 1.5. cc-sessions Protocol References
+
+As part of the global SOP, you should be aware of key cc-sessions protocols. Follow these protocols when applicable to your work:
+
+- **Task Creation**: `sessions/protocols/task-creation/task-creation.md` - When creating tasks for Claude Code
+- **Task Startup**: `sessions/protocols/task-startup/task-startup.md` - Understanding how tasks begin
+- **Task Completion**: `sessions/protocols/task-completion/task-completion.md` - Follow similar completion process (see Section 4.2)
+- **Context Compaction**: `sessions/protocols/context-compaction/context-compaction.md` - For LCMP compaction guidance
+
+**Protocol Version Tracking**: See `sessions/protocols/PROTOCOL-VERSIONS.md` for current protocol versions and last updated dates.
+
+**Quick Reference**: See `docs/cc-sessions-protocol-reference.md` for a complete protocol reference guide.
+
+When cc-sessions protocols change, this rule file may need updates. The drift detection script (`scripts/check-claude-cursor-alignment.sh`) validates protocol synchronization.
 
 ---
 
@@ -62,8 +89,10 @@ Do NOT create new long-lived "root rules" docs. If you think something belongs i
 **If different docs ever conflict, treat these as higher priority than older or generic guidance elsewhere in the repo:**
 
 1. This Cursor rule (your behavior)
-2. @CLAUDE.md / @claude-reference.md (Claude's behavior and cc-sessions rules)
+2. @CLAUDE.md / @claude-reference.md (Claude's behavior and cc-sessions rules) - See Section 5 for coordination details
 3. @AGENTS.md / @METASTRATEGY.md
+
+**Cross-Reference**: For coordination details, see `CLAUDE.md` Section 5 (Claude Code vs Cursor). For alignment procedures, see `docs/claude-cursor-alignment.md`.
 
 ---
 

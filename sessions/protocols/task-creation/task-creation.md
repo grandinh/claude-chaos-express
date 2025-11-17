@@ -1,3 +1,9 @@
+---
+protocol_version: "1.0"
+last_updated: "2025-11-17"
+protocol_name: "task-creation"
+---
+
 # Task Creation Protocol
 
 {todos}
