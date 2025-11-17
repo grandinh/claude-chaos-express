@@ -7,6 +7,15 @@
         "mcp-docs-provider",
         "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/docs"
       ]
+    },
+    "cursor-cloud-agents": {
+      "command": "node",
+      "args": [
+        "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/mcp-servers/cursor-cloud-agents/dist/index.js"
+      ],
+      "env": {
+        "CURSOR_API_TOKEN": "${CURSOR_API_TOKEN}"
+      }
     }
   }
 }

@@ -508,23 +508,30 @@ if (!isApiCommand && taskCompletionDetected) {
     }
     
     // PM Sync: Mark task complete, update epic progress, check if epic complete
-    if (STATE.current_task?.filePath) {
+    if (STATE.current_task?.file) {
         try {
-            const taskContent = fs.readFileSync(STATE.current_task.filePath, 'utf8');
-            const { frontmatter } = parseFrontmatter(taskContent);
-            if (frontmatter?.epic) {
-                const taskFile = path.basename(STATE.current_task.filePath);
-                // Mark task as completed in epic
-                updateEpicTaskStatus(frontmatter.epic, taskFile, 'completed');
-                // Update epic progress
-                updateEpicProgress(frontmatter.epic);
-                // Check if epic is complete
-                if (checkEpicComplete(frontmatter.epic)) {
-                    context += `\n[PM Sync] Epic "${frontmatter.epic}" is now complete (100% progress)!\n`;
-                }
-                // Sync to GitHub if applicable
-                if (frontmatter.github_issue) {
-                    syncToGitHub(frontmatter.epic, taskFile, 'completed');
+            // Check both active and archived (done/) locations
+            const taskFile = STATE.current_task.file;
+            const activePath = path.join(PROJECT_ROOT, 'sessions', 'tasks', taskFile);
+            const archivedPath = path.join(PROJECT_ROOT, 'sessions', 'tasks', 'done', taskFile);
+            const taskPath = fs.existsSync(activePath) ? activePath : (fs.existsSync(archivedPath) ? archivedPath : null);
+            
+            if (taskPath) {
+                const taskContent = fs.readFileSync(taskPath, 'utf8');
+                const { frontmatter } = parseFrontmatter(taskContent);
+                if (frontmatter?.epic) {
+                    // Mark task as completed in epic
+                    updateEpicTaskStatus(frontmatter.epic, taskFile, 'completed');
+                    // Update epic progress
+                    updateEpicProgress(frontmatter.epic);
+                    // Check if epic is complete
+                    if (checkEpicComplete(frontmatter.epic)) {
+                        context += `\n[PM Sync] Epic "${frontmatter.epic}" is now complete (100% progress)!\n`;
+                    }
+                    // Sync to GitHub if applicable
+                    if (frontmatter.github_issue) {
+                        syncToGitHub(frontmatter.epic, taskFile, 'completed');
+                    }
                 }
             }
         } catch (error) {
@@ -578,15 +585,23 @@ if (!isApiCommand && taskStartDetected) {
 
     // Check if context is already gathered for this task
     let contextAlreadyGathered = false;
-    if (STATE.current_task?.filePath) {
+    if (STATE.current_task?.file) {
         try {
-            const taskContent = fs.readFileSync(STATE.current_task.filePath, 'utf8');
-            const { frontmatter } = parseFrontmatter(taskContent);
-            if (frontmatter) {
-                // Extract context_gathered flag (defaults to false if missing)
-                contextAlreadyGathered = frontmatter.context_gathered === true;
+            // Check both active and archived (done/) locations
+            const taskFile = STATE.current_task.file;
+            const activePath = path.join(PROJECT_ROOT, 'sessions', 'tasks', taskFile);
+            const archivedPath = path.join(PROJECT_ROOT, 'sessions', 'tasks', 'done', taskFile);
+            const taskPath = fs.existsSync(activePath) ? activePath : (fs.existsSync(archivedPath) ? archivedPath : null);
+            
+            if (taskPath) {
+                const taskContent = fs.readFileSync(taskPath, 'utf8');
+                const { frontmatter } = parseFrontmatter(taskContent);
+                if (frontmatter) {
+                    // Extract context_gathered flag (defaults to false if missing)
+                    contextAlreadyGathered = frontmatter.context_gathered === true;
+                }
+                // If frontmatter is null or flag is missing, default to false (backward compatibility)
             }
-            // If frontmatter is null or flag is missing, default to false (backward compatibility)
         } catch (error) {
             // If we can't read the file, assume context is not gathered
             contextAlreadyGathered = false;
@@ -683,16 +698,23 @@ if (!isApiCommand && taskStartDetected) {
     }
     
     // PM Sync: Update epic task status to in-progress when task starts
-    if (STATE.current_task?.filePath) {
+    if (STATE.current_task?.file) {
         try {
-            const taskContent = fs.readFileSync(STATE.current_task.filePath, 'utf8');
-            const { frontmatter } = parseFrontmatter(taskContent);
-            if (frontmatter?.epic) {
-                const taskFile = path.basename(STATE.current_task.filePath);
-                updateEpicTaskStatus(frontmatter.epic, taskFile, 'in-progress');
-                // Sync to GitHub if applicable
-                if (frontmatter.github_issue) {
-                    syncToGitHub(frontmatter.epic, taskFile, 'in-progress');
+            // Check both active and archived (done/) locations
+            const taskFile = STATE.current_task.file;
+            const activePath = path.join(PROJECT_ROOT, 'sessions', 'tasks', taskFile);
+            const archivedPath = path.join(PROJECT_ROOT, 'sessions', 'tasks', 'done', taskFile);
+            const taskPath = fs.existsSync(activePath) ? activePath : (fs.existsSync(archivedPath) ? archivedPath : null);
+            
+            if (taskPath) {
+                const taskContent = fs.readFileSync(taskPath, 'utf8');
+                const { frontmatter } = parseFrontmatter(taskContent);
+                if (frontmatter?.epic) {
+                    updateEpicTaskStatus(frontmatter.epic, taskFile, 'in-progress');
+                    // Sync to GitHub if applicable
+                    if (frontmatter.github_issue) {
+                        syncToGitHub(frontmatter.epic, taskFile, 'in-progress');
+                    }
                 }
             }
         } catch (error) {

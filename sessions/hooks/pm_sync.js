@@ -85,10 +85,18 @@ function saveEpic(epic) {
 
 /**
  * Get task status from task file
+ * Checks both active (sessions/tasks/) and archived (sessions/tasks/done/) locations
  */
 function getTaskStatus(taskFile) {
-    const taskPath = path.join(PROJECT_ROOT, 'sessions', 'tasks', taskFile);
-    if (!fs.existsSync(taskPath)) {
+    // Check active location first
+    const activePath = path.join(PROJECT_ROOT, 'sessions', 'tasks', taskFile);
+    // Check archived location
+    const archivedPath = path.join(PROJECT_ROOT, 'sessions', 'tasks', 'done', taskFile);
+    
+    // Try active location first, then archived
+    const taskPath = fs.existsSync(activePath) ? activePath : (fs.existsSync(archivedPath) ? archivedPath : null);
+    
+    if (!taskPath) {
         return null;
     }
     
