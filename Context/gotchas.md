@@ -963,6 +963,125 @@ ps aux | grep claude
 - `sessions/tasks/.task-queues.json` - Queue data structure showing path/relativePath fields
 - `context/gotchas.md` - This entry
 
+## Orchestrator Task Completion Synchronization Issue
+
+**Issue Discovered:** 2025-11-17 (during REPAIR-orchestrator-queue-path-format verification)
+**Severity:** High - Task state inconsistency, completed work not reflected
+
+### The Problem
+
+The orchestrator's completion tracking is not synchronized with actual task file states. When cloud agents finish tasks:
+
+**What SHOULD Happen:**
+1. Cloud agent completes work
+2. Task file `status` field updated to `completed`
+3. Task removed from queues
+4. Orchestrator state marks task as completed
+
+**What ACTUALLY Happens:**
+1. Cloud agent completes work ✅
+2. Task file `status` remains `pending` or `proposed` ❌
+3. Task remains in queues ❌
+4. Orchestrator state marks task as completed ✅
+
+**Impact:**
+- 6 tasks marked "completed" in orchestrator state but still show `status: pending` in task files
+- Tasks remain in context/implementation queues despite completion
+- No way to distinguish actually-completed work from pending work by looking at task files
+- Manual cleanup required to synchronize state
+
+### Evidence
+
+**Orchestrator State** (`sessions/tasks/.orchestrator-state.json`):
+```json
+{
+  "completedTasks": [
+    "m-release-v0.1.0-installable-package.md",
+    "m-create-handoff-protocol.md",
+    "h-quick-framework-fixes.md",
+    "h-implement-skill-validation-script.md",
+    "m-fix-orchestrator-code-review-warnings.md",
+    "REPAIR-pause-detection-robustness.md"
+  ]
+}
+```
+
+**Actual Task File Status:**
+```bash
+$ grep "^status:" sessions/tasks/REPAIR-pause-detection-robustness.md
+status: pending  # ❌ Should be "completed"
+```
+
+### Root Cause
+
+**Hypothesis:** Cloud agents (Cursor API) don't have write access to task files or don't update them after completion. The orchestrator only tracks completion in its own state file, not in the task files themselves.
+
+**Need to Investigate:**
+1. Does cloud agent API return completion status?
+2. Does orchestrator receive completion notification?
+3. Is there code to update task files after completion?
+4. If not, need to implement post-completion task file update
+
+### Prevention
+
+**1. Implement post-completion task file updates**
+```javascript
+// After cloud agent completes task, update task file:
+async handleTaskCompletion(task, agent) {
+  // Update orchestrator state (already done)
+  this.completedTasks.add(task.relativePath);
+
+  // NEW: Update task file status
+  await this.updateTaskFileStatus(task.path, 'completed');
+
+  // NEW: Remove from queues
+  this.queueManager.removeFromAllQueues(task.path);
+}
+```
+
+**2. Add completion verification**
+```javascript
+// Verify task state consistency
+function verifyTaskCompletion(taskPath) {
+  const frontmatter = parseFrontmatter(taskPath);
+  const inState = orchestratorState.completedTasks.includes(taskPath);
+  const inFile = frontmatter.status === 'completed';
+
+  if (inState !== inFile) {
+    console.warn(`⚠️  State mismatch: ${taskPath}`);
+    console.warn(`   Orchestrator state: ${inState ? 'completed' : 'not completed'}`);
+    console.warn(`   Task file status: ${frontmatter.status}`);
+  }
+}
+```
+
+**3. Add queue cleanup**
+- After marking task complete, remove from ALL queues
+- Verify task not in context queue, implementation queue, or processed set
+- Add periodic queue cleanup to remove completed tasks
+
+### Next Steps
+
+**REPAIR Task Needed:** `REPAIR-orchestrator-completion-sync-[YYYY-MM-DD].md`
+
+**Scope:**
+1. Implement `updateTaskFileStatus()` method in orchestrator
+2. Call it after cloud agent completion
+3. Implement `removeFromAllQueues()` in queue manager
+4. Add completion verification checks
+5. Add periodic consistency checks (orchestrator state vs task files vs queues)
+6. Test with a fresh task to verify all state updates properly
+
+**Related to:** `REPAIR-orchestrator-queue-path-format.md` (path fix revealed this issue)
+
+### Related Files
+
+- `scripts/agent-orchestrator.js` - Needs completion handler updates
+- `scripts/task-queue-manager.js` - Needs queue cleanup methods
+- `sessions/tasks/.orchestrator-state.json` - Orchestrator's completion tracking
+- `sessions/tasks/.task-queues.json` - Queue state (should remove completed tasks)
+- Task files themselves - Need status updates after completion
+
 ## Task TEMPLATE YAML Parsing Failure: 2025-11-16 [RESOLVED]
 
 **Problem:** Task template with `[placeholder]` syntax causes YAML parsing failures
