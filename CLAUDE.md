@@ -339,6 +339,32 @@ When new skill files are created in `.claude/skills/`, the framework automatical
 
 See `.claude/skills/skill-assessor/SKILL.md` for detailed assessment methodology.
 
+### 4.5.1 Skill Validation
+
+The framework includes automated skill validation to ensure file/registration consistency:
+
+**Validation Script:** `scripts/validate-skills.js`
+
+**What It Checks:**
+- All registered skills have corresponding `.md` files
+- All skill files are registered in `skill-rules.json`
+- Required fields present (type, skillType, daicMode)
+- Valid skillType values (ANALYSIS-ONLY or WRITE-CAPABLE)
+- No duplicate skill names
+- No orphaned files
+
+**Integration:**
+- Runs automatically when skill files are modified (non-blocking, warning only)
+- Included in framework health checks
+- Can be run manually: `node scripts/validate-skills.js` or `npm run validate:skills` (in scripts directory)
+
+**Exit Codes:**
+- `0` with warnings: Validation passed but has warnings
+- `0` no warnings: All skills valid
+- `1`: Validation failed with errors (fix before proceeding)
+
+See `.claude/skills/README.md` for detailed validation documentation.
+
 ---
 
 ## 4.6 Agent Registry System

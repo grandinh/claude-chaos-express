@@ -3,7 +3,7 @@
   "name": "DebtScanner",
   "description": "Monthly technical debt scanner that identifies code smells, TODOs, and improvement opportunities",
   "claudeAgentId": "check-code-debt",
-  "claudeAgentPath": "~/.claude/agents/check-code-debt.md",
+  "claudeAgentPath": ".claude/agents/check-code-debt.md",
   "trigger": {
     "type": "schedule",
     "schedule": "0 10 1 * *",

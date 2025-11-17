@@ -488,7 +488,8 @@ context_files:
   - docs/tiers_of_context.md
 ```
 
----
+```yaml
+schema_version: "1.0"
 timestamp: 2025-01-27T00:00:00Z
 from: claude
 to: claude
@@ -506,4 +507,28 @@ context_files:
   - sessions/tasks/done/REPAIR-pm-sync-task-filepath-bugs.md
   - sessions/hooks/pm_sync.js
   - sessions/hooks/user_messages.js
+```
+
+```yaml
+schema_version: "1.0"
+timestamp: 2025-11-17T11:07:38Z
+from: cursor
+to: cursor
+issue_id: none
+branch: fix/orchestrator-path-doubling
+completed:
+  - Added cursor-cloud-agents MCP server to .cursor/mcp.json configuration
+  - Configured MCP server with proper command path and environment variables
+  - Verified 9 MCP tools are available: list_agents, get_agent, get_agent_conversation, launch_agent, add_followup, delete_agent, get_api_key_info, list_models, list_repositories
+  - MCP server ready for troubleshooting orchestration bugs via agent status and conversation inspection
+next:
+  - Restart Cursor to load the new MCP configuration
+  - Verify MCP tools are accessible in Cursor interface
+  - Use list_agents and get_agent_conversation tools to debug orchestration issues
+  - Ensure CURSOR_API_TOKEN is set in environment for MCP server to function
+context_files:
+  - .cursor/mcp.json
+  - mcp-servers/cursor-cloud-agents/dist/index.js
+  - docs/api/cursor-cloud-agents-api.md
+```
 

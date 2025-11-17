@@ -213,18 +213,31 @@ In any DAIC mode, when explicitly requested or during REPAIR tasks:
 3. Count configured skills
 4. Verify DAIC modes correctly specified
 5. Check for syntax errors
+6. Run `node scripts/validate-skills.js` for comprehensive validation
 
 **Pass Criteria:**
 - skill-rules.json valid
 - All skills have type: ANALYSIS-ONLY or WRITE-CAPABLE
 - DAIC modes properly configured
 - No syntax errors
+- All registered skills have corresponding files
+- No orphaned skill files
+- All required fields present
 
 **Fail Conditions:**
 - File missing or invalid JSON
 - Skills missing required fields
 - Invalid DAIC mode values
 - Syntax errors
+- Missing skill files
+- Orphaned files detected
+
+**Validation Script:**
+- Run `node scripts/validate-skills.js` for detailed skill validation
+- Checks file/registration consistency
+- Validates required fields
+- Detects orphaned files
+- Reports errors and warnings
 ```
 
 ### 4. LCMP Freshness Test
@@ -294,6 +307,7 @@ In any DAIC mode, when explicitly requested or during REPAIR tasks:
 #### Skill Precedence
 [✓ PASS | ✗ FAIL | ⚠️ WARNING]
 [Details]
+- Run `node scripts/validate-skills.js` for comprehensive skill validation
 
 #### LCMP Freshness
 [✓ PASS | ✗ FAIL | ⚠️ WARNING]

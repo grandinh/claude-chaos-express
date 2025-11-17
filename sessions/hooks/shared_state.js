@@ -417,8 +417,16 @@ class TaskState {
 
         const tasksRoot = path.join(PROJECT_ROOT, 'sessions', 'tasks');
         let fullPath = taskPath;
-        if (file && !taskPath) fullPath = path.join(tasksRoot, file);
-        if (!fs.existsSync(fullPath)) throw new Error(`Task file ${fullPath} does not exist.`);
+        if (file && !taskPath) {
+            // Check both active and archived locations
+            const activePath = path.join(tasksRoot, file);
+            const archivedPath = path.join(tasksRoot, 'done', file);
+            fullPath = fs.existsSync(activePath) ? activePath : (fs.existsSync(archivedPath) ? archivedPath : null);
+        }
+        if (!fullPath || !fs.existsSync(fullPath)) {
+            const attemptedPath = file && !taskPath ? path.join(tasksRoot, file) : fullPath;
+            throw new Error(`Task file ${attemptedPath} does not exist in active or archived location.`);
+        }
 
         const content = fs.readFileSync(fullPath, 'utf8');
         const fmStart = content.indexOf('---');

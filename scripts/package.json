@@ -7,6 +7,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:integration": "jest orchestrator-integration.test.js",
+    "test:cloud-agents": "node test-cloud-agent-infrastructure.js",
+    "test:webhooks": "node test-webhook-setup.js",
     "queue-manager": "node task-queue-manager.js",
     "queue-status": "node task-queue-manager.js --status",
     "queue-validate": "node task-queue-manager.js --validate",
@@ -17,6 +19,7 @@
     "dependency-check": "node dependency-graph.js --check-cycles",
     "agent-registry": "node agent-registry.js",
     "validate-all": "npm run dependency-check && npm run agent-registry validate && npm test",
+    "validate:skills": "node validate-skills.js",
     "watch-automation": "node watch-cursor-automation.js",
     "automation-status": "node automation-status.js",
     "health-check": "./health-check.sh"

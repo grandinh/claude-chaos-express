@@ -3,7 +3,7 @@
   "name": "CommitGen",
   "description": "Optional PR commit message generator that analyzes diffs and suggests conventional commit messages",
   "claudeAgentId": "commit-changes",
-  "claudeAgentPath": "~/.claude/agents/commit-changes.md",
+  "claudeAgentPath": ".claude/agents/commit-changes.md",
   "trigger": {
     "type": "webhook",
     "events": ["pull_request.opened"],

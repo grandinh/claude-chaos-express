@@ -483,6 +483,58 @@ The `framework_health_check` skill now includes skill system validation:
 
 ---
 
+## Skill Validation
+
+Run the validation script to check for skill file/registration consistency:
+
+```bash
+node scripts/validate-skills.js
+```
+
+**What it checks:**
+- All registered skills have corresponding `.md` files
+- All skill files are registered in `skill-rules.json`
+- Required fields are present in `skill-rules.json` entries
+- `skillType` values are valid (ANALYSIS-ONLY or WRITE-CAPABLE)
+- No duplicate skill names
+- No orphaned files
+
+**Integration:**
+- Validation runs automatically when skill files are modified (warning only, non-blocking)
+- Run manually before committing skill changes
+- Add to CI/CD pipeline for automated checks
+- Included in framework health checks
+
+**Exit Codes:**
+- `0` with warnings: Validation passed but has warnings
+- `0` no warnings: All skills valid
+- `1`: Validation failed with errors (fix before proceeding)
+
+**Example Output:**
+```
+Validating Skills...
+==================================================
+✓ Loaded skill-rules.json
+
+Found 21 registered skills
+Found 21 skill files
+
+Checking registered skills...
+✓ skill-developer - Valid
+✓ cc-sessions-core - Valid
+...
+
+Validation Summary:
+  Total registered skills: 21
+  Total skill files: 21
+  Errors: 0
+  Warnings: 1
+
+✓ All skills validated successfully!
+```
+
+---
+
 ## Related Documentation
 
 - **`claude.md`** – Framework overview, Section 4 (Skills)

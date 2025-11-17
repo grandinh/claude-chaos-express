@@ -405,6 +405,51 @@ Check that skill-rules.json is valid JSON.
                 }
             }
         }
+
+        // Skill validation on file changes (non-blocking)
+        // Check if skill file or skill-rules.json was modified
+        if (filePath.startsWith(skillsPath)) {
+            // Run validation asynchronously (non-blocking, warning only)
+            // Use setTimeout to defer execution and avoid blocking hook
+            setTimeout(() => {
+                try {
+                    const validationScript = path.join(PROJECT_ROOT, 'scripts', 'validate-skills.js');
+                    
+                    if (fs.existsSync(validationScript)) {
+                        try {
+                            execSync(`node "${validationScript}"`, { 
+                                cwd: PROJECT_ROOT,
+                                stdio: 'pipe',
+                                timeout: 5000,
+                                encoding: 'utf8'
+                            });
+                        } catch (error) {
+                            // Validation failed - log warning but don't block
+                            // Check if it's a validation failure (exit code 1) or execution error
+                            // Only log if it's not a timeout (timeouts are expected in some cases)
+                            if (error.signal !== 'SIGTERM') {
+                                // error.status === 1 means validation found issues (expected)
+                                // error.status === undefined or other means script execution error
+                                if (error.status === 1) {
+                                    console.error(`
+[Skill Validation] Warning: Skill validation detected issues.
+Run "node scripts/validate-skills.js" for details.
+`);
+                                } else if (error.status !== undefined) {
+                                    // Other non-zero exit code - script execution error
+                                    console.error(`
+[Skill Validation] Error: Validation script failed with exit code ${error.status}.
+Run "node scripts/validate-skills.js" for details.
+`);
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    // Silently fail - validation is optional
+                }
+            }, 100); // 100ms delay to avoid blocking hook execution
+        }
     }
 }
 //!<

@@ -3,7 +3,7 @@
   "name": "A11yGuard",
   "description": "Accessibility compliance checker triggered on pull requests affecting UI components",
   "claudeAgentId": "check-accessibility",
-  "claudeAgentPath": "~/.claude/agents/check-accessibility.md",
+  "claudeAgentPath": ".claude/agents/check-accessibility.md",
   "trigger": {
     "type": "webhook",
     "events": ["pull_request.opened", "pull_request.synchronize"],

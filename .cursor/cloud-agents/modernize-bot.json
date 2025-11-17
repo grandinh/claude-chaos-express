@@ -3,7 +3,7 @@
   "name": "ModernizeBot",
   "description": "Quarterly code modernization agent that identifies outdated APIs and suggests modern alternatives",
   "claudeAgentId": "check-modern-code",
-  "claudeAgentPath": "~/.claude/agents/check-modern-code.md",
+  "claudeAgentPath": ".claude/agents/check-modern-code.md",
   "trigger": {
     "type": "schedule",
     "schedule": "0 11 1 1,4,7,10 *",
