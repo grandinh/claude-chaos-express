@@ -2,35 +2,41 @@
   "agents": [
     {
       "id": "agent-1",
+      "status": "working",
+      "currentTask": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-pause-detection-robustness.md",
+      "role": "context",
+      "startedAt": "2025-11-17T09:50:02.487Z",
+      "completedTasks": 5,
+      "pid": null,
+      "cloudAgentId": "bc-f8bec4e4-b6a1-45ae-b16d-1eb921376eaf"
+    },
+    {
+      "id": "agent-2",
       "status": "idle",
       "currentTask": null,
       "role": null,
-      "startedAt": "2025-11-17T08:22:32.564Z",
+      "startedAt": null,
       "completedTasks": 0,
       "pid": null,
       "cloudAgentId": null
     },
     {
-      "id": "agent-2",
-      "status": "working",
-      "currentTask": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-fix-orchestrator-status-npm-command.md",
-      "role": "context",
-      "startedAt": "2025-11-17T08:22:32.527Z",
-      "completedTasks": 0,
-      "pid": 37006,
-      "cloudAgentId": null
-    },
-    {
       "id": "agent-3",
-      "status": "working",
-      "currentTask": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-fix-missing-ccpm-next-script.md",
-      "role": "context",
-      "startedAt": "2025-11-17T08:22:32.539Z",
+      "status": "idle",
+      "currentTask": null,
+      "role": null,
+      "startedAt": null,
       "completedTasks": 0,
-      "pid": 37012,
+      "pid": null,
       "cloudAgentId": null
     }
   ],
-  "completedTasks": [],
-  "lastUpdated": "2025-11-17T08:22:33.594Z"
+  "completedTasks": [
+    "m-release-v0.1.0-installable-package.md",
+    "m-create-handoff-protocol.md",
+    "h-quick-framework-fixes.md",
+    "h-implement-skill-validation-script.md",
+    "m-fix-orchestrator-code-review-warnings.md"
+  ],
+  "lastUpdated": "2025-11-17T09:50:05.577Z"
 }

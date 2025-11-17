@@ -499,7 +499,9 @@ class AgentOrchestrator {
         if (queueName === 'context') {
             // Update task file flag
             this.updateTaskFlag(task.path, 'context_gathered', true);
-            this.queueManager.moveToImplementationQueue(task.path);
+            // Re-route task to implementation queue (since it was removed from context queue on assignment)
+            // moveToImplementationQueue expects task to be in context queue, so use routeTask instead
+            this.queueManager.routeTask(task.path, true); // skipValidation since we just set context_gathered=true
         }
 
         this.saveState();

@@ -473,8 +473,9 @@ class TaskQueueManager {
 
         // Score all tasks in queue
         const scoredTasks = queue.map(task => {
-            // Check if dependencies are satisfied
-            const depCheck = this.dependencyGraph.checkDependenciesSatisfied(
+            // Check dependencies for all tasks (both context and implementation)
+            let depCheck = { satisfied: true, blocking: [] };
+            depCheck = this.dependencyGraph.checkDependenciesSatisfied(
                 task.relativePath,
                 completedTasks,
                 this.tasksDir
@@ -493,11 +494,16 @@ class TaskQueueManager {
             };
         });
 
-        // Filter out blocked tasks (score < 0)
-        const eligibleTasks = scoredTasks.filter(st => st.dependenciesSatisfied);
+        // Filter out blocked tasks ONLY for implementation queue
+        // Context tasks remain eligible even if blocked (they're just lower priority)
+        const eligibleTasks = queueName === 'implementation'
+            ? scoredTasks.filter(st => st.dependenciesSatisfied)
+            : scoredTasks; // All context tasks are eligible, regardless of dependencies
 
         if (eligibleTasks.length === 0) {
-            console.log(`⏸️  All tasks in ${queueName} queue are blocked by dependencies`);
+            if (queueName === 'implementation') {
+                console.log(`⏸️  All tasks in ${queueName} queue are blocked by dependencies`);
+            }
             return null;
         }
 

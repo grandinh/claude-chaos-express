@@ -81,7 +81,9 @@ class DependencyGraph {
 
         if (!this.adjacencyList.has(normalizedTask)) {
             this.adjacencyList.set(normalizedTask, []);
-            this.reverseList.set(normalizedTask, []);
+            if (!this.reverseList.has(normalizedTask)) {
+                this.reverseList.set(normalizedTask, []);
+            }
         }
 
         // Normalize and add dependencies

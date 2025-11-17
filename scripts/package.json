@@ -18,7 +18,8 @@
     "agent-registry": "node agent-registry.js",
     "validate-all": "npm run dependency-check && npm run agent-registry validate && npm test",
     "watch-automation": "node watch-cursor-automation.js",
-    "automation-status": "node automation-status.js"
+    "automation-status": "node automation-status.js",
+    "health-check": "./health-check.sh"
   },
   "jest": {
     "testEnvironment": "node",

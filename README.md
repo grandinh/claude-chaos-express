@@ -63,6 +63,28 @@ npm install
 npm run summon
 ```
 
+**Before awakening**, you may verify the integrity of the containment systems:
+
+```bash
+./scripts/health-check.sh
+# OR from scripts directory:
+cd scripts && npm run health-check
+```
+
+This will check:
+- 🜄 Cursor Rules (`.cursor/rules/cursor-agent-operating-spec.mdc`)
+- 🜂 Claude Code Documentation (`CLAUDE.md`, `claude-reference.md`)
+- 🜏 Handoff Log (`docs/ai_handoffs.md`)
+- 🜁 Session State (`sessions/sessions-state.json`)
+- 🜃 Agent Registry (`repo_state/agent-registry.json`)
+- 🜅 Git State (repository and branch status)
+- 🜆 Alignment Check (system drift detection)
+
+**Exit codes:**
+- `0` = All systems operational (safe to proceed)
+- `1` = Warnings detected (system operational but advisories present)
+- `2` = Critical errors (repair required before awakening)
+
 You will see:
 
 ```

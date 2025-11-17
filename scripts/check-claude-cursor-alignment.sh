@@ -26,13 +26,13 @@ echo ""
 # Function to report issue
 report_issue() {
     echo -e "${RED}✗ ISSUE: $1${NC}"
-    ((ISSUES_FOUND++))
+    ISSUES_FOUND=$((ISSUES_FOUND + 1))
 }
 
 # Function to report success
 report_success() {
     echo -e "${GREEN}✓ PASS: $1${NC}"
-    ((CHECKS_PASSED++))
+    CHECKS_PASSED=$((CHECKS_PASSED + 1))
 }
 
 # Function to report warning

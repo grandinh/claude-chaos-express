@@ -824,3 +824,99 @@ const content = fs.readFileSync(task.path, 'utf8');
 - `sessions/tasks/REPAIR-orchestrator-queue-path-format.md` - REPAIR task documenting both path bugs
 
 ---
+
+## Graph Algorithm Debugging: When Detection Methods Disagree
+
+**Date:** 2025-11-17
+**Context:** Orchestrator deadlock investigation (dependency graph false cycle detection)
+**Impact:** Established diagnostic pattern for graph algorithm bugs
+
+### Key Insight: Contradictory Results Signal Implementation Bug, Not Data Issue
+
+When two cycle detection algorithms (topological sort and DFS) disagree about circular dependencies, the issue is almost always in the **algorithm implementation**, not the graph structure.
+
+**The Pattern:**
+```
+Topological Sort: "Cycle detected" (108/109 tasks sorted)
+DFS Cycle Detection: "No cycles found"
+→ Contradiction = Implementation bug, not circular dependency
+```
+
+### Why This Matters
+
+**Initial Instinct (Wrong):**
+"The task dependency graph must have a subtle circular reference that DFS can't detect"
+- Leads to manually inspecting 109 task files
+- Wastes time analyzing task relationships
+- Misses the actual bug in topological sort implementation
+
+**Correct Diagnosis:**
+"Two well-established algorithms shouldn't disagree - one must be implemented incorrectly"
+- Focus on algorithm code, not data
+- Compare implementation against textbook algorithm
+- Look for state corruption or conditional logic errors
+
+### Root Cause Pattern
+
+**The bug was state corruption in bidirectional graph structure:**
+```javascript
+// BUG: Unconditional overwrite of reverse adjacency list
+if (!this.adjacencyList.has(task)) {
+    this.adjacencyList.set(task, []);
+    this.reverseList.set(task, []);  // ← Overwrites existing entries!
+}
+
+// FIX: Conditional initialization preserves existing entries
+if (!this.reverseList.has(task)) {
+    this.reverseList.set(task, []);
+}
+```
+
+**Why it caused false cycle detection:**
+1. Task A added with dependency on Task B → Reverse list: `B → [A]`
+2. Task B added later → Line 84: `reverseList.set(B, [])` ← **Overwrites to empty!**
+3. Topological sort can't find Task B's dependents (reverse list empty)
+4. Task A's in-degree never decrements to 0
+5. Task A never becomes "ready" → reported as false cycle
+
+### Diagnostic Workflow
+
+**When graph algorithms disagree:**
+
+1. **Verify contradiction** - Run both methods, confirm disagreement
+2. **Create diagnostic tool** - Build minimal reproduction (`diagnose-cycle.js`)
+3. **Inspect algorithm state** - Print intermediate data structures
+4. **Compare to reference** - Check against textbook implementation
+5. **Test fix** - Verify both methods now agree
+
+### Prevention Checklist
+
+- Never unconditionally overwrite map entries
+- Test with different insertion orders
+- Verify bidirectional consistency (forward + reverse graphs match)
+- Use multiple detection methods (should agree)
+- Add state inspection tools
+
+### Work Log (2025-11-17)
+
+**Session Summary:**
+- Reproduced orchestrator deadlock (0% completion rate)
+- Topological sort reported cycle, DFS found none (contradiction!)
+- Created diagnostic tool exposing state corruption
+- Fixed unconditional overwrite bug in `dependency-graph.js:84-86`
+- Verified: 109/109 tasks sorted correctly, both algorithms agree
+- Test suite: 152/152 passing
+- Documented pattern for future debugging
+
+**Key Learning:**
+Algorithm contradiction points to implementation bug, not data issue. Diagnostic tools tracing intermediate state are essential.
+
+### Related Files
+
+- `scripts/dependency-graph.js:84-86` - Fixed bug
+- `scripts/diagnose-cycle.js` - Diagnostic tool
+- `scripts/find-missing-deps.js` - Dependency analysis tool
+- `context/gotchas.md` - Comprehensive bug documentation
+- `sessions/tasks/m-create-handoff-protocol.md` - Task exposing bug
+
+---

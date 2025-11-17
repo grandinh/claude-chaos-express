@@ -1413,3 +1413,320 @@ $ npm test && npm test && npm test
 - `context/gotchas.md` - This entry
 
 ---
+
+## Dependency Graph False Cycle Detection Bug
+
+**Issue Discovered:** 2025-11-17
+**Context:** Multi-agent orchestrator deadlock investigation
+**Severity:** Critical - Caused 0% task completion rate system-wide
+
+### The Problem
+
+The dependency graph topological sort was reporting false circular dependencies, causing the orchestrator to deadlock with 0% completion rate despite 103 tasks processed.
+
+**Symptoms:**
+```bash
+# Topological sort:
+❌ Cannot produce topological sort (cycle detected)
+   Nodes in cycle: m-create-handoff-protocol.md
+   Sorted: 108/109 tasks
+
+# DFS cycle detection:
+✅ No circular dependencies found
+
+# Orchestrator status:
+Total Processed: 103
+Total Completed: 0  # 0% completion rate!
+```
+
+**Impact:**
+- All 109 tasks blocked from completion
+- Orchestrator appeared "working" but made zero progress
+- Context queue ratio: 95% (massive backlog)
+- No actual circular dependencies existed in task graph
+
+### Root Cause
+
+**File:** `scripts/dependency-graph.js`, lines 82-84
+
+**Bug:** The `addTask()` method unconditionally overwrites the reverse adjacency list (dependents) when adding a task node, even if other tasks already depend on it.
+
+```javascript
+// BUGGY CODE:
+if (!this.adjacencyList.has(normalizedTask)) {
+    this.adjacencyList.set(normalizedTask, []);
+    this.reverseList.set(normalizedTask, []);  // ← Bug: Overwrites existing entries!
+}
+```
+
+**What happens:**
+1. Task A added with dependency on Task B
+   - Creates reverse list entry: `Task B → [Task A]`
+2. Task B added to graph later
+   - Line 84 executes: `reverseList.set('Task B', [])` ← **Overwrites!**
+   - Now: `Task B → []` (lost the dependent!)
+3. Topological sort processes Task B, tries to decrement in-degree of dependents
+   - No dependents found (reverse list is empty)
+   - Task A's in-degree never decrements to 0
+   - Task A never becomes "ready"
+4. Topological sort completes with Task A unprocessed
+   - Reports false cycle: "Task A is in a cycle"
+5. Orchestrator blocks all tasks waiting for non-existent cycle to resolve
+
+**Example:**
+```javascript
+// Task creation order matters (bug only triggers in specific orders):
+graph.addTask('m-create-handoff-protocol.md', ['m-implement-task-registry.md']);
+// → Creates: reverseList['m-implement-task-registry.md'] = ['m-create-handoff-protocol.md']
+
+graph.addTask('m-implement-task-registry.md', []);
+// → Overwrites: reverseList['m-implement-task-registry.md'] = []  ← Bug!
+
+// Topological sort fails:
+// - m-implement-task-registry.md has no dependents (reverse list empty)
+// - m-create-handoff-protocol.md in-degree never decrements
+// - m-create-handoff-protocol.md reported as "in cycle"
+```
+
+### The Fix
+
+**Applied:** 2025-11-17
+
+Added conditional check to preserve existing reverse list entries:
+
+```javascript
+// FIXED CODE:
+if (!this.adjacencyList.has(normalizedTask)) {
+    this.adjacencyList.set(normalizedTask, []);
+    if (!this.reverseList.has(normalizedTask)) {  // ← Only init if doesn't exist
+        this.reverseList.set(normalizedTask, []);
+    }
+}
+```
+
+**Verification:**
+```bash
+# After fix:
+$ node scripts/dependency-graph.js
+✅ No circular dependencies found
+✅ Topological sort: 109/109 tasks sorted
+
+$ node scripts/diagnose-cycle.js
+✅ NO CYCLE (topological sort)
+✅ NO CYCLE (DFS detection)
+Sorted count: 109 / 109
+```
+
+### Prevention
+
+**1. Never unconditionally overwrite map entries**
+```javascript
+// ✅ CORRECT - Check before initializing
+if (!map.has(key)) {
+    map.set(key, defaultValue);
+}
+
+// ❌ WRONG - Always overwrites
+map.set(key, defaultValue);
+```
+
+**2. Test with different insertion orders**
+```javascript
+// Test both orders - bug may only appear in one:
+graph.addTask('A', ['B']);
+graph.addTask('B', []);
+
+// AND reverse order:
+graph.addTask('B', []);
+graph.addTask('A', ['B']);
+```
+
+**3. Verify reverse relationships**
+```javascript
+// After building graph, verify:
+for (const [task, deps] of graph.adjacencyList) {
+    deps.forEach(dep => {
+        const reverseList = graph.reverseList.get(dep) || [];
+        assert(reverseList.includes(task),
+            `Reverse list for ${dep} missing dependent ${task}`);
+    });
+}
+```
+
+**4. Use both detection algorithms**
+```javascript
+// DFS and topological sort should agree:
+const dfs = graph.detectCircularDependencies();
+const topo = graph.topologicalSort();
+
+assert(dfs.hasCycle === topo.hasCycle,
+    'DFS and topological sort disagree on cycle detection');
+```
+
+### Related Files
+
+- `scripts/dependency-graph.js:84-86` - Fixed lines
+- `scripts/diagnose-cycle.js` - Diagnostic tool created during debugging
+- `scripts/find-missing-deps.js` - Diagnostic tool for missing dependencies
+- `sessions/tasks/m-create-handoff-protocol.md` - Task that exposed the bug
+- `context/gotchas.md` - This entry
+
+### Lessons Learned
+
+1. **Symptom contradiction is a red flag** - Topological sort said "cycle", DFS said "no cycle" → investigate algorithm implementation, not task dependencies
+2. **Order-dependent bugs are hard to catch** - Bug only manifested when tasks added in specific order (dependency before dependent)
+3. **False positives can deadlock systems** - A detection bug is as bad as the condition it's detecting
+4. **Diagnostic tools are essential** - Created `diagnose-cycle.js` to trace exact behavior and expose contradiction
+5. **Test both forward and reverse directions** - Graph algorithms depend on bidirectional consistency
+
+### Work Log (2025-11-17)
+
+**Session Summary:**
+- Reproduced orchestrator deadlock (0% completion rate, 103 processed tasks)
+- Root cause investigation identified false circular dependency detection
+- Fixed bug in `dependency-graph.js:84-86` (conditional check for reverse list)
+- Created diagnostic tools (`diagnose-cycle.js`, `find-missing-deps.js`)
+- Verified fix: all 109 tasks now sort correctly
+- Test suite: 152/152 passing (no regressions)
+- Documented in comprehensive gotcha entry above
+
+**Key Discovery:**
+The bug only manifested when tasks were added in the "wrong" order (dependency referenced before dependent node created). This made it difficult to catch during initial development but caused complete system deadlock in production.
+
+**Prevention Added:**
+- Conditional check now preserves existing reverse list entries
+- Diagnostic tools available for future debugging
+- Documentation includes verification steps and testing guidance
+
+---
+
+## Bash Arithmetic Expressions with set -e Cause Premature Exit
+
+**Date:** 2025-11-17
+**Severity:** Medium (causes scripts to fail silently)
+**Category:** Tooling / Scripting
+**Affects:** Shell scripts using `set -euo pipefail` with arithmetic counters
+
+### The Problem
+
+Shell scripts using `((COUNTER++))` for incrementing counters fail prematurely when combined with `set -e` (exit on error) mode.
+
+**Root Cause:**
+- In Bash, arithmetic expressions `(( expr ))` return exit codes based on the expression value:
+  - Exit 0 (success) if expression evaluates to **non-zero**
+  - Exit 1 (failure) if expression evaluates to **zero**
+- When `COUNTER` is 0, `((COUNTER++))` evaluates to 0 (the value **before** increment)
+- This returns exit code 1, triggering `set -e` to terminate the script
+- Counter gets incremented to 1, but script exits before continuing
+
+**Example:**
+```bash
+#!/bin/bash
+set -euo pipefail
+
+COUNTER=0
+
+increment() {
+    ((COUNTER++))  # Evaluates to 0 on first call → exit 1 → script terminates
+}
+
+increment  # Script exits here!
+echo "Never reached"
+```
+
+### Affected Scripts
+
+1. **`scripts/health-check.sh`** (fixed 2025-11-17)
+   - Failed after first successful check
+   - Only displayed 7 lines of output instead of full report
+   - Exit code 1 made health check appear broken
+
+2. **`scripts/check-claude-cursor-alignment.sh`** (fixed 2025-11-17)
+   - Failed after first check
+   - Caused health check to report false "alignment issues"
+   - Exit code 1 prevented seeing actual alignment status
+
+### The Fix
+
+**Replace:** `((COUNTER++))`
+**With:** `COUNTER=$((COUNTER + 1))`
+
+This always returns exit code 0 regardless of counter value.
+
+**Before (broken):**
+```bash
+report_success() {
+    echo -e "${GREEN}✓ $1${NC}"
+    ((CHECKS_PASSED++))  # ← Fails when counter is 0
+}
+```
+
+**After (fixed):**
+```bash
+report_success() {
+    echo -e "${GREEN}✓ $1${NC}"
+    CHECKS_PASSED=$((CHECKS_PASSED + 1))  # ← Always succeeds
+}
+```
+
+### Alternative Fixes
+
+1. **Ignore exit code:** `((COUNTER++)) || true`
+2. **Use colon command:** `: $((COUNTER++))`
+3. **Assignment form:** `COUNTER=$((COUNTER + 1))` ✅ (preferred for clarity)
+
+### Detection
+
+**Symptoms:**
+- Script exits after first function call that increments a counter
+- No error message displayed
+- Exit code 1 (not 0 or 2)
+- Truncated output (stops mid-execution)
+
+**Diagnosis:**
+```bash
+# Test arithmetic expression behavior
+bash -c 'set -euo pipefail; X=0; ((X++)); echo "Reached"'
+# Output: (none) - script exits
+
+bash -c 'set -euo pipefail; X=0; X=$((X + 1)); echo "Reached"'
+# Output: Reached - script continues
+```
+
+### Prevention
+
+**For new scripts:**
+1. Use `COUNTER=$((COUNTER + 1))` instead of `((COUNTER++))`
+2. Test scripts with `set -euo pipefail` from the start
+3. Verify counters start at 0 during testing (edge case)
+
+**For existing scripts:**
+1. Grep for arithmetic expressions: `grep -n '((.*.++))' scripts/*.sh`
+2. Check for `set -e` usage: `grep -n 'set -.*e' scripts/*.sh`
+3. Test with counter starting at 0
+
+### Impact
+
+**Before fix:**
+- Health check script unusable (appeared broken)
+- Alignment check falsely reported issues
+- Debugging was time-consuming (no obvious error)
+
+**After fix:**
+- Both scripts complete all checks successfully
+- Health check shows 7 checks passed, 1 warning (alignment)
+- Alignment check shows 20 checks passed
+
+### Related Files
+
+- `scripts/health-check.sh` - Fixed lines 38, 44, 50
+- `scripts/check-claude-cursor-alignment.sh` - Fixed lines 29, 35
+- `sessions/tasks/h-create-health-check-script.md` - Original task
+
+### References
+
+- Bash Manual: "((expression))" - Returns status 0 or 1 based on evaluation
+- POSIX: Arithmetic expressions and exit status behavior
+- StackOverflow: "Why does my counter fail with set -e?"
+
+---
