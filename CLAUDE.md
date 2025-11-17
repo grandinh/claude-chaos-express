@@ -347,22 +347,48 @@ See `.claude/skills/skill-assessor/SKILL.md` for detailed assessment methodology
 The project includes a centralized agent registry system that tracks all Claude Code subagents and Cursor Cloud Agents.
 
 **Registry Location:** `repo_state/agent-registry.json`
+**Schema Location:** `repo_state/agent-registry-schema.json`
 **Management CLI:** `scripts/agent-registry.js`
 **Documentation:** See `repo_state/README.md` and `scripts/README.md`
+
+### Bootstrap and Validation
+
+**First-time setup or after schema corruption:**
+
+```bash
+# Bootstrap registry (creates schema and initial registry if missing)
+node scripts/agent-registry.js init
+
+# Validate registry integrity against schema
+node scripts/agent-registry.js validate
+```
+
+The `init` command:
+- Checks if schema exists (graceful if already present)
+- Validates existing registry if found
+- Generates initial registry from agent files if missing
+- Provides guidance on filesystem state verification
+
+The `validate` command:
+- Verifies registry structure against JSON schema
+- Reports agent counts and last sync time
+- Shows detailed validation errors if any
+
+**Note:** Schema validation is **required** for all write operations (sync, create, link, warn, archive, generate-docs). Read-only commands (check, validate) work even without schema.
 
 ### Quick Commands
 
 ```bash
-# Sync registry with current agents
+# Sync registry with current agents (requires schema)
 node scripts/agent-registry.js sync
 
-# Check for duplicates before creating
+# Check for duplicates before creating (works without schema)
 node scripts/agent-registry.js check <agent-name>
 
-# Create new Claude agent
+# Create new Claude agent (requires schema)
 node scripts/agent-registry.js create claude --name <name> --category <category>
 
-# Auto-generate documentation
+# Auto-generate documentation (requires schema)
 node scripts/agent-registry.js generate-docs
 ```
 

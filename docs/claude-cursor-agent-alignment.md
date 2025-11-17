@@ -19,7 +19,7 @@ Both systems should be documented, mapped, and synchronized to avoid confusion a
 <!-- AUTO-GENERATED:START:registry-reference -->
 **Source of Truth:** All Claude agent definitions are maintained in `repo_state/agent-registry.json`. Use `node scripts/agent-registry.js sync` to update the registry from `.claude/agents/` changes.
 
-*Last updated: 2025-11-16T17:30:00.477Z | Registry version 1.0.0*
+*Last updated: 2025-11-17T00:29:55.208Z | Registry version 1.0.0*
 <!-- AUTO-GENERATED:END:registry-reference -->
 
 ---
@@ -38,7 +38,7 @@ Both systems should be documented, mapped, and synchronized to avoid confusion a
 
 **Note:** Cloud Agent use cases and triggers are maintained manually. Agent definitions are sourced from the registry.
 
-*Last updated: 2025-11-16T17:30:00.477Z | Auto-generated from `repo_state/agent-registry.json` (v1.0.0)*
+*Last updated: 2025-11-17T00:29:55.208Z | Auto-generated from `repo_state/agent-registry.json` (v1.0.0)*
 <!-- AUTO-GENERATED:END:agent-mapping -->
 
 ### High-Potential Automation Candidates (Manual Reference)

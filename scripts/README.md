@@ -5,6 +5,12 @@ Management scripts for the agent registry system.
 ## Quick Start
 
 ```bash
+# Bootstrap registry (first-time setup or recovery)
+node scripts/agent-registry.js init
+
+# Validate registry integrity
+node scripts/agent-registry.js validate
+
 # Sync registry with current agents
 node scripts/agent-registry.js sync
 
@@ -28,6 +34,72 @@ node scripts/agent-registry.js archive <agent>
 
 # Generate documentation
 node scripts/agent-registry.js generate-docs
+```
+
+## Command Reference
+
+### Init Command
+
+**Purpose:** Bootstrap the registry system by creating schema and initial registry if missing.
+
+**Usage:** `node scripts/agent-registry.js init`
+
+**When to use:**
+- First-time repository setup
+- Recovery after schema deletion or corruption
+- Verifying registry system integrity
+
+**What it does:**
+1. Verifies schema validator is loaded (reports error if not)
+2. Checks if registry exists
+   - If exists: Validates registry and suggests `sync`
+   - If missing: Runs `sync` to generate from agent files
+3. Reports status and suggests next steps
+
+**Safe to run multiple times:** Yes, idempotent operation.
+
+### Validate Command
+
+**Purpose:** Verify registry structure against JSON schema.
+
+**Usage:** `node scripts/agent-registry.js validate`
+
+**When to use:**
+- After manual registry edits
+- Before committing registry changes
+- Diagnosing validation errors
+- In CI/CD pipelines
+
+**What it does:**
+1. Loads schema and registry
+2. Validates registry using `ajv`
+3. Reports validation status and agent counts
+4. Shows detailed errors if validation fails
+
+**Exit codes:**
+- 0: Registry is valid
+- 1: Validation failed or files missing
+
+### Schema Requirements
+
+**Write operations require schema:**
+- sync, create, link, warn, archive, generate-docs
+
+**Read operations work without schema:**
+- check (requires registry only)
+- validate (reports error if schema missing)
+- init (bootstraps schema if missing)
+
+**If schema is missing during write operation:**
+
+```bash
+✗ Schema validation unavailable
+ℹ The registry schema could not be loaded. This is required for write operations.
+
+ℹ To fix this:
+  1. Check that repo_state/agent-registry-schema.json exists
+  2. Run: node scripts/agent-registry.js validate --schema
+  3. If schema is missing, restore it from version control
 ```
 
 ## Generate-Docs Command

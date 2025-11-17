@@ -41,16 +41,30 @@ const MAX_TRIGGERS_PER_SKILL = 100; // Limit skill trigger count to prevent bloa
 
 // Initialize schema validator (compile once)
 let schemaValidator = null;
-try {
-  const schemaContent = fs.readFileSync(SCHEMA_PATH, 'utf8');
-  const schema = JSON.parse(schemaContent);
-  const ajv = new Ajv({ allErrors: true, verbose: true });
-  addFormats(ajv);
-  schemaValidator = ajv.compile(schema);
-} catch (err) {
-  console.error(`Failed to load schema: ${err.message}`);
-  process.exit(1);
+
+function loadSchema() {
+  try {
+    if (!fs.existsSync(SCHEMA_PATH)) {
+      error(`Schema file not found: ${SCHEMA_PATH}`);
+      info('Run "node scripts/agent-registry.js init" to bootstrap the registry');
+      return null;
+    }
+    const schemaContent = fs.readFileSync(SCHEMA_PATH, 'utf8');
+    const schema = JSON.parse(schemaContent);
+    const ajv = new Ajv({ allErrors: true, verbose: true });
+    addFormats(ajv);
+    return ajv.compile(schema);
+  } catch (err) {
+    error(`Failed to load schema: ${err.message}`);
+    if (err.code === 'ENOENT') {
+      info('Run "node scripts/agent-registry.js init" to bootstrap the registry');
+    }
+    return null;
+  }
 }
+
+// Load schema on startup (but don't exit if missing - allow init command)
+schemaValidator = loadSchema();
 
 // Colors for terminal output
 const colors = {
@@ -1285,6 +1299,103 @@ function cmdGenerateSkillRules() {
   }
 }
 
+//!> Initialize registry (bootstrap)
+function cmdInit() {
+  info('Initializing agent registry...');
+
+  // Schema already exists (we're running this code, so schema was loaded or created)
+  if (schemaValidator) {
+    success('Schema is already loaded');
+  } else {
+    // This shouldn't happen since we load schema on startup, but handle it anyway
+    error('Schema validator failed to initialize');
+    info('Check repo_state/agent-registry-schema.json for syntax errors');
+    process.exit(1);
+  }
+
+  // Check if registry exists
+  if (fs.existsSync(REGISTRY_PATH)) {
+    info(`Registry already exists: ${REGISTRY_PATH}`);
+
+    // Validate existing registry
+    try {
+      const registry = loadRegistry();
+      validateRegistry(registry);
+      success('Existing registry is valid!');
+      info('Use "sync" to update registry from agent files');
+    } catch (err) {
+      warning('Existing registry has validation errors');
+      error(err.message);
+      info('Run "sync" to regenerate registry from agent files');
+    }
+  } else {
+    // Generate initial registry
+    info('No registry found. Generating initial registry from agent files...');
+    cmdSync({});
+    success(`Created registry: ${REGISTRY_PATH}`);
+    console.log('');
+    info('Registry initialized successfully!');
+    console.log('');
+    info('Next steps:');
+    info('  1. Run: node scripts/agent-registry.js validate  # Verify registry integrity');
+    info('  2. Run: node scripts/agent-registry.js sync      # Sync with filesystem if needed');
+  }
+}
+//!<
+
+//!> Validate registry against schema
+function cmdValidate() {
+  if (!schemaValidator) {
+    error('Schema validator not initialized');
+    info('Check repo_state/agent-registry-schema.json for syntax errors');
+    process.exit(1);
+  }
+
+  if (!fs.existsSync(REGISTRY_PATH)) {
+    error(`Registry file not found: ${REGISTRY_PATH}`);
+    info('Run "node scripts/agent-registry.js init" to create it');
+    process.exit(1);
+  }
+
+  try {
+    const registryContent = fs.readFileSync(REGISTRY_PATH, 'utf8');
+    const registry = JSON.parse(registryContent);
+
+    const valid = schemaValidator(registry);
+
+    if (valid) {
+      success('Registry is valid!');
+      console.log('');
+      info(`Total agents: ${registry.metadata.totalAgents}`);
+      info(`  Claude agents: ${registry.metadata.claudeAgents || 0}`);
+      info(`  Cloud agents: ${registry.metadata.cloudAgents || 0}`);
+      info(`  Deprecated: ${registry.metadata.deprecatedAgents || 0}`);
+      info(`  Last synced: ${registry.metadata.lastSyncAt}`);
+    } else {
+      error('Registry validation failed:');
+      console.log('');
+      schemaValidator.errors.forEach(err => {
+        const path = err.instancePath || err.schemaPath;
+        error(`  ${path}: ${err.message}`);
+        if (err.params && Object.keys(err.params).length > 0) {
+          console.log(`    Params: ${JSON.stringify(err.params)}`);
+        }
+      });
+      console.log('');
+      info('Run "sync" to fix validation errors');
+      process.exit(1);
+    }
+  } catch (err) {
+    error(`Failed to validate registry: ${err.message}`);
+    if (err instanceof SyntaxError) {
+      error('Registry file contains invalid JSON');
+      info('Run "sync" to regenerate registry');
+    }
+    process.exit(1);
+  }
+}
+//!<
+
 // Parse arguments
 function parseArgs(argv) {
   const args = {};
@@ -1315,6 +1426,8 @@ function main() {
     console.log('Agent Registry Management CLI');
     console.log('');
     console.log('Commands:');
+    console.log('  init                                     - Bootstrap registry (create schema and initial registry)');
+    console.log('  validate                                 - Validate registry against schema');
     console.log('  sync                                     - Scan .claude/agents/ and update registry');
     console.log('  check <agent-name>                       - Check for duplicates before creation');
     console.log('  create claude --name <name> --category <cat> - Create new Claude agent');
@@ -1330,7 +1443,30 @@ function main() {
 
   const command = args[0];
 
+  // Commands that require schema validation (write operations)
+  const writeCommands = ['sync', 'create', 'link', 'warn', 'deprecate', 'archive', 'generate-docs', 'generate-skill-rules'];
+
+  // Check schema for write operations
+  if (writeCommands.includes(command) && !schemaValidator) {
+    error('Schema validation unavailable');
+    info('The registry schema could not be loaded. This is required for write operations.');
+    info('');
+    info('To fix this:');
+    info('  1. Check that repo_state/agent-registry-schema.json exists');
+    info('  2. Run: node scripts/agent-registry.js validate --schema');
+    info('  3. If schema is missing, restore it from version control');
+    process.exit(1);
+  }
+
   switch (command) {
+    case 'init':
+      cmdInit();
+      break;
+
+    case 'validate':
+      cmdValidate();
+      break;
+
     case 'sync':
       const syncOptions = parseArgs(args.slice(1));
       cmdSync(syncOptions);

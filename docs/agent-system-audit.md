@@ -35,7 +35,7 @@ These systems are **complementary**, not competing. Each has its own strengths a
 **Automation Candidates:** 2
 **Deprecated:** 1
 
-*Last updated: 2025-11-16T17:30:00.466Z | Auto-generated from `repo_state/agent-registry.json` (v1.0.0)*
+*Last updated: 2025-11-17T00:29:55.198Z | Auto-generated from `repo_state/agent-registry.json` (v1.0.0)*
 <!-- AUTO-GENERATED:END:agent-count -->
 
 ### Agent Categories
@@ -145,7 +145,7 @@ These systems are **complementary**, not competing. Each has its own strengths a
 | test-runner | uncategorized | claude | You are an expert test execution and analysis specialist. Your primary responsib... |  |
 | triage-expert | general | claude | Triage Expert |  |
 
-*Last updated: 2025-11-16T17:30:00.475Z | Auto-generated from `repo_state/agent-registry.json` (v1.0.0)*
+*Last updated: 2025-11-17T00:29:55.207Z | Auto-generated from `repo_state/agent-registry.json` (v1.0.0)*
 <!-- AUTO-GENERATED:END:agent-catalog -->
 
 <!-- AUTO-GENERATED:START:automation-candidates -->
@@ -162,7 +162,7 @@ Agents identified for potential Cursor Cloud Agent automation:
   - Model: inherit
   - Tools: Read, Grep, Glob, LS, Edit, MultiEdit, Bash
 
-*Last updated: 2025-11-16T17:30:00.475Z | Auto-generated from `repo_state/agent-registry.json` (v1.0.0)*
+*Last updated: 2025-11-17T00:29:55.207Z | Auto-generated from `repo_state/agent-registry.json` (v1.0.0)*
 <!-- AUTO-GENERATED:END:automation-candidates -->
 
 ### Use Cases for Claude Subagents
