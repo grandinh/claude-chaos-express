@@ -488,3 +488,22 @@ context_files:
   - docs/tiers_of_context.md
 ```
 
+---
+timestamp: 2025-01-27T00:00:00Z
+from: claude
+to: claude
+issue_id: none
+branch: fix/pm-sync-filepath-bugs
+completed:
+  - Fixed Bug 1: Replaced STATE.current_task?.filePath with STATE.current_task.file and added dual-path checking (sessions/hooks/user_messages.js:511, 588, 701)
+  - Fixed Bug 2: Updated getTaskStatus to check both active and archived task locations (sessions/hooks/pm_sync.js:90-111)
+  - Created and archived task file: REPAIR-pm-sync-task-filepath-bugs.md
+  - Committed all changes with descriptive commit message
+next:
+  - PM sync now correctly tracks epic progress for both active and archived tasks
+  - Epic progress calculations will correctly reach 100% when all tasks are completed
+context_files:
+  - sessions/tasks/done/REPAIR-pm-sync-task-filepath-bugs.md
+  - sessions/hooks/pm_sync.js
+  - sessions/hooks/user_messages.js
+
