@@ -633,3 +633,50 @@ Developer → Opens IDE → Gets notification → Starts work
 - `.cursor/plans/cursor-automation-flow-spec-9b54aa1a.plan.md` - Architectural analysis
 - `context/decisions.md` - "Unified Cursor Automation" decision
 
+## Three-Task Decomposition Pattern for Multi-Component Systems
+
+**Date:** 2025-11-16
+**Context:** Multi-agent orchestration architecture design
+**Impact:** Reusable pattern for breaking down complex automation systems
+
+### Key Insight: Detection → Enforcement → Orchestration Pattern
+
+Complex automation systems benefit from three-layer decomposition that separates input detection, validation/gating, and work coordination into independent components.
+
+### The Pattern
+
+```
+Layer 1: Detection (Input Layer)
+    ↓ Feeds
+Layer 2: Enforcement (Gating Layer)
+    ↓ Routes
+Layer 3: Orchestration (Coordination Layer)
+```
+
+**Layer Responsibilities:**
+
+1. **Detection** - Single responsibility: detect new work, minimal logic, no decision-making
+2. **Enforcement** - Validates prerequisites, framework-level gating, determines routing  
+3. **Orchestration** - Manages distribution, coordinates workers, depends on both layers
+
+### Real-World Application
+
+**Multi-Agent Task Automation (3 independent tasks):**
+- Task 1 (Detection): File watcher monitors for new tasks
+- Task 2 (Enforcement): `context_gathered` flag validation and queue routing
+- Task 3 (Orchestration): 3-agent pool with dual queues and load balancing
+
+### Why This Works
+
+**Clear Separation:** "What work?" → "Ready?" → "Who does it?"
+**Independent Development:** Each layer has standalone value
+**Scalability:** Easy to swap or enhance individual layers
+**Testability:** Each layer testable independently
+
+### Related Files
+
+- `sessions/tasks/m-unified-cursor-automation.md` - Detection layer
+- `sessions/tasks/h-enforce-context-gathering.md` - Enforcement layer
+- `sessions/tasks/h-multi-agent-orchestration.md` - Orchestration layer
+
+---

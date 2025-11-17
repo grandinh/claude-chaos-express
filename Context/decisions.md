@@ -388,5 +388,186 @@ mv sessions/tasks/agent-progress.json sessions/tasks/archive/
 
 ---
 
+## Multi-Agent Role Separation: Context-Gathering XOR Implementation
+
+**Decision Date:** 2025-11-16
+**Context:** m-unified-cursor-automation task refinement and three-task architecture
+**Decision Made By:** Framework implementation
+
+### The Problem
+
+Initial automation design mixed context-gathering and implementation work within single agent sessions, creating unclear responsibility boundaries and potential for role confusion.
+
+### Decision
+
+**Enforce strict role separation: context-gathering XOR implementation (never both)**
+
+### Rationale
+
+1. **Clear Responsibility** - Each agent has single, well-defined purpose
+2. **Prevents Role Confusion** - Agent never switches between gathering context and implementing
+3. **Clean Agent Lifecycle** - Spawn → single duty → terminate pattern
+4. **Queue-Based Orchestration** - Enables dual-queue system (context queue vs. implementation queue)
+5. **Error Isolation** - Context gathering failures don't block implementation agents
+
+**Trade-offs Accepted:**
+- More agent spawns (one for context, one for implementation)
+- Slightly more complex orchestration logic
+- Queue transition overhead (context → implementation)
+
+### Implementation
+
+**Agent Lifecycle:**
+```
+Context-Gathering Agent:
+    Initialize → Read task → Gather context → Update manifest → Set flag to true → Terminate
+
+Implementation Agent:
+    Initialize → Verify context → Implement task → Complete work → Terminate
+```
+
+**Enforcement Points:**
+1. **Task-level flag:** `context_gathered: true|false` gates which queue
+2. **Queue separation:** Context queue vs. implementation queue
+3. **Agent termination:** Agents exit after single duty completion
+4. **No role switching:** Once assigned role (context or implementation), agent never changes
+
+### Consequences
+
+**Positive:**
+- Clear separation of concerns
+- Enables load balancing based on queue depth
+- Prevents context/implementation mixing errors
+- Scalable (easy to add specialized agent types)
+
+**Negative:**
+- Higher overhead (2 agents per task minimum)
+- Queue transition adds latency
+- More complex orchestration required
+
+### Future Considerations
+
+Could extend pattern to:
+- Testing agents (separate from implementation)
+- Documentation agents (separate from testing)
+- Review agents (separate from implementation)
+
+### Related Files
+
+- `sessions/tasks/m-unified-cursor-automation.md` - Task detection (Task 1)
+- `sessions/tasks/h-enforce-context-gathering.md` - Context enforcement (Task 2)
+- `sessions/tasks/h-multi-agent-orchestration.md` - Orchestration system (Task 3)
+
+---
+
+## Handoff Protocol: YAML Log + Ephemeral Triggers
+
+**Decision Date:** 2025-11-16
+**Context:** Cursor automation protocol alignment and hybrid approach
+**Decision Made By:** Framework implementation
+
+### The Problem
+
+Initial automation spec assumed JSON handoff files + trigger files, but actual handoff protocol uses YAML entries in `docs/ai_handoffs.md`. Had to reconcile trigger file pattern with existing YAML log approach.
+
+### Options Considered
+
+**Option A: Monitor YAML Log Only**
+- Watch `docs/ai_handoffs.md` for new entries
+- Parse YAML to detect Claude → Cursor handoffs
+- No trigger files needed
+
+**Option B: Trigger Files Only**
+- Keep trigger file pattern as proposed
+- Ignore YAML log for automation
+- Document as protocol extension
+
+**Option C: Hybrid (Chosen)**
+- YAML log remains canonical source of truth
+- Ephemeral trigger files act as automation signals
+- Best of both: structured log + file-based triggering
+
+### Decision
+
+**Chose Option C: Hybrid Approach**
+
+### Rationale
+
+1. **Preserves SoT** - YAML log in `docs/ai_handoffs.md` remains canonical handoff record
+2. **Enables Automation** - Trigger files provide simple detection mechanism for IDE
+3. **Minimal Bloat** - Triggers are ephemeral (deleted after processing)
+4. **Backward Compatible** - Doesn't break existing YAML log consumers
+5. **Debuggable** - Both structured log (YAML) and visible triggers (files) for troubleshooting
+
+**Trade-offs Accepted:**
+- Slight duplication (YAML entry + trigger file both created)
+- Cleanup required (archive triggers after processing)
+- Two systems to maintain (YAML log + trigger detection)
+
+### Implementation
+
+**Creation Flow:**
+```
+Claude ALIGN Phase
+    ↓
+1. Append YAML entry to docs/ai_handoffs.md (canonical record)
+    ↓
+2. Create trigger file in .cursor/triggers/ (automation signal)
+    ↓
+Watcher detects trigger → Cursor auto-starts → Work happens
+    ↓
+Archive trigger to .cursor/triggers/archive/ (cleanup)
+```
+
+**YAML Log (Canonical):**
+```yaml
+timestamp: 2025-11-16T10:00:00Z
+from: claude
+to: cursor
+completed: [...]
+next: [...]
+context_files: [...]
+```
+
+**Trigger File (Ephemeral):**
+```markdown
+---
+task_id: example
+handoff: docs/ai_handoffs.md#entry-123
+created: 2025-11-16T10:00:00Z
+---
+# AUTO-IMPLEMENT: Example Task
+[Cursor will detect and process this]
+```
+
+### Consequences
+
+**Positive:**
+- Clean protocol alignment (YAML log preserved)
+- Practical automation (file-based triggers work well)
+- No protocol breaking changes
+- Easy to debug (both log and triggers visible)
+
+**Negative:**
+- Creates temporary files (cleanup overhead)
+- Two representations of same handoff
+- Potential drift if trigger/log mismatch
+
+### Prevention of Drift
+
+**Synchronization rules:**
+1. Always create trigger from YAML entry (not vice versa)
+2. Include YAML entry reference in trigger (handoff field)
+3. Archive trigger immediately after processing
+4. YAML log is authoritative if discrepancy exists
+
+### Related Files
+
+- `sessions/tasks/m-unified-cursor-automation.md` - Scope reduced to detection only (Task 1)
+- `docs/ai_handoffs.md` - Canonical YAML handoff log
+- `context/insights.md` - "Trigger File Pattern for IDE Automation"
+
+---
+
 *Decisions will be added here as they are made and documented during framework development and usage.*
 
