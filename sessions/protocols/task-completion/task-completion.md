@@ -69,7 +69,73 @@ Your choice: [1/2/3/4]
    Include: Task completion summary, final status
 ```
 
-## 5. Update Index Files
+## 5. LCMP Compaction (Optional)
+
+After completion agents finish, suggest LCMP compaction to preserve durable learnings:
+
+```markdown
+[STATUS: LCMP Compaction Review]
+Reviewing task context for durable information to preserve...
+```
+
+**LCMP Compaction Process:**
+
+1. **Analyze task context** for durable information:
+   - Architectural decisions with rationale
+   - Patterns that apply to multiple features
+   - Gotchas that are expensive to rediscover
+   - Constraints that affect future work
+   - Tradeoffs between competing approaches
+
+2. **Categorize candidates** for LCMP files:
+   - **decisions.md** - Architectural decisions, tradeoffs, rationale
+   - **insights.md** - Patterns, learnings, best practices discovered
+   - **gotchas.md** - Pitfalls, failure modes, edge cases encountered
+
+3. **Present recommendations** using this format:
+
+```markdown
+[FINDINGS: LCMP Compaction]
+I've reviewed the completed task context. Here's what I suggest preserving:
+
+**For `Context/decisions.md`:**
+- [Decision 1]: [Brief description]
+- [Decision 2]: [Brief description]
+
+**For `Context/insights.md`:**
+- [Insight 1]: [Brief description]
+- [Insight 2]: [Brief description]
+
+**For `Context/gotchas.md`:**
+- [Gotcha 1]: [Brief description]
+- [Gotcha 2]: [Brief description]
+
+Would you like to preserve these learnings in LCMP files?
+
+1. YES - Compact now (promote to LCMP files)
+2. NO - Skip compaction, continue workflow
+3. SELECT - Choose which items to preserve (multi-select), then continue
+
+Your choice: [1/2/3]
+```
+
+4. **Wait for user confirmation** before proceeding:
+   - If user chooses YES (1): Perform LCMP compaction, then continue workflow
+   - If user chooses NO (2): Skip compaction, continue workflow
+   - If user chooses SELECT (3): Present items as checkboxes, allow user to select which ones to preserve, perform compaction for selected items only, then continue workflow
+
+5. **After compaction** (if performed):
+   - Show what was added to each LCMP file
+   - Verify changes are correct
+   - Continue with workflow
+
+**Important Notes:**
+- LCMP compaction is **optional** - user can skip it
+- Only promote **durable** information (not ephemeral details)
+- Never auto-compact without explicit user approval
+- Compaction happens **before** task archival so learnings are preserved
+
+## 6. Update Index Files
 
 Before archiving the task:
 1. Check all index files in `sessions/tasks/indexes/`
@@ -79,7 +145,7 @@ Before archiving the task:
    - Keep the same format: `` `[task-filename]` - [brief description]``
 3. If no indexes contain the task, skip this step
 
-## 6. Task Archival
+## 7. Task Archival
 
 After updating indexes:
 ```bash
@@ -90,7 +156,7 @@ mv sessions/tasks/[priority]-[task-name].md sessions/tasks/done/
 mv sessions/tasks/[priority]-[task-name]/ sessions/tasks/done/
 ```
 
-## 4. Git Operations (Commit & Merge)
+## 8. Git Operations (Commit & Merge)
 
 **NOTE**: Do not commit until the task file is marked complete and moved to done/. This ensures the completed task file is included in its final location.
 

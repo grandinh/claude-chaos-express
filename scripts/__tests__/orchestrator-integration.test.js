@@ -72,8 +72,9 @@ This is a test task for integration testing.
             expect(state.contextQueue[0].contextGathered).toBe(false);
         });
 
-        test('should route task to implementation queue when context_gathered is true', () => {
-            // Create task with context already gathered
+        test('should route task to context queue when context_gathered is true but Context Manifest is missing', () => {
+            // Create task with context_gathered=true but no Context Manifest section
+            // This should trigger validation and route to context queue
             const taskContent = `---
 name: ready-task
 priority: medium
@@ -84,7 +85,7 @@ depends_on: []
 
 # Ready Task
 
-This task has context gathered.
+This task has context_gathered=true but no Context Manifest section.
 `;
             const taskPath = path.join(TASKS_DIR, 'ready-task.md');
             fs.writeFileSync(taskPath, taskContent);
@@ -96,12 +97,13 @@ This task has context gathered.
             // Process
             queueManager.processNewTasks();
 
-            // Verify routing
+            // Verify routing - should be forced to context queue due to missing Context Manifest
             const state = queueManager.getQueueState();
-            expect(state.contextQueue.length).toBe(0);
-            expect(state.implementationQueue.length).toBe(1);
-            expect(state.implementationQueue[0].relativePath).toBe('ready-task.md');
-            expect(state.implementationQueue[0].contextGathered).toBe(true);
+            expect(state.contextQueue.length).toBe(1);
+            expect(state.implementationQueue.length).toBe(0);
+            expect(state.contextQueue[0].relativePath).toBe('ready-task.md');
+            expect(state.contextQueue[0].contextGathered).toBe(false); // Overridden by validation
+            expect(state.contextQueue[0].validationIssue).toBe('missing_context_manifest');
         });
 
         test('should handle queue transition from context to implementation', () => {

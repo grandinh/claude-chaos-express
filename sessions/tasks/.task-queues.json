@@ -1096,6 +1096,17 @@
       "dependsOn": [],
       "addedAt": "2025-11-17T05:13:02.559Z",
       "validationIssue": "missing_context_manifest"
+    },
+    {
+      "path": "./sessions/tasks/m-CODE-REVIEW-orchestrator-queue-enhancements.md",
+      "relativePath": "m-CODE-REVIEW-orchestrator-queue-enhancements.md",
+      "name": "m-CODE-REVIEW-orchestrator-queue-enhancements",
+      "contextGathered": false,
+      "priority": "medium",
+      "leverage": "high",
+      "status": "pending",
+      "dependsOn": [],
+      "addedAt": "2025-11-17T05:32:42.233Z"
     }
   ],
   "implementationQueue": [],
@@ -1611,6 +1622,10 @@
       },
       {
         "task": "orchestrator-test-impl.md",
+        "dependencies": []
+      },
+      {
+        "task": "m-CODE-REVIEW-orchestrator-queue-enhancements.md",
         "dependencies": []
       }
     ],
@@ -2317,8 +2332,15 @@
         "status": "pending",
         "created": "2025-11-16T00:00:00.000Z",
         "branch": "test/orchestrator-validation"
+      },
+      {
+        "task": "m-CODE-REVIEW-orchestrator-queue-enhancements.md",
+        "priority": "medium",
+        "leverage": "high",
+        "status": "pending",
+        "created": "2025-11-17"
       }
     ]
   },
-  "lastUpdated": "2025-11-17T05:13:05.302Z"
+  "lastUpdated": "2025-11-17T05:32:42.235Z"
 }
