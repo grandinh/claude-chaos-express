@@ -3,34 +3,34 @@
     {
       "id": "agent-1",
       "status": "working",
-      "currentTask": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/orchestrator-test-impl.md",
-      "role": "implementation",
-      "startedAt": "2025-11-17T04:36:48.891Z",
+      "currentTask": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-implement-cursor-auto-task-pickup.md",
+      "role": "context",
+      "startedAt": "2025-11-17T07:14:07.818Z",
       "completedTasks": 0,
-      "pid": 87416,
+      "pid": 81529,
       "cloudAgentId": null
     },
     {
       "id": "agent-2",
       "status": "working",
-      "currentTask": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/orchestrator-test-context.md",
+      "currentTask": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-enforce-context-gathering.md",
       "role": "context",
-      "startedAt": "2025-11-17T04:36:53.892Z",
+      "startedAt": "2025-11-17T07:14:12.819Z",
       "completedTasks": 0,
-      "pid": 87514,
+      "pid": 81687,
       "cloudAgentId": null
     },
     {
       "id": "agent-3",
-      "status": "idle",
-      "currentTask": null,
-      "role": null,
-      "startedAt": null,
+      "status": "working",
+      "currentTask": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-CODE-REVIEW-critical-yaml-security.md",
+      "role": "context",
+      "startedAt": "2025-11-17T07:14:17.820Z",
       "completedTasks": 0,
-      "pid": null,
+      "pid": 81780,
       "cloudAgentId": null
     }
   ],
   "completedTasks": [],
-  "lastUpdated": "2025-11-17T04:36:58.847Z"
+  "lastUpdated": "2025-11-17T07:14:17.823Z"
 }

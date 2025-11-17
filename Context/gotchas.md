@@ -856,3 +856,850 @@ dd if=/dev/zero of=sessions/tasks/test.md bs=1K count=100
 ---
 
 *More gotchas will be added as they are discovered during framework development and usage.*
+
+## Orchestrator Agent Spawning Path Doubling Bug
+
+**Issue Discovered:** 2025-11-17
+**Severity:** Critical - All agents stuck, zero task completions
+
+### The Problem
+
+The multi-agent orchestrator was creating doubled paths when spawning Claude CLI agents, causing all agents to get stuck trying to open non-existent files:
+
+```bash
+# WRONG (bug):
+claude @sessions/tasks/sessions/tasks/m-unified-cursor-automation.md
+
+# RIGHT (expected):
+claude @sessions/tasks/m-unified-cursor-automation.md
+```
+
+**Impact:** All 3 agents stuck for 5+ hours with zero task completions despite orchestrator showing "working" status.
+
+### Root Cause
+
+**File:** `scripts/agent-orchestrator.js`
+**Lines:** 267, 274
+
+```javascript
+// Line 267: Compute relative path from PROJECT_ROOT
+const taskPath = path.relative(PROJECT_ROOT, task.path);
+// Result: "sessions/tasks/filename.md"
+
+// Line 274: DOUBLED PATH BUG
+const agentProcess = spawn(claudeCmd, [
+    '--dangerously-skip-permissions',
+    `@sessions/tasks/${taskPath}`  // BUG: Prepends "sessions/tasks/" again!
+]);
+// Result: "@sessions/tasks/sessions/tasks/filename.md"
+```
+
+**Why It Happened:**
+1. Task queue stores both `path` (absolute) and `relativePath` (filename only)
+2. Code computed relative path from absolute path → `sessions/tasks/filename.md`
+3. Then prepended `sessions/tasks/` again → doubled path
+4. Should have used `task.relativePath` (just the filename) instead
+
+### The Fix
+
+**Applied:** 2025-11-17 in REPAIR-orchestrator-queue-path-format task
+
+```javascript
+// BEFORE (wrong):
+`@sessions/tasks/${taskPath}`
+
+// AFTER (correct):
+`@sessions/tasks/${task.relativePath}`
+```
+
+**Verification:**
+```bash
+# After fix, agents spawn with correct paths:
+$ ps aux | grep "claude.*@sessions/tasks"
+claude @sessions/tasks/m-fix-missing-ccpm-next-script.md  # ✅ Single prefix
+```
+
+### Prevention
+
+**1. Use data structure fields directly**
+```javascript
+// ✅ CORRECT - Use existing relativePath field
+`@sessions/tasks/${task.relativePath}`
+
+// ❌ WRONG - Compute path that already includes directory
+const taskPath = path.relative(PROJECT_ROOT, task.path);
+`@sessions/tasks/${taskPath}`  // Doubles the prefix!
+```
+
+**2. Verify spawned process paths**
+```bash
+# After code changes, check actual process commands:
+ps aux | grep "claude.*@sessions/tasks"
+
+# Should show single prefix, not doubled
+```
+
+**3. Restart orchestrator after code changes**
+- Code changes don't affect running Node.js processes
+- Must kill and restart to pick up new code
+- Also clear `.orchestrator-state.json` to avoid stale state
+
+**4. Test with fresh state**
+```bash
+# Clear state before testing
+rm sessions/tasks/.orchestrator-state.json
+
+# Start orchestrator
+npm run orchestrator
+
+# Verify agents spawn correctly within 10 seconds
+ps aux | grep claude
+```
+
+### Related Files
+
+- `scripts/agent-orchestrator.js:274` - Fixed line
+- `sessions/tasks/REPAIR-orchestrator-queue-path-format.md` - REPAIR task
+- `sessions/tasks/.task-queues.json` - Queue data structure showing path/relativePath fields
+- `context/gotchas.md` - This entry
+
+---
+
+## 2025-11-17T06:31:57.049Z - Orchestrator Agent Failure
+
+- Agent: agent-3
+- Task: m-unified-cursor-automation.md
+- Role: context
+- Reason: exit code 143
+
+## 2025-11-17T06:45:36.607Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: orchestrator-test-context.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:45:40.930Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: orchestrator-test-impl.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:45:41.884Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-add-code-review-auto-invoke-triggers.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:45:45.875Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-remove-claudekit-hook-dependency.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:45:46.210Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-rightsize-contextkit-footprint.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:45:47.074Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-refactor-claudekit-hooks-to-proper-setup.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:45:50.929Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-normalize-trigger-keywords.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:45:51.348Z - Orchestrator Agent Failure
+
+- Agent: agent-3
+- Task: h-implement-parallel-agent-invocation.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:45:51.434Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-implement-automation-strategy.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:45:52.537Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-implement-code-search-parallelization.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:45:55.884Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-enhance-handoff-for-cursor-independence.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:45:56.099Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-documentation-consolidation-alignment.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:45:56.789Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-create-quick-start-guide.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:45:56.823Z - Orchestrator Agent Failure
+
+- Agent: agent-3
+- Task: h-create-troubleshooting-guide.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:45:57.723Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-align-cursor-claude-logging-standards.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:00.966Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-create-health-check-script.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:01.063Z - Orchestrator Agent Failure
+
+- Agent: agent-3
+- Task: h-CODE-REVIEW-warning-cloud-timeout.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:01.257Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: REPAIR-pm-command-script-paths.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:01.991Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: REPAIR-context-lcmp-path-sync.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:02.133Z - Orchestrator Agent Failure
+
+- Agent: agent-3
+- Task: m-simplify-handoff-process.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:02.883Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-reconcile-task-reference-drift.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:05.878Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-release-v0.1.0-installable-package.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:06.132Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-optimize-skill-directory-mapping.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:06.242Z - Orchestrator Agent Failure
+
+- Agent: agent-3
+- Task: m-prune-skill-trigger-noise.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:06.451Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-investigate-optional-sot-files.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:07.161Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-implement-user-onboarding.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:07.431Z - Orchestrator Agent Failure
+
+- Agent: agent-3
+- Task: m-integrate-agent-registry-with-skill-rules.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:08.152Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-implement-task-registry.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:10.837Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-implement-task-dependency-graph-v2.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:11.052Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-implement-custom-skill-rules.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:11.264Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-implement-plugin-backlinking.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:11.366Z - Orchestrator Agent Failure
+
+- Agent: agent-3
+- Task: m-implement-artifact-lifecycle.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:11.579Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-enhance-lcmp-prompting.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:12.295Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-ensure-backlinking-in-task-creation.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:12.579Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-document-alignment-context-integration.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:13.288Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-document-typical-workflows.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:15.807Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-create-integration-tests.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:15.954Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-create-visual-workflow-examples.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:16.181Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-create-examples-directory.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:16.405Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-create-error-recovery-guide.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:16.673Z - Orchestrator Agent Failure
+
+- Agent: agent-3
+- Task: m-CODE-REVIEW-warning-state-race.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:16.712Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-unified-healthcheck-command.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:17.446Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-smarter-file-search.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:17.716Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-merge-contextkit-planning.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:18.415Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-modularize-knowledge.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:20.802Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-review-branch-creation-in-task-init.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:20.929Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-implement-task-template-generation.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:21.078Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-implement-performance-dashboard-v2.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:21.310Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-implement-context-window-budgeting.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:21.527Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-implement-agent-registry-caching.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:21.802Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-implement-context-gathering-cache.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:22.036Z - Orchestrator Agent Failure
+
+- Agent: agent-3
+- Task: l-dynamic-skill-loading.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:22.575Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-context-window-budgeting.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:22.838Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-create-agents-documentation.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:23.815Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-context-summarization.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:25.824Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-test-cloud-agent-infrastructure.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:25.939Z - Orchestrator Agent Failure
+
+- Agent: agent-3
+- Task: h-track-telemetry-ritual-map.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:26.048Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-vision-codex-progress-ledger.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:26.204Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-stationmaster-control-plane.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:26.436Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-streamline-handoff-logging.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:26.653Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-quick-framework-fixes.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:26.931Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-optimize-skill-triggers.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:27.167Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-implement-numeric-impact-priority-system.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:27.701Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-implement-skill-validation-script.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:27.967Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-fix-tasksdir-parameter-inconsistency.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:28.936Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-fix-test-script-directory-issue.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:30.810Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-deduplicate-framework-docs.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:30.947Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-eldritch-commit-composer.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:31.239Z - Orchestrator Agent Failure
+
+- Agent: agent-3
+- Task: h-breach-telemetry-ledger.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:31.424Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: REPAIR-pause-detection-robustness.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:31.576Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: REPAIR-skill-invocation-mechanism.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:31.790Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: REPAIR-consolidate-tier-docs.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:32.046Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: REPAIR-code-review-findings-workflow.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:32.295Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: ?-investigate-optional-sot-files.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:32.826Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-CODE-REVIEW-warning-promise-rejection.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:33.096Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: m-CODE-REVIEW-warning-env-exposure.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:34.064Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-review-todo-change-block-json-control.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:35.815Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-review-task-dependency-graph-implementation.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:35.945Z - Orchestrator Agent Failure
+
+- Agent: agent-3
+- Task: l-review-lcmp-squish-workflow-integration.md
+- Role: context
+- Reason: API error: 429 - {"error":"Rate limit exceeded","message":"You have exceeded the rate limit of 30 requests per minute for this endpoint. Contact hi@cursor.com if you need a higher limit."}
+
+## 2025-11-17T06:46:36.132Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-maintain-agent-documentation.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:36.682Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-implement-state-persistence-batching.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:36.836Z - Orchestrator Agent Failure
+
+- Agent: agent-3
+- Task: l-create-success-metrics-dashboard.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:37.035Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-document-continuous-worker-scope.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:37.233Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-create-configuration-wizard.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:37.499Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-CODE-REVIEW-suggestion-health-check.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:38.051Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-CODE-REVIEW-warning-input-validation.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:38.401Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-CODE-REVIEW-suggestion-queue-logging.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:39.232Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-CODE-REVIEW-suggestion-project-root.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:40.867Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-CODE-REVIEW-suggestion-graph-validation.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:40.973Z - Orchestrator Agent Failure
+
+- Agent: agent-3
+- Task: l-CODE-REVIEW-suggestion-magic-numbers.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:41.102Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-CODE-REVIEW-suggestion-base64-comment.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:46:41.328Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: l-CODE-REVIEW-suggestion-error-messages.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+## 2025-11-17T06:57:06.872Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: REPAIR-orchestrator-health-2025-11-16.md
+- Role: context
+- Reason: API error: 400 - {"error":"You do not have access to repository grandinh/claude-chaos-express.git, or the repository does not exist. If you believe you should have access, ensure the Cursor GitHub App is installed: https://cursor.com/api/auth/connect-github?auth_id=github%7Cuser_01KA33QPMEQ2CME9T1Q62T1JXQ&redirect_type=install&owner=grandinh&source=BACKGROUND_AGENT_API"}
+
+---
+
+## Task TEMPLATE YAML Parsing Failure: 2025-11-16 [RESOLVED]
+
+**Problem:** Task template with `[placeholder]` syntax causes YAML parsing failures
+
+**Symptom:**
+- Agents crash when reading TEMPLATE.md
+- Error: "bad indentation of a mapping entry"
+- Template values like `name: [prefix]-[descriptive-name]` fail
+
+**Root Cause:**
+- Square brackets in YAML are array delimiters
+- Unquoted `[placeholder]` values interpreted as malformed arrays
+- YAML parser expects either quoted strings or valid array syntax
+
+**Fix Applied (2025-11-16):**
+```yaml
+# ❌ WRONG - causes parsing error
+name: [prefix]-[descriptive-name]
+depends_on: [task-file-1, task-file-2]
+
+# ✅ CORRECT - quoted template values
+name: "[prefix]-[descriptive-name]"
+depends_on: []  # Empty array with example in comment
+```
+
+**Prevention:**
+- Always quote YAML values containing special characters
+- Use empty arrays `[]` instead of inline placeholder arrays
+- Validate frontmatter with YAML parser before committing templates
+- Run `npm run validate-frontmatter` to catch issues early
+
+**Resolution:**
+- Fixed in REPAIR-orchestrator-health-2025-11-16 (completed 2025-11-16)
+- TEMPLATE.md updated with quoted template values
+- Agents now parse TEMPLATE.md without errors
+- Documented in operator guide and CLAUDE.md troubleshooting section
+
+---
+
+## Task Dependency Circular References: 2025-11-16 [RESOLVED]
+
+**Problem:** Circular `depends_on` relationships deadlock entire orchestrator
+
+**Symptom:**
+- Orchestrator shows "All tasks in context queue are blocked by dependencies"
+- 100+ tasks processed, 0 completed (0% success rate)
+- Agents stuck waiting indefinitely for blocker tasks
+- No visible errors, just infinite waiting
+
+**Root Cause:**
+- Task A depends on Task B
+- Task B depends on Task C
+- Task C depends on Task A (circular loop)
+- Orchestrator correctly respects dependencies but can't break circular chains
+- No cycle detection at startup or runtime
+
+**Fix Applied (2025-11-16):**
+```bash
+# Quick fix: Reset task queues (backup first)
+cp sessions/tasks/.task-queues.json sessions/tasks/.task-queues.json.backup-$(date +%Y%m%d-%H%M%S)
+rm sessions/tasks/.task-queues.json
+pm2 restart orchestrator
+```
+
+**Prevention:**
+- Run `node scripts/dependency-graph.js` before starting orchestrator
+- Add circular dependency validation to queue manager startup (future enhancement)
+- Document dependency relationships in task planning phase
+- Use `depends_on` sparingly - prefer priority/leverage ordering
+
+**Resolution:**
+- Fixed in REPAIR-orchestrator-health-2025-11-16 (completed 2025-11-16)
+- Task queues reset to clear circular dependency deadlock
+- Orchestrator restarted cleanly with 101 context tasks, 1 implementation task
+- Agents successfully assigned tasks after reset
+- Documented recovery procedure in operator guide and CLAUDE.md troubleshooting section
+
+**Context:** REPAIR-orchestrator-health-2025-11-16, affects h-multi-agent-orchestration.md

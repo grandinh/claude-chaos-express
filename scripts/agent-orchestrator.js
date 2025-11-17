@@ -271,7 +271,7 @@ class AgentOrchestrator {
 
         const agentProcess = spawn(claudeCmd, [
             '--dangerously-skip-permissions',
-            `@sessions/tasks/${taskPath}`
+            `@sessions/tasks/${task.relativePath}`
         ], {
             cwd: PROJECT_ROOT,
             env: {
@@ -347,8 +347,9 @@ class AgentOrchestrator {
             return;
         }
 
-        // Read task file to generate prompt
-        const taskContent = fs.readFileSync(task.path, 'utf8');
+        // Read task file to generate prompt (resolve to absolute path)
+        const taskPath = path.isAbsolute(task.path) ? task.path : path.join(PROJECT_ROOT, task.path);
+        const taskContent = fs.readFileSync(taskPath, 'utf8');
         const taskName = task.name || path.basename(task.path, '.md');
         
         // Generate prompt based on role

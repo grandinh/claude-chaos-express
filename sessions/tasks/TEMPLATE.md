@@ -1,10 +1,10 @@
 ---
-name: [prefix]-[descriptive-name]
-branch: feature/[name]|fix/[name]|experiment/[name]|none
-status: pending|in-progress|completed|blocked
-created: YYYY-MM-DD
-depends_on: [task-file-1, task-file-2]  # Optional: list of task files this task depends on
-submodules: [list of git submodules affected (delete if not super-repo)]
+name: "[prefix]-[descriptive-name]"
+branch: "feature/[name]|fix/[name]|experiment/[name]|none"
+status: "pending|in-progress|completed|blocked"
+created: "YYYY-MM-DD"
+depends_on: []  # Optional: list of task files this task depends on, e.g. ["task-file-1.md", "task-file-2.md"]
+submodules: []  # Optional: list of git submodules affected (delete if not super-repo)
 ---
 
 # [Human-Readable Title]

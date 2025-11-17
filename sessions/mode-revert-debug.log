@@ -8,3 +8,8 @@
   Prompt: SILENCE...
   discussion_phrase_detected: true
   Trigger phrases: ["SILENCE"]
+
+[2025-11-17T06:28:56.196Z] EMERGENCY STOP TRIGGERED
+  Prompt: SILENCE...
+  discussion_phrase_detected: true
+  Trigger phrases: ["SILENCE"]

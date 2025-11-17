@@ -4,6 +4,44 @@ This file documents patterns, learnings, and insights discovered during framewor
 
 ---
 
+## Orchestrator Health Verification: Evidence-Based Validation
+
+**Date:** 2025-11-16
+**Context:** REPAIR-orchestrator-health-2025-11-16 task completion
+**Impact:** Prevented prolonged system failure by implementing health check protocol
+
+### Key Insight: Queue State Reset as Surgical Intervention
+
+When the multi-agent orchestrator experiences complete task execution deadlock (0% completion rate despite processed tasks), the fastest recovery path is **queue state reset** rather than dependency untangling:
+
+**Quick Recovery Protocol:**
+1. Backup current queue state with timestamp
+2. Delete `.task-queues.json` file
+3. Restart orchestrator to rebuild queues from task files
+4. Verify agents assign tasks within 10 seconds
+
+**Why This Works:**
+- Task metadata still exists in individual task files (source of truth)
+- Queue files are derived state (can be regenerated)
+- Circular dependency cycles get broken when queue rebuilds from scratch
+- Faster than manually editing multiple `depends_on` fields
+
+**When to Use:**
+- Circular dependency deadlock detected (run `node scripts/dependency-graph.js`)
+- 100+ tasks processed but 0 completed
+- All tasks showing "blocked by dependencies" status
+- After fixing YAML frontmatter errors in multiple tasks
+
+**Prevention Checklist:**
+- Run `node scripts/dependency-graph.js` before starting orchestrator (detect cycles)
+- Validate TEMPLATE.md YAML frontmatter (quote special characters)
+- Use `depends_on` sparingly (prefer priority/leverage ordering)
+- Test frontmatter changes with `npm run validate-frontmatter`
+
+**Related:** See `context/gotchas.md` entries "Task Dependency Circular References" and "Task TEMPLATE YAML Parsing Failure" for specific issues resolved.
+
+---
+
 ## Skill Trigger System: Natural Language Coverage & Monitoring
 
 **Date:** 2025-11-15
@@ -678,5 +716,111 @@ Layer 3: Orchestration (Coordination Layer)
 - `sessions/tasks/m-unified-cursor-automation.md` - Detection layer
 - `sessions/tasks/h-enforce-context-gathering.md` - Enforcement layer
 - `sessions/tasks/h-multi-agent-orchestration.md` - Orchestration layer
+
+---
+
+## Task Path Handling in Multi-Agent Systems
+
+**Date:** 2025-11-17
+**Context:** REPAIR-orchestrator-queue-path-format task (orchestrator path bug fixes)
+**Impact:** Prevents subtle path doubling and resolution bugs in agent spawning
+
+### Key Insight: Dual Path Representation
+
+Queue data structures should maintain both absolute and relative path representations for different use cases.
+
+**Pattern Discovered:**
+```javascript
+// Task queue object structure
+{
+  "path": "/full/absolute/path/to/sessions/tasks/filename.md",  // For file I/O
+  "relativePath": "filename.md",                                  // For CLI args
+  "name": "task-name",
+  // ... other fields
+}
+```
+
+### Why This Matters
+
+**Different operations need different path formats:**
+
+1. **CLI Arguments** need relative filenames:
+   ```javascript
+   // ✅ CORRECT - Use relativePath for CLI args
+   spawn('claude', [`@sessions/tasks/${task.relativePath}`]);
+   // Result: @sessions/tasks/filename.md
+
+   // ❌ WRONG - Computing from absolute path
+   const computed = path.relative(PROJECT_ROOT, task.path);
+   spawn('claude', [`@sessions/tasks/${computed}`]);
+   // Result: @sessions/tasks/sessions/tasks/filename.md (doubled!)
+   ```
+
+2. **File I/O** needs absolute paths:
+   ```javascript
+   // ✅ CORRECT - Resolve to absolute before reading
+   const absPath = path.isAbsolute(task.path)
+     ? task.path
+     : path.join(PROJECT_ROOT, task.path);
+   const content = fs.readFileSync(absPath, 'utf8');
+
+   // ❌ WRONG - Assuming path is always absolute
+   const content = fs.readFileSync(task.path, 'utf8');
+   // Fails if working directory != PROJECT_ROOT
+   ```
+
+### Common Pitfalls
+
+**Path Doubling:**
+- Computing relative path from absolute path, then prepending directory again
+- Example: `path.relative()` → `sessions/tasks/file.md` + `sessions/tasks/` prefix → doubled path
+
+**Relative Path Assumptions:**
+- Assuming `task.path` is always absolute
+- Queue rebuilds may use relative paths
+- Always check with `path.isAbsolute()` before file operations
+
+**Working Directory Dependencies:**
+- Relative paths break when working directory changes
+- Orchestrator runs from `scripts/`, tasks are in `../sessions/tasks/`
+- Always resolve to absolute paths for file I/O
+
+### Application
+
+**When designing queue data structures:**
+```javascript
+// ✅ DO: Maintain both representations
+const task = {
+  path: path.resolve(PROJECT_ROOT, 'sessions/tasks', filename),  // Absolute
+  relativePath: filename,                                         // Relative
+};
+
+// ✅ DO: Use appropriate format for each use case
+spawn(cmd, [`@sessions/tasks/${task.relativePath}`]);  // CLI
+fs.readFileSync(task.path, 'utf8');                     // File I/O
+
+// ❌ DON'T: Compute paths on-the-fly
+const computed = path.relative(PROJECT_ROOT, task.path);
+spawn(cmd, [`@sessions/tasks/${computed}`]);  // Risk of doubling
+```
+
+**When reading files from queue:**
+```javascript
+// ✅ DO: Defensive path resolution
+const absPath = path.isAbsolute(task.path)
+  ? task.path
+  : path.join(PROJECT_ROOT, task.path);
+const content = fs.readFileSync(absPath, 'utf8');
+
+// ❌ DON'T: Trust path is absolute
+const content = fs.readFileSync(task.path, 'utf8');
+```
+
+### Related Files
+
+- `scripts/agent-orchestrator.js:274` - Local CLI spawning (uses `relativePath`)
+- `scripts/agent-orchestrator.js:351` - Cloud agent file reading (resolves to absolute)
+- `context/gotchas.md` - "Orchestrator Agent Spawning Path Doubling Bug" (comprehensive gotcha entry)
+- `sessions/tasks/REPAIR-orchestrator-queue-path-format.md` - REPAIR task documenting both path bugs
 
 ---

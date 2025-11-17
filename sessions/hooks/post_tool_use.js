@@ -94,7 +94,8 @@ Handles post-tool execution cleanup and state management:
 function shouldPauseForUserInput(toolName, toolOutput) {
     if (toolName === "Task" && STATE.flags.subagent) {
         // Check subagent output for pause markers
-        const output = toolOutput || "";
+        // Ensure output is always a string for .match() calls
+        const output = String(toolOutput || "");
 
         // Check for explicit wait instructions
         if (output.match(/WAIT for user|Wait for user|execution MUST stop/i)) {

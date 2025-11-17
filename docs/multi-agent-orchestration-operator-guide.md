@@ -342,6 +342,21 @@ tail -20 sessions/tasks/.new-tasks.log
    - Ensure `context_gathered` field exists
    - Validate with: `npm run validate-frontmatter`
 
+4. **TEMPLATE frontmatter parsing errors:**
+   - **Symptom:** Agents crash with "bad indentation of a mapping entry" errors
+   - **Cause:** Unquoted square brackets `[placeholder]` in YAML values
+   - **Fix:** Quote all template values with special characters:
+     ```yaml
+     # ❌ WRONG
+     name: [prefix]-[descriptive-name]
+     depends_on: [task-1, task-2]
+
+     # ✅ CORRECT
+     name: "[prefix]-[descriptive-name]"
+     depends_on: []  # Empty array, use comments for examples
+     ```
+   - **Validation:** Test with `npm run validate-frontmatter` after changes
+
 ### Tasks Stuck in Queue
 
 **Symptoms:** Tasks remain in queue for extended periods
@@ -366,7 +381,18 @@ node scripts/dependency-graph.js --check-cycles
    - Update `depends_on` fields to break the cycle
    - Document the change in `context/decisions.md`
 
-2. **All agents in failed state:**
+2. **Circular dependency deadlock (0% completion rate):**
+   - **Symptom:** 100+ tasks processed, 0 completed
+   - **Quick fix:** Reset task queues (backup first):
+     ```bash
+     cp sessions/tasks/.task-queues.json sessions/tasks/.task-queues.json.backup-$(date +%Y%m%d-%H%M%S)
+     rm sessions/tasks/.task-queues.json
+     pm2 restart orchestrator
+     ```
+   - **Root cause:** Circular `depends_on` chains block all task assignment
+   - **Prevention:** Run `node scripts/dependency-graph.js` before starting orchestrator
+
+3. **All agents in failed state:**
    ```bash
    # Reset agent pool
    cat <<EOF > sessions/tasks/.orchestrator-state.json
@@ -384,7 +410,7 @@ node scripts/dependency-graph.js --check-cycles
    pm2 restart orchestrator
    ```
 
-3. **Agents stuck waiting for user input:**
+4. **Agents stuck waiting for user input:**
    - Check Claude Code session states
    - Respond to any pause prompts
    - Agents will auto-resume after user responds

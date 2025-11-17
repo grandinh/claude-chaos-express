@@ -724,6 +724,28 @@ The orchestration system respects cc-sessions framework rules:
 - Check dependencies: `node scripts/dependency-graph.js`
 - Ensure context_gathered tasks have Context Manifest section
 
+**Circular dependency deadlock (0% task completion rate):**
+- **Symptom:** All tasks blocked, 100+ processed but 0 completed
+- **Diagnosis:** Run `node scripts/dependency-graph.js` to detect cycles
+- **Quick fix:** Reset task queues (backup first):
+  ```bash
+  cp sessions/tasks/.task-queues.json sessions/tasks/.task-queues.json.backup-$(date +%Y%m%d-%H%M%S)
+  rm sessions/tasks/.task-queues.json
+  pm2 restart orchestrator
+  ```
+- **Prevention:** Run dependency graph check before starting orchestrator
+
+**TEMPLATE frontmatter parsing errors:**
+- **Symptom:** Agents crash reading TEMPLATE.md with "bad indentation" YAML errors
+- **Fix:** Quote all template values with special characters:
+  ```yaml
+  # ❌ WRONG
+  name: [prefix]-[descriptive-name]
+
+  # ✅ CORRECT
+  name: "[prefix]-[descriptive-name]"
+  ```
+
 **Desktop notifications not working:**
 - macOS: Ensure Terminal has notification permissions
 - Linux: Install `notify-send` package
