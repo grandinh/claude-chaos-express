@@ -21,6 +21,13 @@ const PROJECT_ROOT = detectProjectRoot();
 const ORCHESTRATOR_STATE = path.join(PROJECT_ROOT, 'sessions', 'tasks', '.orchestrator-state.json');
 const AGENT_POOL_SIZE = 3;
 
+// Log directory setup
+const LOGS_DIR = path.join(PROJECT_ROOT, '.cursor', 'automation-logs');
+if (!fs.existsSync(LOGS_DIR)) {
+    fs.mkdirSync(LOGS_DIR, { recursive: true });
+}
+const ORCHESTRATOR_ERROR_LOG = path.join(LOGS_DIR, 'orchestrator-errors.log');
+
 // Configuration
 const CONFIG = {
     // Agent execution mode: 'local' (Claude CLI) or 'cloud' (Cursor Cloud Agent API)
@@ -182,6 +189,31 @@ class AgentOrchestrator {
      * @param {string} queueName - 'context' or 'implementation'
      */
     assignTaskToAgent(agent, task, queueName) {
+        // CRITICAL: Validate file exists before assignment
+        if (!fs.existsSync(task.path)) {
+            console.error(`❌ CRITICAL ERROR: Task file does not exist: ${task.path}`);
+            console.error(`   Task: ${task.relativePath}`);
+            console.error(`   Queue: ${queueName}`);
+            console.error(`   Agent: ${agent.id}`);
+
+            // Log to gotchas.md
+            this.logFileValidationFailure(task, `File not found at assignment time in ${queueName} queue`);
+
+            // Remove from queue to prevent re-assignment
+            this.queueManager.removeFromQueue(task.path, queueName);
+
+            // Return agent to idle state
+            console.log(`↩️  Returning ${agent.id} to idle state (task file missing)`);
+            
+            // CRITICAL: Actually update agent state and persist it
+            agent.status = 'idle';
+            agent.currentTask = null;
+            agent.role = null;
+            this.saveState();
+            
+            return;
+        }
+
         // CRITICAL: Validate context gathering before implementation
         if (queueName === 'implementation') {
             const frontmatter = this.queueManager.parseFrontmatter(task.path);
@@ -264,6 +296,19 @@ class AgentOrchestrator {
      * @param {string} queueName - 'context' or 'implementation'
      */
     spawnLocalAgent(agent, task, queueName) {
+        // FAIL-FAST: Final validation before spawning
+        if (!fs.existsSync(task.path)) {
+            console.error(`❌ FAIL-FAST: Task file disappeared before agent spawn: ${task.path}`);
+            this.logFileValidationFailure(task, `File disappeared between assignment and spawn`);
+
+            // Return agent to idle state
+            agent.status = 'idle';
+            agent.currentTask = null;
+            agent.role = null;
+            this.saveState();
+            return;
+        }
+
         const taskPath = path.relative(PROJECT_ROOT, task.path);
         const claudeCmd = process.env.CLAUDE_CMD || 'claude';
 
@@ -285,9 +330,20 @@ class AgentOrchestrator {
 
         agent.pid = agentProcess.pid;
 
-        // Set timeout
-        const timeout = queueName === 'context' 
-            ? CONFIG.contextTaskTimeout 
+        // Set startup timeout (10 seconds to detect file read failure)
+        let startupDetected = false;
+        const startupTimeoutId = setTimeout(() => {
+            if (!startupDetected && agentProcess.killed === false) {
+                console.error(`❌ ${agent.id} failed to start processing within 10 seconds - likely file read failure`);
+                agentProcess.kill('SIGTERM');
+                this.handleAgentFailure(agent, task, queueName, 'startup timeout - file likely missing');
+                this.logFileValidationFailure(task, 'Agent failed to read file within 10 seconds');
+            }
+        }, 10000);
+
+        // Set task timeout
+        const timeout = queueName === 'context'
+            ? CONFIG.contextTaskTimeout
             : CONFIG.implementationTaskTimeout;
 
         const timeoutId = setTimeout(() => {
@@ -305,8 +361,9 @@ class AgentOrchestrator {
 
         // Handle process exit
         agentProcess.on('exit', (code, signal) => {
+            clearTimeout(startupTimeoutId);
             clearTimeout(timeoutId);
-            
+
             if (code === 0) {
                 this.handleAgentCompletion(agent, task, queueName);
             } else {
@@ -317,11 +374,21 @@ class AgentOrchestrator {
 
         // Log stdout/stderr
         agentProcess.stdout.on('data', (data) => {
+            // Mark startup as detected on first output
+            if (!startupDetected) {
+                startupDetected = true;
+                clearTimeout(startupTimeoutId);
+            }
             // Optionally log agent output
             // console.log(`[${agent.id}] ${data.toString()}`);
         });
 
         agentProcess.stderr.on('data', (data) => {
+            // Mark startup as detected on first output (even stderr)
+            if (!startupDetected) {
+                startupDetected = true;
+                clearTimeout(startupTimeoutId);
+            }
             console.error(`[${agent.id} stderr] ${data.toString()}`);
         });
 
@@ -335,6 +402,19 @@ class AgentOrchestrator {
      * @param {string} queueName - 'context' or 'implementation'
      */
     async spawnCloudAgent(agent, task, queueName) {
+        // FAIL-FAST: Final validation before spawning
+        if (!fs.existsSync(task.path)) {
+            console.error(`❌ FAIL-FAST: Task file disappeared before cloud agent spawn: ${task.path}`);
+            this.logFileValidationFailure(task, `File disappeared between assignment and cloud spawn`);
+
+            // Return agent to idle state
+            agent.status = 'idle';
+            agent.currentTask = null;
+            agent.role = null;
+            this.saveState();
+            return;
+        }
+
         if (!CONFIG.cursorApiKey) {
             console.error('❌ CURSOR_API_TOKEN not set. Cannot spawn cloud agent.');
             this.handleAgentFailure(agent, task, queueName, 'missing API key');
@@ -539,11 +619,27 @@ class AgentOrchestrator {
     logContextViolation(task, reason) {
         const gotchasPath = path.join(PROJECT_ROOT, 'Context', 'gotchas.md');
         const violationEntry = `\n## ${new Date().toISOString()} - Context Gathering Violation\n\n- Task: ${task.relativePath}\n- Reason: ${reason}\n- Action: Task blocked from implementation queue, routed to context queue\n`;
-        
+
         if (fs.existsSync(gotchasPath)) {
             fs.appendFileSync(gotchasPath, violationEntry, 'utf8');
         } else {
             console.warn(`⚠️  Gotchas file not found, cannot log violation: ${gotchasPath}`);
+        }
+    }
+
+    /**
+     * Log file validation failure to gotchas.md
+     * @param {Object} task - Task object
+     * @param {string} reason - Validation failure reason
+     */
+    logFileValidationFailure(task, reason) {
+        const gotchasPath = path.join(PROJECT_ROOT, 'Context', 'gotchas.md');
+        const failureEntry = `\n## ${new Date().toISOString()} - File Validation Failure\n\n- Task: ${task.relativePath}\n- Path: ${task.path}\n- Reason: ${reason}\n- Action: Task removed from queue, agent returned to idle\n- Recommendation: Check if file was moved, renamed, or deleted. Remove stale references from logs.\n`;
+
+        if (fs.existsSync(gotchasPath)) {
+            fs.appendFileSync(gotchasPath, failureEntry, 'utf8');
+        } else {
+            console.warn(`⚠️  Gotchas file not found, cannot log failure: ${gotchasPath}`);
         }
     }
 
@@ -564,12 +660,12 @@ class AgentOrchestrator {
         agent.pid = null;
         agent.cloudAgentId = null;
 
-        // Log to gotchas
-        const gotchasPath = path.join(PROJECT_ROOT, 'Context', 'gotchas.md');
-        const gotchaEntry = `\n## ${new Date().toISOString()} - Orchestrator Agent Failure\n\n- Agent: ${agent.id}\n- Task: ${task.relativePath}\n- Role: ${queueName}\n- Reason: ${reason}\n`;
-        
-        if (fs.existsSync(gotchasPath)) {
-            fs.appendFileSync(gotchasPath, gotchaEntry, 'utf8');
+        // Log to orchestrator error log file
+        const logEntry = `[${new Date().toISOString()}] Orchestrator Agent Failure\n  Agent: ${agent.id}\n  Task: ${task.relativePath}\n  Role: ${queueName}\n  Reason: ${reason}\n\n`;
+        try {
+            fs.appendFileSync(ORCHESTRATOR_ERROR_LOG, logEntry, 'utf8');
+        } catch (error) {
+            console.error(`Failed to write to orchestrator error log: ${error.message}`);
         }
 
         this.saveState();
@@ -614,6 +710,19 @@ class AgentOrchestrator {
         console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
 
         this.isRunning = true;
+
+        // CRITICAL: Validate queues at startup to remove invalid references
+        const validationStats = this.queueManager.validateQueues();
+        if (validationStats.systemicIssue) {
+            console.error('❌ CRITICAL: More than 10% of queued tasks are invalid.');
+            console.error('   This indicates a systemic problem with task management.');
+            console.error('   Please investigate and consider rebuilding queues.');
+            console.error('\n   To rebuild queues from scratch:');
+            console.error('   1. Backup: cp sessions/tasks/.task-queues.json sessions/tasks/.task-queues.json.backup');
+            console.error('   2. Delete: rm sessions/tasks/.task-queues.json');
+            console.error('   3. Restart: npm run orchestrator\n');
+            process.exit(1);
+        }
 
         // Initial scan - check if queues are empty, if so, process all tasks
         const queueStatus = this.queueManager.getStatus();

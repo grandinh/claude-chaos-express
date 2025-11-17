@@ -24,7 +24,7 @@ const DETECTION_LOG = path.join(LOGS_DIR, 'detection.log');
 const ERROR_LOG = path.join(LOGS_DIR, 'errors.log');
 
 const EXCLUDED_TASK_FILES = ['TEMPLATE.md'];
-const EXCLUDED_TASK_DIRS = ['done', 'indexes', 'archive'];
+const EXCLUDED_TASK_DIRS = ['done', 'indexes', 'archive', 'deprecated'];
 
 // Logging utilities
 function log(message, logFile = WATCH_LOG) {

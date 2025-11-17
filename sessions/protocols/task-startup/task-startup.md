@@ -62,7 +62,13 @@ Check task frontmatter for branch name{submodule_context}, then create/checkout 
 
 ## 3. Verify context manifest for the task
 
-Check the task file for a Context Manifest section and report status:
+Check the task file's frontmatter for the `context_gathered` flag and verify the Context Manifest section exists:
+
+**Check `context_gathered` flag:**
+- If `context_gathered: true` → Context is already gathered, skip to step 4
+- If `context_gathered: false` or missing → Context gathering is required (todo will be added)
+
+**Check for Context Manifest section:**
 
 If missing:
 ```markdown
@@ -78,10 +84,16 @@ If present:
 ✓ Context manifest found and loaded
 ```
 
-- If present, proceed to the next step to load it
-- If missing, you **must** use the context-gathering agent to analyze this task and create a context manifest
+**Behavior:**
+- If `context_gathered: true` AND Context Manifest exists → Skip context gathering todo (step 4), proceed to "Initial Discussion & Planning" (step 5)
+- If `context_gathered: false` or missing → Context gathering todo will be added automatically (step 4)
+- If `context_gathered: true` but Context Manifest missing → This is an error state; context gathering todo will still be added (step 4)
 
 ## 4. Gather context for the task
+
+**Note:** This step only appears as a todo if `context_gathered: false` or missing. If `context_gathered: true`, this todo is automatically skipped and you proceed directly to "Initial Discussion & Planning" (step 5).
+
+If context gathering is needed:
 
 Based on the manifest:
 - Read the narrative explanation to understand how everything works

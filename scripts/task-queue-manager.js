@@ -189,7 +189,7 @@ class TaskQueueManager {
      */
     scanAllTasks(options = {}) {
         const {
-            excludePatterns = ['TEMPLATE.md', 'done/', 'archive/', 'indexes/', 'README', 'HANDOFF', 'PROMPT', 'TASK_', 'ROADMAP', 'DEPENDENCY', 'IMPLEMENTATION', 'QUICK-START', 'PARALLEL'],
+            excludePatterns = ['TEMPLATE.md', 'done/', 'archive/', 'indexes/', 'deprecated/', 'README', 'HANDOFF', 'PROMPT', 'TASK_', 'ROADMAP', 'DEPENDENCY', 'IMPLEMENTATION', 'QUICK-START', 'PARALLEL'],
             includeCompleted = false,
             forceRescan = false
         } = options;
@@ -298,6 +298,13 @@ class TaskQueueManager {
     routeTask(taskPath, skipValidation = false) {
         const frontmatter = this.parseFrontmatter(taskPath);
         if (!frontmatter) {
+            // Log more detailed error for file not found
+            if (!fs.existsSync(taskPath)) {
+                console.error(`❌ VALIDATION ERROR: Cannot route task - file does not exist: ${taskPath}`);
+                console.error(`   Action: Task rejected from queue processing`);
+            } else {
+                console.error(`❌ VALIDATION ERROR: Cannot parse frontmatter for: ${taskPath}`);
+            }
             return null;
         }
 
@@ -486,7 +493,25 @@ class TaskQueueManager {
         // Sort by score (descending)
         eligibleTasks.sort((a, b) => b.score - a.score);
 
-        return eligibleTasks[0].task;
+        // CRITICAL: Validate file still exists before returning
+        for (const eligible of eligibleTasks) {
+            if (!fs.existsSync(eligible.task.path)) {
+                console.error(`❌ Task file no longer exists: ${eligible.task.path}`);
+                console.error(`   Removing from ${queueName} queue`);
+
+                // Remove from queue
+                this.removeFromQueue(eligible.task.path, queueName);
+
+                // Continue to next eligible task
+                continue;
+            }
+
+            // File exists, return this task
+            return eligible.task;
+        }
+
+        // No eligible tasks with existing files
+        return null;
     }
 
     /**
@@ -540,6 +565,131 @@ class TaskQueueManager {
             this.routeTask(taskPath);
         });
         return newTasks.length;
+    }
+
+    /**
+     * Validate and clean up both queues by removing invalid references
+     * @returns {Object} - Validation statistics
+     */
+    validateQueues() {
+        console.log('\n🔍 Validating task queues...\n');
+
+        const stats = {
+            contextQueueBefore: this.contextQueue.length,
+            implementationQueueBefore: this.implementationQueue.length,
+            contextRemoved: 0,
+            implementationRemoved: 0,
+            expiredRemoved: 0,
+            totalInvalid: 0,
+            invalidTasks: []
+        };
+
+        const EXPIRATION_DAYS = 7;
+        const now = Date.now();
+        const expirationMs = EXPIRATION_DAYS * 24 * 60 * 60 * 1000;
+
+        // Validate context queue
+        this.contextQueue = this.contextQueue.filter(task => {
+            // Check file existence
+            if (!fs.existsSync(task.path)) {
+                console.error(`❌ Removing non-existent task from context queue: ${task.relativePath}`);
+                stats.contextRemoved++;
+                stats.totalInvalid++;
+                stats.invalidTasks.push(task.relativePath);
+                return false;
+            }
+
+            // Check for expiration (7 days since last modification)
+            try {
+                const fileStats = fs.statSync(task.path);
+                const lastModified = fileStats.mtime.getTime();
+                const age = now - lastModified;
+
+                if (age > expirationMs) {
+                    console.warn(`⏰ Removing expired task from context queue: ${task.relativePath} (${Math.floor(age / (24 * 60 * 60 * 1000))} days old)`);
+                    stats.contextRemoved++;
+                    stats.expiredRemoved++;
+                    stats.totalInvalid++;
+                    stats.invalidTasks.push(task.relativePath);
+                    return false;
+                }
+            } catch (error) {
+                console.error(`❌ Error checking task age: ${task.relativePath}`);
+                stats.contextRemoved++;
+                stats.totalInvalid++;
+                stats.invalidTasks.push(task.relativePath);
+                return false;
+            }
+
+            return true;
+        });
+
+        // Validate implementation queue
+        this.implementationQueue = this.implementationQueue.filter(task => {
+            // Check file existence
+            if (!fs.existsSync(task.path)) {
+                console.error(`❌ Removing non-existent task from implementation queue: ${task.relativePath}`);
+                stats.implementationRemoved++;
+                stats.totalInvalid++;
+                stats.invalidTasks.push(task.relativePath);
+                return false;
+            }
+
+            // Check for expiration (7 days since last modification)
+            try {
+                const fileStats = fs.statSync(task.path);
+                const lastModified = fileStats.mtime.getTime();
+                const age = now - lastModified;
+
+                if (age > expirationMs) {
+                    console.warn(`⏰ Removing expired task from implementation queue: ${task.relativePath} (${Math.floor(age / (24 * 60 * 60 * 1000))} days old)`);
+                    stats.implementationRemoved++;
+                    stats.expiredRemoved++;
+                    stats.totalInvalid++;
+                    stats.invalidTasks.push(task.relativePath);
+                    return false;
+                }
+            } catch (error) {
+                console.error(`❌ Error checking task age: ${task.relativePath}`);
+                stats.implementationRemoved++;
+                stats.totalInvalid++;
+                stats.invalidTasks.push(task.relativePath);
+                return false;
+            }
+
+            return true;
+        });
+
+        // Calculate validation percentage
+        const totalBefore = stats.contextQueueBefore + stats.implementationQueueBefore;
+        const invalidPercentage = totalBefore > 0 ? (stats.totalInvalid / totalBefore) * 100 : 0;
+
+        // Save cleaned state
+        this.saveState();
+
+        // Report results
+        console.log('\n📊 Queue Validation Results:');
+        console.log(`   Context Queue: ${stats.contextQueueBefore} → ${this.contextQueue.length} (${stats.contextRemoved} removed)`);
+        console.log(`   Implementation Queue: ${stats.implementationQueueBefore} → ${this.implementationQueue.length} (${stats.implementationRemoved} removed)`);
+        console.log(`   Total Invalid: ${stats.totalInvalid} (${invalidPercentage.toFixed(1)}%)`);
+        if (stats.expiredRemoved > 0) {
+            console.log(`   Expired (>7 days): ${stats.expiredRemoved}`);
+        }
+
+        if (stats.invalidTasks.length > 0) {
+            console.log('\n❌ Invalid tasks removed:');
+            stats.invalidTasks.forEach(task => console.log(`   - ${task}`));
+        }
+
+        // Check if too many invalid tasks (>10%)
+        if (invalidPercentage > 10 && totalBefore > 0) {
+            console.error(`\n⚠️  WARNING: More than 10% of queued tasks were invalid (${invalidPercentage.toFixed(1)}%)`);
+            console.error('   This indicates a systemic issue with queue management.');
+            console.error('   Consider rebuilding queues from scratch.\n');
+            stats.systemicIssue = true;
+        }
+
+        return stats;
     }
 
     /**
@@ -689,6 +839,46 @@ if (require.main === module) {
     }
 
     console.log('\n');
+}
+
+// CLI usage
+if (require.main === module) {
+    const manager = new TaskQueueManager();
+
+    // Parse command line arguments
+    const args = process.argv.slice(2);
+
+    if (args.includes('--validate')) {
+        console.log('Running queue validation...');
+        const stats = manager.validateQueues();
+
+        if (stats.systemicIssue) {
+            console.error('\n❌ CRITICAL: Systemic issues detected in queue management.');
+            process.exit(1);
+        } else {
+            console.log('\n✅ Queue validation complete.');
+            process.exit(0);
+        }
+    } else if (args.includes('--status')) {
+        printQueueStatus(manager.getStatus());
+        process.exit(0);
+    } else if (args.includes('--rebuild')) {
+        console.log('Rebuilding queues from scratch...');
+        manager.contextQueue = [];
+        manager.implementationQueue = [];
+        manager.processedTasks.clear();
+        manager.saveState();
+        const stats = manager.processAllTasks();
+        console.log(`\n✅ Rebuild complete: ${stats.routed} tasks routed`);
+        process.exit(0);
+    } else {
+        console.log('Task Queue Manager CLI');
+        console.log('Usage:');
+        console.log('  node task-queue-manager.js --validate    Validate and clean queues');
+        console.log('  node task-queue-manager.js --status      Show queue status');
+        console.log('  node task-queue-manager.js --rebuild     Rebuild queues from scratch');
+        process.exit(0);
+    }
 }
 
 module.exports = TaskQueueManager;

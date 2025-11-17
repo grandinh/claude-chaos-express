@@ -108,17 +108,101 @@ args: ['echo COMPROMISED']
             const filePath = path.join(scriptsDir, file);
             const content = fs.readFileSync(filePath, 'utf8');
 
-            // Pattern: yaml.load(...) without { schema: yaml.SAFE_SCHEMA }
-            // This regex looks for yaml.load with single argument or without SAFE_SCHEMA
-            const unsafePattern = /yaml\.load\([^,)]+\)(?!\s*,\s*\{\s*schema:\s*yaml\.SAFE_SCHEMA)/g;
+            // Find all yaml.load( occurrences
+            const yamlLoadPattern = /yaml\.load\s*\(/g;
+            let match;
 
-            const matches = content.match(unsafePattern);
-            if (matches) {
-                unsafeUsages.push({ file, matches });
+            while ((match = yamlLoadPattern.exec(content)) !== null) {
+                const matchIndex = match.index;
+                const beforeMatch = content.substring(0, matchIndex);
+                const currentLineNumber = (beforeMatch.match(/\n/g) || []).length + 1;
+                
+                // Extract the full call by finding matching closing paren
+                // Handle nested parentheses, brackets, and braces
+                let parenCount = 1;
+                let bracketCount = 0;
+                let braceCount = 0;
+                let pos = matchIndex + match[0].length;
+                let callContent = match[0];
+                let inString = false;
+                let stringChar = null;
+                let escaped = false;
+                
+                while (pos < content.length && parenCount > 0) {
+                    const char = content[pos];
+                    
+                    // Handle string escaping
+                    if (escaped) {
+                        callContent += char;
+                        escaped = false;
+                        pos++;
+                        continue;
+                    }
+                    
+                    if (char === '\\' && inString) {
+                        escaped = true;
+                        callContent += char;
+                        pos++;
+                        continue;
+                    }
+                    
+                    // Track string boundaries
+                    if ((char === '"' || char === "'" || char === '`') && !escaped) {
+                        if (!inString) {
+                            inString = true;
+                            stringChar = char;
+                        } else if (char === stringChar) {
+                            inString = false;
+                            stringChar = null;
+                        }
+                    }
+                    
+                    // Only count brackets/parens/braces outside of strings
+                    if (!inString) {
+                        if (char === '(') parenCount++;
+                        else if (char === ')') parenCount--;
+                        else if (char === '[') bracketCount++;
+                        else if (char === ']') bracketCount--;
+                        else if (char === '{') braceCount++;
+                        else if (char === '}') braceCount--;
+                    }
+                    
+                    callContent += char;
+                    pos++;
+                    
+                    // Safety: prevent infinite loops on malformed code
+                    if (pos > content.length) break;
+                }
+                
+                // Check if this call has SAFE_SCHEMA
+                // Must contain both "schema" and "SAFE_SCHEMA" keywords
+                const hasSafeSchema = callContent.includes('schema') && 
+                                     callContent.includes('SAFE_SCHEMA');
+                
+                if (!hasSafeSchema) {
+                    // Extract first line of call for preview (truncate if too long)
+                    const firstLine = callContent.split('\n')[0];
+                    const preview = firstLine.length > 100 
+                        ? firstLine.substring(0, 100) + '...'
+                        : firstLine;
+                    
+                    unsafeUsages.push({
+                        file,
+                        line: currentLineNumber,
+                        call: preview
+                    });
+                }
             }
         });
 
         // Should find zero unsafe usages
+        if (unsafeUsages.length > 0) {
+            const report = unsafeUsages.map(u => 
+                `  ${u.file}:${u.line} - ${u.call}`
+            ).join('\n');
+            throw new Error(`Found ${unsafeUsages.length} unsafe yaml.load() call(s):\n${report}`);
+        }
+        
         expect(unsafeUsages).toEqual([]);
     });
 });

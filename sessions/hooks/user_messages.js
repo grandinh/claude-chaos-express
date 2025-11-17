@@ -539,6 +539,26 @@ if (!isApiCommand && taskStartDetected) {
         }
     }
 
+    // Check if context is already gathered for this task
+    let contextAlreadyGathered = false;
+    if (STATE.current_task?.filePath) {
+        try {
+            const taskContent = fs.readFileSync(STATE.current_task.filePath, 'utf8');
+            const frontmatterMatch = taskContent.match(/^---\n([\s\S]*?)\n---/);
+            if (frontmatterMatch) {
+                const frontmatter = frontmatterMatch[1];
+                const contextGatheredMatch = frontmatter.match(/^context_gathered:\s*(true|false)/m);
+                if (contextGatheredMatch) {
+                    contextAlreadyGathered = contextGatheredMatch[1] === 'true';
+                }
+                // If context_gathered flag is missing, default to false (backward compatibility)
+            }
+        } catch (error) {
+            // If we can't read the file, assume context is not gathered
+            contextAlreadyGathered = false;
+        }
+    }
+
     // Set todos based on config
     const todoBranchContent = CONFIG.git_preferences.has_submodules
         ? 'Create/checkout task branch and matching submodule branches'
@@ -547,7 +567,7 @@ if (!isApiCommand && taskStartDetected) {
         ? 'Creating/checking out task branches'
         : 'Creating/checking out task branch';
 
-    // Build todos list - will add read task todo conditionally
+    // Build todos list - conditionally add context gathering todo
     const todos = [
         new CCTodo({
             content: 'Check git status and handle any uncommitted changes',
@@ -560,12 +580,16 @@ if (!isApiCommand && taskStartDetected) {
         new CCTodo({
             content: 'Verify context manifest for the task',
             activeForm: 'Verifying context manifest'
-        }),
-        new CCTodo({
-            content: 'Gather context for the task',
-            activeForm: 'Catching up to speed...'
         })
     ];
+
+    // Only add context gathering todo if context is not already gathered
+    if (!contextAlreadyGathered) {
+        todos.push(new CCTodo({
+            content: 'Gather context for the task',
+            activeForm: 'Catching up to speed...'
+        }));
+    }
 
     // Check if task will be auto-loaded
     // Detect OS for correct sessions command

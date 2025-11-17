@@ -316,6 +316,9 @@ cat sessions/tasks/.orchestrator-state.json | jq '.agents'
 
 # Check task log
 tail -20 sessions/tasks/.new-tasks.log
+
+# Check orchestrator error log for recent failures
+tail -50 .cursor/automation-logs/orchestrator-errors.log
 ```
 
 **Solutions:**
@@ -655,7 +658,8 @@ npm run orchestrator-status
 
 4. **Update documentation:**
    - Document any configuration changes
-   - Log troubleshooting patterns in `context/gotchas.md`
+   - Log troubleshooting patterns in `Context/gotchas.md` (for durable knowledge)
+   - Check operational logs in `.cursor/automation-logs/orchestrator-errors.log` (for transient failures)
    - Update decisions in `context/decisions.md`
 
 ### Log Rotation
@@ -755,5 +759,6 @@ cat sessions/tasks/.task-queues.json | jq '.processedTasks | length'
 
 **For additional support:**
 - Review `docs/ORCHESTRATOR_CONFIG.md` for detailed configuration
-- Check `context/gotchas.md` for known issues and workarounds
+- Check `Context/gotchas.md` for known issues and workarounds (durable knowledge)
+- Check `.cursor/automation-logs/orchestrator-errors.log` for recent agent failures (operational logs)
 - Consult `scripts/README.md` for script documentation

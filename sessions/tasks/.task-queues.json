@@ -1068,17 +1068,6 @@
       "status": "pending",
       "dependsOn": [],
       "addedAt": "2025-11-17T07:37:53.613Z"
-    },
-    {
-      "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-orchestrator-task-validation.md",
-      "relativePath": "REPAIR-orchestrator-task-validation.md",
-      "name": "[prefix]-[descriptive-name]",
-      "contextGathered": false,
-      "priority": "medium",
-      "leverage": "medium",
-      "status": "pending|in-progress|completed|blocked",
-      "dependsOn": [],
-      "addedAt": "2025-11-17T07:40:44.981Z"
     }
   ],
   "implementationQueue": [
@@ -2371,13 +2360,6 @@
         "priority": "high",
         "leverage": "medium",
         "status": "pending",
-        "created": "2025-11-17"
-      },
-      {
-        "task": "REPAIR-orchestrator-task-validation.md",
-        "priority": "medium",
-        "leverage": "medium",
-        "status": "pending|in-progress|completed|blocked",
         "created": "2025-11-17"
       }
     ]

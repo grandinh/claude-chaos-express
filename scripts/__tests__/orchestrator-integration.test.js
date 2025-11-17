@@ -494,4 +494,190 @@ depends_on: []
             expect(nextTask.relativePath).toBe('unblocked-task.md');
         });
     });
+
+    describe('File Validation', () => {
+        test('should reject non-existent task files during routing', () => {
+            // Simulate a task file that doesn't exist
+            const nonExistentPath = path.join(TASKS_DIR, 'non-existent-task.md');
+
+            // Try to route non-existent task
+            const result = queueManager.routeTask(nonExistentPath);
+
+            // Should return null and not add to any queue
+            expect(result).toBeNull();
+            expect(queueManager.contextQueue.length).toBe(0);
+            expect(queueManager.implementationQueue.length).toBe(0);
+        });
+
+        test('should remove invalid tasks from queue during getNextTask', () => {
+            // Create a valid task first
+            const taskContent = `---
+name: valid-task
+priority: high
+leverage: high
+context_gathered: false
+depends_on: []
+---
+
+# Valid Task
+`;
+            const taskPath = path.join(TASKS_DIR, 'valid-task.md');
+            fs.writeFileSync(taskPath, taskContent);
+
+            // Route the task to queue
+            queueManager.routeTask(taskPath);
+            expect(queueManager.contextQueue.length).toBe(1);
+
+            // Now delete the file to simulate it being moved/deleted
+            fs.unlinkSync(taskPath);
+
+            // Try to get next task - should detect missing file and return null
+            const nextTask = queueManager.getNextTask('context', new Set());
+            expect(nextTask).toBeNull();
+
+            // Queue should be empty after invalid task removal
+            expect(queueManager.contextQueue.length).toBe(0);
+        });
+
+        test('should validate queues and remove non-existent files', () => {
+            // Create multiple tasks
+            const task1Content = `---
+name: task-1
+priority: high
+leverage: high
+context_gathered: false
+---
+# Task 1
+`;
+            const task2Content = `---
+name: task-2
+priority: medium
+leverage: medium
+context_gathered: true
+---
+# Task 2
+## Context Manifest
+Context gathered
+`;
+            fs.writeFileSync(path.join(TASKS_DIR, 'task-1.md'), task1Content);
+            fs.writeFileSync(path.join(TASKS_DIR, 'task-2.md'), task2Content);
+
+            // Route both tasks
+            queueManager.routeTask(path.join(TASKS_DIR, 'task-1.md'));
+            queueManager.routeTask(path.join(TASKS_DIR, 'task-2.md'));
+
+            expect(queueManager.contextQueue.length).toBe(1);
+            expect(queueManager.implementationQueue.length).toBe(1);
+
+            // Delete task-1 to simulate file removal
+            fs.unlinkSync(path.join(TASKS_DIR, 'task-1.md'));
+
+            // Run validation
+            const stats = queueManager.validateQueues();
+
+            // Check validation results
+            expect(stats.contextRemoved).toBe(1);
+            expect(stats.implementationRemoved).toBe(0);
+            expect(stats.totalInvalid).toBe(1);
+            expect(stats.invalidTasks).toContain('task-1.md');
+
+            // Queues should be updated
+            expect(queueManager.contextQueue.length).toBe(0);
+            expect(queueManager.implementationQueue.length).toBe(1);
+        });
+
+        test('should detect systemic issues when >10% tasks are invalid', () => {
+            // Create 10 tasks and route them
+            for (let i = 1; i <= 10; i++) {
+                const taskContent = `---
+name: task-${i}
+priority: medium
+leverage: medium
+context_gathered: false
+---
+# Task ${i}
+`;
+                fs.writeFileSync(path.join(TASKS_DIR, `task-${i}.md`), taskContent);
+                queueManager.routeTask(path.join(TASKS_DIR, `task-${i}.md`));
+            }
+
+            expect(queueManager.contextQueue.length).toBe(10);
+
+            // Delete 2 tasks (20% > 10% threshold)
+            fs.unlinkSync(path.join(TASKS_DIR, 'task-1.md'));
+            fs.unlinkSync(path.join(TASKS_DIR, 'task-2.md'));
+
+            // Run validation
+            const stats = queueManager.validateQueues();
+
+            // Should detect systemic issue
+            expect(stats.systemicIssue).toBe(true);
+            expect(stats.totalInvalid).toBe(2);
+            expect(stats.contextRemoved).toBe(2);
+        });
+
+        test('should handle file deletion between log entry and queue population', () => {
+            // Create task file
+            const taskContent = `---
+name: disappearing-task
+priority: high
+leverage: high
+context_gathered: false
+---
+# Disappearing Task
+`;
+            const taskPath = path.join(TASKS_DIR, 'disappearing-task.md');
+            fs.writeFileSync(taskPath, taskContent);
+
+            // Write to log (simulating watcher detection)
+            fs.writeFileSync(TASK_LOG, `[${new Date().toISOString()}] New task detected: disappearing-task.md\n`);
+
+            // Delete file before processing (simulating race condition)
+            fs.unlinkSync(taskPath);
+
+            // Process new tasks from log
+            const newTaskCount = queueManager.processNewTasks();
+
+            // Task should be found in log but not added to queue (file missing)
+            expect(newTaskCount).toBe(1);
+            expect(queueManager.contextQueue.length).toBe(0);
+            expect(queueManager.implementationQueue.length).toBe(0);
+        });
+
+        test('should exclude deprecated directory tasks', () => {
+            // Create deprecated directory
+            const deprecatedDir = path.join(TASKS_DIR, 'deprecated');
+            fs.mkdirSync(deprecatedDir, { recursive: true });
+
+            // Create task in deprecated directory
+            const deprecatedTaskContent = `---
+name: deprecated-task
+priority: high
+leverage: high
+context_gathered: false
+---
+# Deprecated Task
+`;
+            fs.writeFileSync(path.join(deprecatedDir, 'deprecated-task.md'), deprecatedTaskContent);
+
+            // Also create a valid task in main directory
+            const validTaskContent = `---
+name: valid-task
+priority: medium
+leverage: medium
+context_gathered: false
+---
+# Valid Task
+`;
+            fs.writeFileSync(path.join(TASKS_DIR, 'valid-task.md'), validTaskContent);
+
+            // Scan all tasks
+            const allTasks = queueManager.scanAllTasks();
+
+            // Should only find the valid task, not the deprecated one
+            expect(allTasks).toHaveLength(1);
+            expect(allTasks[0]).toContain('valid-task.md');
+            expect(allTasks[0]).not.toContain('deprecated');
+        });
+    });
 });

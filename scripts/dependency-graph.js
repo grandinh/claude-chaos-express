@@ -135,7 +135,7 @@ class DependencyGraph {
      * @param {string} depsFile - Path to manual dependencies YAML file
      * @returns {Object} - Build result with stats
      */
-    buildFromDirectory(excludePatterns = ['TEMPLATE.md', 'done/', 'archive/', 'indexes/'], depsFile = DEFAULT_DEPS_FILE) {
+    buildFromDirectory(excludePatterns = ['TEMPLATE.md', 'done/', 'archive/', 'indexes/', 'deprecated/'], depsFile = DEFAULT_DEPS_FILE) {
         const stats = {
             tasksScanned: 0,
             tasksAdded: 0,

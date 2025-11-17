@@ -474,11 +474,27 @@ To restore the previous task later:
         ? 'Creating/checking out task branches'
         : 'Creating/checking out task branch';
 
+    // Check if context is already gathered
+    const contextAlreadyGathered = frontmatter.context_gathered === true;
+
     const todos = [
-        { content: todoBranchContent, status: "pending", activeForm: todoBranchActive },
-        { content: "Gather context if task lacks context manifest", status: "pending", activeForm: "Gathering context for task" },
-        { content: "Begin work on the task", status: "pending", activeForm: "Beginning work on task" }
+        { content: todoBranchContent, status: "pending", activeForm: todoBranchActive }
     ];
+
+    // Only add context gathering todo if context is not already gathered
+    if (!contextAlreadyGathered) {
+        todos.push({ 
+            content: "Gather context if task lacks context manifest", 
+            status: "pending", 
+            activeForm: "Gathering context for task" 
+        });
+    }
+
+    todos.push({ 
+        content: "Begin work on the task", 
+        status: "pending", 
+        activeForm: "Beginning work on task" 
+    });
 
     // Format protocol with template substitutions
     if (protocolContent) {
