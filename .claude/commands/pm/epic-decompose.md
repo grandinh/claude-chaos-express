@@ -4,7 +4,7 @@ allowed-tools: Bash, Read, Write, LS, Task
 
 # Epic Decompose
 
-Break epic into concrete, actionable tasks.
+Break epic into concrete, actionable cc-sessions tasks.
 
 ## Usage
 ```
@@ -15,6 +15,7 @@ Break epic into concrete, actionable tasks.
 
 **IMPORTANT:** Before executing this command, read and follow:
 - `.claude/rules/datetime.md` - For getting real current date/time
+- `sessions/protocols/task-creation/task-creation.md` - For task creation protocol
 
 ## Preflight Checklist
 
@@ -22,138 +23,145 @@ Before proceeding, complete these validation steps.
 Do not bother the user with preflight checks progress ("I'm not going to ..."). Just do them and move on.
 
 1. **Verify epic exists:**
-   - Check if `.claude/epics/$ARGUMENTS/epic.md` exists
+   - Check if `.claude/epics/$ARGUMENTS/epic.md` or `.claude/epics/$ARGUMENTS/epic.json` exists
    - If not found, tell user: "❌ Epic not found: $ARGUMENTS. First create it with: /pm:prd-parse $ARGUMENTS"
    - Stop execution if epic doesn't exist
 
-2. **Check for existing tasks:**
-   - Check if any numbered task files (001.md, 002.md, etc.) already exist in `.claude/epics/$ARGUMENTS/`
-   - If tasks exist, list them and ask: "⚠️ Found {count} existing tasks. Delete and recreate all tasks? (yes/no)"
+2. **Check for existing cc-sessions tasks:**
+   - Query `sessions/tasks/*.md` for tasks with `epic: $ARGUMENTS` in frontmatter
+   - If tasks exist, list them and ask: "⚠️ Found {count} existing tasks for this epic. Delete and recreate all tasks? (yes/no)"
    - Only proceed with explicit 'yes' confirmation
-   - If user says no, suggest: "View existing tasks with: /pm:epic-show $ARGUMENTS"
+   - If user says no, suggest: "View existing tasks with: /pm:epic-status $ARGUMENTS"
 
-3. **Validate epic frontmatter:**
-   - Verify epic has valid frontmatter with: name, status, created, prd
-   - If invalid, tell user: "❌ Invalid epic frontmatter. Please check: .claude/epics/$ARGUMENTS/epic.md"
+3. **Validate epic:**
+   - Read epic from `.claude/epics/$ARGUMENTS/epic.md` or `.claude/epics/$ARGUMENTS/epic.json`
+   - Verify epic has: name, status, created
+   - If invalid, tell user: "❌ Invalid epic. Please check: .claude/epics/$ARGUMENTS/"
 
 4. **Check epic status:**
    - If epic status is already "completed", warn user: "⚠️ Epic is marked as completed. Are you sure you want to decompose it again?"
 
 ## Instructions
 
-You are decomposing an epic into specific, actionable tasks for: **$ARGUMENTS**
+You are decomposing an epic into specific, actionable cc-sessions tasks for: **$ARGUMENTS**
+
+**CRITICAL:** Tasks are created as cc-sessions task manifests in `sessions/tasks/`, NOT as PM task files in `.claude/epics/`.
 
 ### 1. Read the Epic
-- Load the epic from `.claude/epics/$ARGUMENTS/epic.md`
+
+- Load the epic from `.claude/epics/$ARGUMENTS/epic.md` (or epic.json if epic.md doesn't exist)
 - Understand the technical approach and requirements
 - Review the task breakdown preview
+- Extract epic metadata (name, github_issue if present)
 
-### 2. Analyze for Parallel Creation
+### 2. Break Down into Tasks
 
-Determine if tasks can be created in parallel:
-- If tasks are mostly independent: Create in parallel using Task agents
-- If tasks have complex dependencies: Create sequentially
-- For best results: Group independent tasks for parallel creation
+Analyze the epic and break it into:
+- **1-3 day tasks** - Each task should be completable in 1-3 days
+- **Clear dependencies** - Identify which tasks depend on others
+- **Parallel opportunities** - Identify tasks that can run in parallel
 
-### 3. Parallel Task Creation (When Possible)
+### 3. Create cc-sessions Tasks
 
-If tasks can be created in parallel, spawn sub-agents:
+For each task, create a cc-sessions task file following the task-creation protocol:
 
+**Task Naming:**
+- Use format: `{priority}-{type}-{descriptive-name}.md`
+- Priority: `h-` (high), `m-` (medium), `l-` (low)
+- Type: `implement-`, `fix-`, `refactor-`, `test-`, `docs-`, etc.
+- Example: `m-implement-auth-jwt.md`, `h-fix-login-redirect.md`
+
+**Task Location:**
+- Create in `sessions/tasks/` directory
+- NOT in `.claude/epics/$ARGUMENTS/`
+
+**Task Frontmatter (REQUIRED fields):**
 ```yaml
-Task:
-  description: "Create task files batch {X}"
-  subagent_type: "general-purpose"
-  prompt: |
-    Create task files for epic: $ARGUMENTS
-
-    Tasks to create:
-    - {list of 3-4 tasks for this batch}
-
-    For each task:
-    1. Create file: .claude/epics/$ARGUMENTS/{number}.md
-    2. Use exact format with frontmatter and all sections
-    3. Follow task breakdown from epic
-    4. Set parallel/depends_on fields appropriately
-    5. Number sequentially (001.md, 002.md, etc.)
-
-    Return: List of files created
+---
+name: "{priority}-{type}-{descriptive-name}"
+branch: "feature/{name}"  # Based on task type
+status: "pending"
+created: "{YYYY-MM-DD}"  # Get real date
+context_gathered: false
+depends_on: []  # List of task files this depends on, e.g. ["m-implement-auth-jwt.md"]
+epic: "$ARGUMENTS"  # REQUIRED: Epic name
+epic_task_number: "001"  # Optional: Order within epic (001, 002, etc.)
+github_issue: ""  # Optional: Will be set during sync
+---
 ```
 
-### 4. Task File Format with Frontmatter
-For each task, create a file with this exact structure:
+**Task Structure:**
+Follow the task-creation protocol structure:
+- Problem/Goal section
+- Success Criteria (checkboxes)
+- Context Manifest (will be populated by context-gathering agent)
+- User Notes (optional)
+- Work Log (optional)
 
-```markdown
----
-name: [Task Title]
-status: open
-created: [Current ISO date/time]
-updated: [Current ISO date/time]
-github: [Will be updated when synced to GitHub]
-depends_on: []  # List of task numbers this depends on, e.g., [001, 002]
-parallel: true  # Can this run in parallel with other tasks?
-conflicts_with: []  # Tasks that modify same files, e.g., [003, 004]
----
+### 4. Task Creation Process
 
-# Task: [Task Title]
+For each task:
 
-## Description
-Clear, concise description of what needs to be done
+1. **Determine priority and type:**
+   - High priority: Critical path, blockers
+   - Medium priority: Important but not blocking
+   - Low priority: Nice to have, can be deferred
 
-## Acceptance Criteria
-- [ ] Specific criterion 1
-- [ ] Specific criterion 2
-- [ ] Specific criterion 3
+2. **Create task file:**
+   ```bash
+   cp sessions/tasks/TEMPLATE.md sessions/tasks/{priority}-{type}-{name}.md
+   ```
 
-## Technical Details
-- Implementation approach
-- Key considerations
-- Code locations/files affected
+3. **Fill out frontmatter:**
+   - Set `name` to match filename
+   - Set `epic: $ARGUMENTS` (REQUIRED)
+   - Set `epic_task_number` for ordering (optional)
+   - Set `depends_on` with actual task filenames (not numbers)
+   - Set `status: pending`
+   - Set `created` to real date
 
-## Dependencies
-- [ ] Task/Issue dependencies
-- [ ] External dependencies
+4. **Write task content:**
+   - Problem/Goal: Clear description
+   - Success Criteria: Specific, measurable checkboxes
+   - Leave Context Manifest empty (context-gathering agent will populate)
 
-## Effort Estimate
-- Size: XS/S/M/L/XL
-- Hours: estimated hours
-- Parallel: true/false (can run in parallel with other tasks)
+5. **Handle dependencies:**
+   - If task depends on others, list them in `depends_on` as task filenames
+   - Example: `depends_on: ["m-implement-auth-jwt.md", "h-fix-login-redirect.md"]`
+   - Dependencies must reference actual task filenames, not numbers
 
-## Definition of Done
-- [ ] Code implemented
-- [ ] Tests written and passing
-- [ ] Documentation updated
-- [ ] Code reviewed
-- [ ] Deployed to staging
+### 5. Update Epic JSON
+
+After creating all tasks, create/update `.claude/epics/$ARGUMENTS/epic.json`:
+
+```json
+{
+  "name": "$ARGUMENTS",
+  "github_issue": "{from epic.md if present}",
+  "tasks": [
+    {
+      "task_file": "m-implement-auth-jwt.md",
+      "status": "pending",
+      "github_issue": null,
+      "epic_task_number": "001"
+    },
+    {
+      "task_file": "h-fix-login-redirect.md",
+      "status": "pending",
+      "github_issue": null,
+      "epic_task_number": "002"
+    }
+  ],
+  "progress": 0,
+  "status": "open",
+  "created": "{epic creation date}",
+  "updated": "{current date}"
+}
 ```
 
-### 3. Task Naming Convention
-Save tasks as: `.claude/epics/$ARGUMENTS/{task_number}.md`
-- Use sequential numbering: 001.md, 002.md, etc.
-- Keep task titles short but descriptive
+**Note:** PM sync hooks will automatically update this file when tasks are created/started/completed, but initial creation should populate it.
 
-### 4. Frontmatter Guidelines
-- **name**: Use a descriptive task title (without "Task:" prefix)
-- **status**: Always start with "open" for new tasks
-- **created**: Get REAL current datetime by running: `date -u +"%Y-%m-%dT%H:%M:%SZ"`
-- **updated**: Use the same real datetime as created for new tasks
-- **github**: Leave placeholder text - will be updated during sync
-- **depends_on**: List task numbers that must complete before this can start (e.g., [001, 002])
-- **parallel**: Set to true if this can run alongside other tasks without conflicts
-- **conflicts_with**: List task numbers that modify the same files (helps coordination)
-
-### 5. Task Types to Consider
-- **Setup tasks**: Environment, dependencies, scaffolding
-- **Data tasks**: Models, schemas, migrations
-- **API tasks**: Endpoints, services, integration
-- **UI tasks**: Components, pages, styling
-- **Testing tasks**: Unit tests, integration tests
-- **Documentation tasks**: README, API docs
-- **Deployment tasks**: CI/CD, infrastructure
-
-### 6. Parallelization
-Mark tasks with `parallel: true` if they can be worked on simultaneously without conflicts.
-
-### 7. Execution Strategy
+### 6. Execution Strategy
 
 Choose based on task count and complexity:
 
@@ -161,64 +169,54 @@ Choose based on task count and complexity:
 
 **Medium Epic (5-10 tasks)**:
 - Batch into 2-3 groups
-- Spawn agents for each batch
+- Create tasks in batches
 - Consolidate results
 
 **Large Epic (> 10 tasks)**:
 - Analyze dependencies first
 - Group independent tasks
-- Launch parallel agents (max 5 concurrent)
 - Create dependent tasks after prerequisites
+- Consider using Task agents for parallel creation
 
-Example for parallel execution:
-```markdown
-Spawning 3 agents for parallel task creation:
-- Agent 1: Creating tasks 001-003 (Database layer)
-- Agent 2: Creating tasks 004-006 (API layer)
-- Agent 3: Creating tasks 007-009 (UI layer)
-```
-
-### 8. Task Dependency Validation
+### 7. Task Dependency Validation
 
 When creating tasks with dependencies:
-- Ensure referenced dependencies exist (e.g., if Task 003 depends on Task 002, verify 002 was created)
+- Ensure referenced dependencies exist (check task filenames in `depends_on`)
 - Check for circular dependencies (Task A → Task B → Task A)
 - If dependency issues found, warn but continue: "⚠️ Task dependency warning: {details}"
 
-### 9. Update Epic with Task Summary
-After creating all tasks, update the epic file by adding this section:
-```markdown
-## Tasks Created
-- [ ] 001.md - {Task Title} (parallel: true/false)
-- [ ] 002.md - {Task Title} (parallel: true/false)
-- etc.
-
-Total tasks: {count}
-Parallel tasks: {parallel_count}
-Sequential tasks: {sequential_count}
-Estimated total effort: {sum of hours}
-```
-
-Also update the epic's frontmatter progress if needed (still 0% until tasks actually start).
-
-### 9. Quality Validation
+### 8. Quality Validation
 
 Before finalizing tasks, verify:
 - [ ] All tasks have clear acceptance criteria
 - [ ] Task sizes are reasonable (1-3 days each)
 - [ ] Dependencies are logical and achievable
-- [ ] Parallel tasks don't conflict with each other
+- [ ] All tasks have `epic: $ARGUMENTS` in frontmatter
+- [ ] Task filenames follow cc-sessions naming convention
 - [ ] Combined tasks cover all epic requirements
 
-### 10. Post-Decomposition
+### 9. Post-Decomposition
 
 After successfully creating tasks:
-1. Confirm: "✅ Created {count} tasks for epic: $ARGUMENTS"
+
+1. Confirm: "✅ Created {count} cc-sessions tasks for epic: $ARGUMENTS"
 2. Show summary:
    - Total tasks created
-   - Parallel vs sequential breakdown
-   - Total estimated effort
-3. Suggest next step: "Ready to sync to GitHub? Run: /pm:epic-sync $ARGUMENTS"
+   - Task files created (list filenames)
+   - Dependencies mapped
+3. Show next steps:
+   - "Tasks are in: sessions/tasks/"
+   - "View next tasks: /pm:next"
+   - "View epic status: /pm:epic-status $ARGUMENTS"
+   - "Ready to sync to GitHub? Run: /pm:epic-sync $ARGUMENTS"
+
+## Important Notes
+
+- **Tasks are cc-sessions task manifests**, not PM task files
+- **Tasks go in `sessions/tasks/`**, not `.claude/epics/$ARGUMENTS/`
+- **Epic metadata is in frontmatter**, not separate PM task format
+- **PM sync happens automatically** via hooks when tasks are created/started/completed
+- **Dependencies use task filenames**, not task numbers
 
 ## Error Recovery
 
@@ -226,5 +224,6 @@ If any step fails:
 - If task creation partially completes, list which tasks were created
 - Provide option to clean up partial tasks
 - Never leave the epic in an inconsistent state
+- Ensure epic.json is updated even if some tasks fail
 
 Aim for tasks that can be completed in 1-3 days each. Break down larger tasks into smaller, manageable pieces for the "$ARGUMENTS" epic.

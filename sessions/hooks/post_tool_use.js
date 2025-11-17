@@ -22,6 +22,12 @@ const {
     TaskState,
     StateError
 } = require('./shared_state.js');
+const {
+    syncTaskToEpic,
+    updateEpicTaskStatus,
+    syncToGitHub
+} = require('./pm_sync.js');
+const { parseFrontmatter } = require('../lib/frontmatter-sync.js');
 ///-///
 
 //-//
@@ -221,47 +227,125 @@ if (STATE.mode === Mode.GO && !STATE.flags.subagent && (!STATE.todos.active || S
 //!<
 
 //!> Task file auto-update detection
-if (["Edit", "Write", "MultiEdit"].includes(toolName) && STATE.current_task.name && STATE.current_task.file) {
+if (["Edit", "Write", "MultiEdit"].includes(toolName)) {
     // Extract file path from tool input
     const filePathStr = toolInput.file_path;
     if (filePathStr) {
         const filePath = path.resolve(filePathStr);
-        const taskPath = path.resolve(path.join(PROJECT_ROOT, 'sessions', 'tasks', STATE.current_task.file));
-
-        // Check if the edited file is the current task file
-        if (filePath === taskPath) {
+        const tasksDir = path.join(PROJECT_ROOT, 'sessions', 'tasks');
+        
+        // Check if file is in sessions/tasks/ directory (new task creation or existing task edit)
+        if (filePath.startsWith(tasksDir) && filePath.endsWith('.md')) {
             try {
-                // Task file was edited - re-parse frontmatter to detect changes
-                const updatedTask = TaskState.loadTask({ path: taskPath });
-
-                // Update session state with any changes from the re-parsed frontmatter
-                if (updatedTask) {
-                    editState(s => {
-                        // Update relevant fields from the re-parsed task
-                        if (updatedTask.status !== STATE.current_task.status) {
-                            s.current_task.status = updatedTask.status;
+                const taskFile = path.relative(tasksDir, filePath);
+                const content = fs.readFileSync(filePath, 'utf8');
+                const { frontmatter } = parseFrontmatter(content);
+                
+                if (frontmatter) {
+                    // PM Sync: Register task with epic if epic metadata exists
+                    if (frontmatter.epic) {
+                        syncTaskToEpic(filePath, frontmatter);
+                    }
+                    
+                    // If this is the current task, update state and sync status changes
+                    if (STATE.current_task.name && STATE.current_task.file === taskFile) {
+                        const updatedTask = TaskState.loadTask({ path: filePath });
+                        
+                        if (updatedTask) {
+                            const oldStatus = STATE.current_task.status;
+                            const newStatus = updatedTask.status;
+                            
+                            editState(s => {
+                                // Update relevant fields from the re-parsed task
+                                if (updatedTask.status !== STATE.current_task.status) {
+                                    s.current_task.status = updatedTask.status;
+                                }
+                                if (updatedTask.updated !== STATE.current_task.updated) {
+                                    s.current_task.updated = updatedTask.updated;
+                                }
+                                if (updatedTask.branch !== STATE.current_task.branch) {
+                                    s.current_task.branch = updatedTask.branch;
+                                }
+                                if (updatedTask.submodules !== STATE.current_task.submodules) {
+                                    s.current_task.submodules = updatedTask.submodules;
+                                }
+                                // Update other relevant fields as needed
+                                if (updatedTask.started !== STATE.current_task.started) {
+                                    s.current_task.started = updatedTask.started;
+                                }
+                                if (updatedTask.dependencies !== STATE.current_task.dependencies) {
+                                    s.current_task.dependencies = updatedTask.dependencies;
+                                }
+                            });
+                            
+                            // PM Sync: Update epic task status if status changed
+                            if (oldStatus !== newStatus && frontmatter.epic) {
+                                updateEpicTaskStatus(frontmatter.epic, taskFile, newStatus);
+                                // Sync to GitHub if applicable
+                                if (frontmatter.github_issue) {
+                                    syncToGitHub(frontmatter.epic, taskFile, newStatus);
+                                }
+                            }
                         }
-                        if (updatedTask.updated !== STATE.current_task.updated) {
-                            s.current_task.updated = updatedTask.updated;
-                        }
-                        if (updatedTask.branch !== STATE.current_task.branch) {
-                            s.current_task.branch = updatedTask.branch;
-                        }
-                        if (updatedTask.submodules !== STATE.current_task.submodules) {
-                            s.current_task.submodules = updatedTask.submodules;
-                        }
-                        // Update other relevant fields as needed
-                        if (updatedTask.started !== STATE.current_task.started) {
-                            s.current_task.started = updatedTask.started;
-                        }
-                        if (updatedTask.dependencies !== STATE.current_task.dependencies) {
-                            s.current_task.dependencies = updatedTask.dependencies;
-                        }
-                    });
+                    }
                 }
             } catch (error) {
                 // File might be temporarily invalid during editing
                 // or frontmatter might be malformed - silently skip
+            }
+        } else if (STATE.current_task.name && STATE.current_task.file) {
+            // Check if the edited file is the current task file (for directory tasks)
+            const taskPath = path.resolve(path.join(PROJECT_ROOT, 'sessions', 'tasks', STATE.current_task.file));
+            if (filePath === taskPath) {
+                try {
+                    // Task file was edited - re-parse frontmatter to detect changes
+                    const updatedTask = TaskState.loadTask({ path: taskPath });
+
+                    // Update session state with any changes from the re-parsed frontmatter
+                    if (updatedTask) {
+                        const oldStatus = STATE.current_task.status;
+                        const newStatus = updatedTask.status;
+                        
+                        editState(s => {
+                            // Update relevant fields from the re-parsed task
+                            if (updatedTask.status !== STATE.current_task.status) {
+                                s.current_task.status = updatedTask.status;
+                            }
+                            if (updatedTask.updated !== STATE.current_task.updated) {
+                                s.current_task.updated = updatedTask.updated;
+                            }
+                            if (updatedTask.branch !== STATE.current_task.branch) {
+                                s.current_task.branch = updatedTask.branch;
+                            }
+                            if (updatedTask.submodules !== STATE.current_task.submodules) {
+                                s.current_task.submodules = updatedTask.submodules;
+                            }
+                            // Update other relevant fields as needed
+                            if (updatedTask.started !== STATE.current_task.started) {
+                                s.current_task.started = updatedTask.started;
+                            }
+                            if (updatedTask.dependencies !== STATE.current_task.dependencies) {
+                                s.current_task.dependencies = updatedTask.dependencies;
+                            }
+                        });
+                        
+                        // PM Sync: Update epic task status if status changed
+                        if (oldStatus !== newStatus) {
+                            const taskContent = fs.readFileSync(taskPath, 'utf8');
+                            const { frontmatter } = parseFrontmatter(taskContent);
+                            if (frontmatter?.epic) {
+                                updateEpicTaskStatus(frontmatter.epic, STATE.current_task.file, newStatus);
+                                // Sync to GitHub if applicable
+                                if (frontmatter.github_issue) {
+                                    syncToGitHub(frontmatter.epic, STATE.current_task.file, newStatus);
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    // File might be temporarily invalid during editing
+                    // or frontmatter might be malformed - silently skip
+                }
             }
         }
     }

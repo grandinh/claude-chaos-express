@@ -16,6 +16,9 @@ const https = require('https');
 const { execSync } = require('child_process');
 const TaskQueueManager = require('./task-queue-manager');
 const { detectProjectRoot } = require('./utils');
+// PM Sync integration
+const pmSync = require('../sessions/hooks/pm_sync.js');
+const { parseFrontmatter } = require('../sessions/lib/frontmatter-sync.js');
 
 const PROJECT_ROOT = detectProjectRoot();
 const ORCHESTRATOR_STATE = path.join(PROJECT_ROOT, 'sessions', 'tasks', '.orchestrator-state.json');
@@ -502,8 +505,7 @@ class AgentOrchestrator {
             return;
         }
 
-        // Read task file to generate prompt (resolve to absolute path)
-        const taskPath = path.isAbsolute(task.path) ? task.path : path.join(PROJECT_ROOT, task.path);
+        // Read task file to generate prompt (taskPath already resolved above)
         const taskContent = fs.readFileSync(taskPath, 'utf8');
         const taskName = task.name || path.basename(task.path, '.md');
         
@@ -940,7 +942,11 @@ Read the task file content above and implement all todos. Ensure \`context_gathe
 
             // 6. Task Archival
             console.log(`[STATUS: Archiving Task]`);
-            await this.archiveTask(task);
+            const archivedTaskPath = await this.archiveTask(task);
+
+            // 6.5. PM Sync - Update epic progress and sync to GitHub
+            console.log(`[STATUS: PM Sync]`);
+            await this.syncTaskToPM(archivedTaskPath || taskPath);
 
             // 7. Git Operations
             console.log(`[STATUS: Git Operations]`);
@@ -1287,9 +1293,75 @@ Maintain strict chronological order and preserve important decisions.`;
             fs.renameSync(taskPath, donePath);
             
             console.log(`  ✓ Task archived to: done/${taskFileName}`);
+            
+            // Return the archived path for PM sync
+            return donePath;
         } catch (error) {
             console.error(`  ❌ Error archiving task: ${error.message}`);
             throw error;
+        }
+    }
+
+    /**
+     * Sync task completion to PM epics
+     * Updates epic task status, recalculates progress, and syncs to GitHub if applicable
+     * @param {string} taskPath - Path to archived task file (in done/ directory)
+     */
+    async syncTaskToPM(taskPath) {
+        try {
+            // Read task file to get frontmatter
+            if (!fs.existsSync(taskPath)) {
+                console.warn(`  ⚠️  Task file not found for PM sync: ${taskPath}`);
+                return;
+            }
+
+            const taskContent = fs.readFileSync(taskPath, 'utf8');
+            const { frontmatter } = parseFrontmatter(taskContent);
+
+            if (!frontmatter || !frontmatter.epic) {
+                // Not an epic task, skip PM sync
+                console.log(`  ✓ Task not part of an epic, skipping PM sync`);
+                return;
+            }
+
+            const epicName = frontmatter.epic;
+            const taskFile = path.basename(taskPath);
+
+            console.log(`  📋 Syncing task "${taskFile}" to epic "${epicName}"`);
+
+            // Update epic task status to 'completed'
+            const statusUpdated = pmSync.updateEpicTaskStatus(epicName, taskFile, 'completed');
+            if (!statusUpdated) {
+                console.warn(`  ⚠️  Failed to update epic task status`);
+            } else {
+                console.log(`  ✓ Epic task status updated to 'completed'`);
+            }
+
+            // Update epic progress
+            const progress = pmSync.updateEpicProgress(epicName);
+            console.log(`  ✓ Epic progress updated: ${progress}%`);
+
+            // Check if epic is complete
+            const epicComplete = pmSync.checkEpicComplete(epicName);
+            if (epicComplete) {
+                console.log(`  🎉 Epic "${epicName}" is now complete (100% progress)!`);
+            }
+
+            // Sync to GitHub if applicable
+            if (frontmatter.github_issue) {
+                const githubSynced = pmSync.syncToGitHub(epicName, taskFile, 'completed');
+                if (githubSynced) {
+                    console.log(`  ✓ GitHub issue synced: ${frontmatter.github_issue}`);
+                } else {
+                    console.warn(`  ⚠️  GitHub sync failed (issue may not exist or gh CLI not available)`);
+                }
+            }
+
+            console.log(`  ✓ PM sync completed`);
+        } catch (error) {
+            // Don't throw - PM sync errors shouldn't block task completion
+            console.error(`  ❌ Error in PM sync: ${error.message}`);
+            console.error(`   PM sync failed but task completion continues`);
         }
     }
 

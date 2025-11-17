@@ -24,6 +24,13 @@ const {
     isParentTask
 } = require('./shared_state.js');
 const { parseFrontmatter } = require('../lib/frontmatter-sync.js');
+const {
+    syncTaskToEpic,
+    updateEpicTaskStatus,
+    updateEpicProgress,
+    checkEpicComplete,
+    syncToGitHub
+} = require('./pm_sync.js');
 ///-///
 
 //-//
@@ -343,6 +350,10 @@ if (!isApiCommand && taskCreationDetected) {
     if (hadActiveTodos) {
         context += "\nYour previous todos have been stashed and will be restored after task creation is complete.\n";
     }
+    
+    // PM Sync: After task file is created, sync to epic if epic metadata exists
+    // Note: Actual sync happens in post_tool_use.js when file is written
+    context += "\n[PM Sync] Task creation detected. If task has epic: frontmatter, it will be automatically synced to epic when file is created.\n";
 }
 //!<
 
@@ -359,12 +370,12 @@ if (!isApiCommand && taskCompletionDetected) {
             activeForm: 'Running code-review agent'
         }),
         new CCTodo({
-            content: 'Run logging agent to consolidate work logs',
-            activeForm: 'Running logging agent to consolidate work logs'
-        }),
-        new CCTodo({
             content: 'Run service-documentation agent to update CLAUDE.md files and other documentation',
             activeForm: 'Running service-documentation agent to update documentation'
+        }),
+        new CCTodo({
+            content: 'Run logging agent to consolidate work logs',
+            activeForm: 'Running logging agent to consolidate work logs'
         }),
         new CCTodo({
             content: 'Mark task file complete and move to tasks/done/',
@@ -494,6 +505,31 @@ if (!isApiCommand && taskCompletionDetected) {
         context += `User triggered task completion. Protocol:\n${protocolContent}\n`;
     } else {
         context += "User triggered task completion. Read sessions/protocols/task-completion.md\n";
+    }
+    
+    // PM Sync: Mark task complete, update epic progress, check if epic complete
+    if (STATE.current_task?.filePath) {
+        try {
+            const taskContent = fs.readFileSync(STATE.current_task.filePath, 'utf8');
+            const { frontmatter } = parseFrontmatter(taskContent);
+            if (frontmatter?.epic) {
+                const taskFile = path.basename(STATE.current_task.filePath);
+                // Mark task as completed in epic
+                updateEpicTaskStatus(frontmatter.epic, taskFile, 'completed');
+                // Update epic progress
+                updateEpicProgress(frontmatter.epic);
+                // Check if epic is complete
+                if (checkEpicComplete(frontmatter.epic)) {
+                    context += `\n[PM Sync] Epic "${frontmatter.epic}" is now complete (100% progress)!\n`;
+                }
+                // Sync to GitHub if applicable
+                if (frontmatter.github_issue) {
+                    syncToGitHub(frontmatter.epic, taskFile, 'completed');
+                }
+            }
+        } catch (error) {
+            // Silently fail - task file might not exist or might be invalid
+        }
     }
 }
 //!<
@@ -644,6 +680,24 @@ if (!isApiCommand && taskStartDetected) {
         context += `User triggered task startup. Protocol:\n${protocolContent}\n`;
     } else {
         context += "User triggered task startup. Read sessions/protocols/task-startup.md\n";
+    }
+    
+    // PM Sync: Update epic task status to in-progress when task starts
+    if (STATE.current_task?.filePath) {
+        try {
+            const taskContent = fs.readFileSync(STATE.current_task.filePath, 'utf8');
+            const { frontmatter } = parseFrontmatter(taskContent);
+            if (frontmatter?.epic) {
+                const taskFile = path.basename(STATE.current_task.filePath);
+                updateEpicTaskStatus(frontmatter.epic, taskFile, 'in-progress');
+                // Sync to GitHub if applicable
+                if (frontmatter.github_issue) {
+                    syncToGitHub(frontmatter.epic, taskFile, 'in-progress');
+                }
+            }
+        } catch (error) {
+            // Silently fail - task file might not exist yet or might be invalid
+        }
     }
 }
 //!<

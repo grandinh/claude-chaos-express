@@ -7,48 +7,91 @@ echo "📋 Next Available Tasks"
 echo "======================="
 echo ""
 
-# Find tasks that are open and have no dependencies or whose dependencies are closed
+# Query cc-sessions tasks instead of PM tasks
 found=0
 
-for epic_dir in .claude/epics/*/; do
-  [ -d "$epic_dir" ] || continue
-  epic_name=$(basename "$epic_dir")
+# Check if epic filter is provided
+EPIC_FILTER=""
+if [ "$1" = "--epic" ] && [ -n "$2" ]; then
+  EPIC_FILTER="$2"
+fi
 
-  for task_file in "$epic_dir"/[0-9]*.md; do
-    [ -f "$task_file" ] || continue
+# Function to parse frontmatter value
+parse_frontmatter() {
+  local file="$1"
+  local key="$2"
+  grep "^${key}:" "$file" | head -1 | sed "s/^${key}: *//" | sed 's/^"//' | sed 's/"$//'
+}
 
-    # Check if task is open
-    status=$(grep "^status:" "$task_file" | head -1 | sed 's/^status: *//')
-    if [ "$status" != "open" ] && [ -n "$status" ]; then
-      continue
-    fi
-
-    # Check dependencies
-    # Extract dependencies from task file
-    deps_line=$(grep "^depends_on:" "$task_file" | head -1)
-    if [ -n "$deps_line" ]; then
-      deps=$(echo "$deps_line" | sed 's/^depends_on: *//')
-      deps=$(echo "$deps" | sed 's/^\[//' | sed 's/\]$//')
-      # Trim whitespace and handle empty cases
-      deps=$(echo "$deps" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-      [ -z "$deps" ] && deps=""
-    else
-      deps=""
-    fi
-
-    # If no dependencies or empty, task is available
-    if [ -z "$deps" ] || [ "$deps" = "depends_on:" ]; then
-      task_name=$(grep "^name:" "$task_file" | head -1 | sed 's/^name: *//')
-      task_num=$(basename "$task_file" .md)
-      parallel=$(grep "^parallel:" "$task_file" | head -1 | sed 's/^parallel: *//')
-
-      echo "✅ Ready: #$task_num - $task_name"
-      echo "   Epic: $epic_name"
-      [ "$parallel" = "true" ] && echo "   🔄 Can run in parallel"
-      echo ""
-      ((found++))
+# Function to check if task dependencies are met
+check_dependencies() {
+  local task_file="$1"
+  local deps_line=$(parse_frontmatter "$task_file" "depends_on")
+  
+  if [ -z "$deps_line" ] || [ "$deps_line" = "[]" ] || [ "$deps_line" = "null" ]; then
+    return 0  # No dependencies
+  fi
+  
+  # Parse array format: [task1.md, task2.md] or ["task1.md", "task2.md"]
+  local deps=$(echo "$deps_line" | sed 's/^\[//' | sed 's/\]$//' | sed 's/"//g' | sed 's/ //g')
+  
+  if [ -z "$deps" ]; then
+    return 0  # Empty dependencies
+  fi
+  
+  # Check each dependency
+  IFS=',' read -ra DEP_ARRAY <<< "$deps"
+  for dep in "${DEP_ARRAY[@]}"; do
+    dep=$(echo "$dep" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    if [ -n "$dep" ]; then
+      local dep_file="sessions/tasks/$dep"
+      if [ ! -f "$dep_file" ]; then
+        return 1  # Dependency file not found
+      fi
+      
+      local dep_status=$(parse_frontmatter "$dep_file" "status")
+      if [ "$dep_status" != "completed" ]; then
+        return 1  # Dependency not completed
+      fi
     fi
   done
+  
+  return 0  # All dependencies met
+}
+
+# Scan sessions/tasks/ directory
+for task_file in sessions/tasks/*.md; do
+  [ -f "$task_file" ] || continue
+  
+  # Check if task is pending
+  status=$(parse_frontmatter "$task_file" "status")
+  if [ "$status" != "pending" ]; then
+    continue
+  fi
+  
+  # Check epic filter if provided
+  if [ -n "$EPIC_FILTER" ]; then
+    epic=$(parse_frontmatter "$task_file" "epic")
+    if [ "$epic" != "$EPIC_FILTER" ]; then
+      continue
+    fi
+  fi
+  
+  # Check dependencies
+  if ! check_dependencies "$task_file"; then
+    continue  # Dependencies not met
+  fi
+  
+  # Task is ready
+  task_name=$(parse_frontmatter "$task_file" "name")
+  task_basename=$(basename "$task_file")
+  epic=$(parse_frontmatter "$task_file" "epic")
+  
+  echo "✅ Ready: @sessions/tasks/$task_basename"
+  echo "   Name: $task_name"
+  [ -n "$epic" ] && echo "   Epic: $epic"
+  echo ""
+  ((found++))
 done
 
 if [ $found -eq 0 ]; then
@@ -57,6 +100,7 @@ if [ $found -eq 0 ]; then
   echo "💡 Suggestions:"
   echo "  • Check blocked tasks: /pm:blocked"
   echo "  • View all tasks: /pm:epic-list"
+  [ -n "$EPIC_FILTER" ] && echo "  • Try without epic filter: /pm:next"
 fi
 
 echo ""

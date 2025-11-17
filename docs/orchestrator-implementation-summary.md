@@ -147,6 +147,15 @@ npm run queue-manager
 - Uses queue manager for task routing and priority selection
 - Updates queue state after task assignments and completions
 
+### With PM Sync (Epic Tracking)
+- Automatically syncs task completion to PM epics via `sessions/hooks/pm_sync.js`
+- Updates epic task status to 'completed' when orchestrator finishes implementation tasks
+- Recalculates epic progress percentage after each task completion
+- Detects and logs epic completion (100% progress) when final task completes
+- Syncs to GitHub issues when tasks have `github_issue` frontmatter
+- PM sync runs as part of task completion protocol (step 6.5, after archival)
+- Errors in PM sync are logged but do not block task completion
+
 ## State Management
 
 ### Orchestrator State
