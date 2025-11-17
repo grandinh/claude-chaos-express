@@ -477,7 +477,8 @@ class AgentOrchestrator {
 
     async spawnCloudAgent(agent, task, queueName) {
         // FAIL-FAST: Final validation before spawning
-        if (!fs.existsSync(task.path)) {
+        const taskPath = path.isAbsolute(task.path) ? task.path : path.join(PROJECT_ROOT, task.path);
+        if (!fs.existsSync(taskPath)) {
             console.error(`❌ FAIL-FAST: Task file disappeared before cloud agent spawn: ${task.path}`);
             this.logFileValidationFailure(task, `File disappeared between assignment and cloud spawn`);
 
@@ -642,7 +643,7 @@ Read the task file content above and implement all todos. Ensure \`context_gathe
                 const status = response.status;
                 
                 if (status === 'FINISHED') {
-                    this.handleAgentCompletion(agent, task, queueName);
+                    await this.handleAgentCompletion(agent, task, queueName);
                 } else if (status === 'FAILED' || status === 'CANCELLED') {
                     this.handleAgentFailure(agent, task, queueName, `cloud agent ${status}`);
                 } else if (status === 'RUNNING' || status === 'CREATING') {
