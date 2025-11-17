@@ -1730,3 +1730,208 @@ bash -c 'set -euo pipefail; X=0; X=$((X + 1)); echo "Reached"'
 - StackOverflow: "Why does my counter fail with set -e?"
 
 ---
+
+## Validation Logic Drift Between Enforcement Levels
+
+**Date:** 2025-11-17
+**Context:** h-enforce-context-gathering task
+**Discovered During:** Code review of enforcement implementation
+
+### Problem
+
+Hook and queue manager were using different validation logic, causing inconsistent enforcement
+
+### Symptoms
+
+- Tasks pass queue validation but fail hook validation
+- Users confused why IMPLEMENT mode blocked after task in implementation queue
+- Different error messages for same validation failure
+- Inconsistent behavior across enforcement levels
+
+### Root Cause
+
+**Hook validation** (`sessions/hooks/context_validation.js`):
+```javascript
+// Case-sensitive, anchored, all heading levels, content length check
+const headingRegex = /^#{1,6}\s+Context Manifest\s*$/m;
+if (meaningfulContent.length < 50) return invalid;
+```
+
+**Queue manager validation** (`scripts/task-queue-manager.js`):
+```javascript
+// Case-insensitive, unanchored, only ##, no content check
+const hasManifest = /##\s+Context Manifest|## Context Manifest/i.test(content);
+```
+
+### Impact
+
+- Tasks routed to implementation queue without proper context
+- Hook blocks IMPLEMENT mode, causing user confusion
+- Difficult to debug (validation works in one place, fails in another)
+- Undermines trust in multi-level enforcement
+
+### Fix
+
+Extract shared validation utility in `sessions/lib/context-validation-utils.js`:
+
+```javascript
+function hasValidContextManifest(content, minLength = 50) {
+    // Single implementation used by both hook and queue manager
+    const headingRegex = /^#{1,6}\s+Context Manifest\s*$/m;
+    const match = content.match(headingRegex);
+    if (!match) return { valid: false, reason: 'heading_missing' };
+
+    // Extract and validate content...
+    if (meaningfulContent.length < minLength) {
+        return { valid: false, reason: 'content_insufficient' };
+    }
+
+    return { valid: true };
+}
+```
+
+**Updated both systems to use shared utility:**
+- `sessions/hooks/context_validation.js` - Uses `validateTaskContext()`
+- `scripts/task-queue-manager.js` - Uses `hasValidContextManifest()`
+
+### Prevention
+
+1. **Extract shared utilities EARLY** when implementing multi-level enforcement
+2. **Never duplicate validation logic** across systems
+3. **Test consistency:** Same input should produce same result across all levels
+4. **Document shared utilities** in `sessions/lib/README.md` for discoverability
+5. **Code review checklist:** Check for validation logic duplication
+
+### Testing
+
+**Consistency Test:**
+```javascript
+const testContent = '---\ncontext_gathered: true\n---\n## Context Manifest\nTest content here';
+
+// Both should return same result
+const hookResult = validateTaskContext(testFile, parseFrontmatter);
+const queueResult = hasValidContextManifest(testContent);
+
+assert(hookResult.valid === queueResult.valid);
+```
+
+### Related Files
+
+- `sessions/lib/context-validation-utils.js` - Shared validation utility (single source of truth)
+- `sessions/hooks/context_validation.js` - Hook using shared utility
+- `scripts/task-queue-manager.js` - Queue manager using shared utility
+- `docs/context-gathering-enforcement.md` - Enforcement specification
+
+---
+
+## Frontmatter Parsing Duplication Across Hooks
+
+**Date:** 2025-11-17
+**Context:** h-enforce-context-gathering task
+**Discovered During:** Code review and consistency check
+
+### Problem
+
+Multiple hooks were independently parsing frontmatter using inline regex logic
+
+### Symptoms
+
+- Bug fixes required changing 3+ files
+- Inconsistent handling of edge cases (missing flags, malformed YAML)
+- Code review flagged duplication pattern
+- Maintenance burden increased with each new hook
+
+### Root Cause
+
+**No awareness of existing shared utility:**
+- `sessions/lib/frontmatter-sync.js` already had `parseFrontmatter()` function
+- Inline regex implementation seemed simpler than importing shared utility
+- No documentation of shared utilities in hook development guide
+- Pattern repeated as developers copied from existing hooks
+
+### Affected Files
+
+**Hooks with duplicated parsing:**
+- `sessions/hooks/context_validation.js` (lines 40-50)
+```javascript
+const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+const contextGatheredMatch = frontmatter.match(/^context_gathered:\s*(true|false)/m);
+```
+
+- `sessions/hooks/user_messages.js` (lines 546-560)
+```javascript
+const frontmatterMatch = taskContent.match(/^---\n([\s\S]*?)\n---/);
+const contextGatheredMatch = frontmatter.match(/^context_gathered:\s*(true|false)/m);
+```
+
+- `sessions/hooks/session_start.js` (potential duplication)
+
+### Impact
+
+- Technical debt (duplicated logic across multiple files)
+- Bug fixes must be applied in 3+ places
+- Edge case handling varies between hooks
+- Future hooks likely to repeat pattern
+- Increased test surface area
+
+### Fix
+
+**Replace inline parsing with shared utility:**
+
+```javascript
+// Before (duplicated inline logic)
+const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+if (!frontmatterMatch) return { valid: false };
+const contextGatheredMatch = frontmatterMatch[1].match(/^context_gathered:\s*(true|false)/m);
+const contextGathered = contextGatheredMatch ? contextGatheredMatch[1] === 'true' : false;
+
+// After (shared utility)
+const { parseFrontmatter } = require('../lib/frontmatter-sync.js');
+const { frontmatter } = parseFrontmatter(content);
+const contextGathered = frontmatter.context_gathered === true;
+```
+
+**Benefits:**
+- Single source of truth (one place to fix bugs)
+- Handles edge cases consistently (booleans, arrays, null values)
+- Cleaner code (3 lines vs 6+ lines)
+- Type coercion built-in (`'true'` → `true`)
+
+### Prevention
+
+1. **ALWAYS check `sessions/lib/` before implementing parsing/validation logic**
+2. **Document shared utilities** in hook development guide
+3. **Code review should flag duplication patterns**
+4. **Consider pre-commit hook** to detect regex-based frontmatter parsing
+5. **Establish pattern:** Import from `sessions/lib/` for common operations
+
+### Testing
+
+**Shared utility handles edge cases:**
+```javascript
+parseFrontmatter('---\ncontext_gathered: true\n---\nContent')
+// { frontmatter: { context_gathered: true }, body: 'Content' }
+
+parseFrontmatter('---\ncontext_gathered: false\n---')
+// { frontmatter: { context_gathered: false }, body: '' }
+
+parseFrontmatter('No frontmatter')
+// { frontmatter: null, body: 'No frontmatter' }
+```
+
+### Lesson Learned
+
+**Before implementing common operations in hooks:**
+1. Search `sessions/lib/` for existing utilities
+2. Ask: "Is this logic hook-specific or reusable?"
+3. If reusable, extract to shared utility
+4. Update hook development documentation
+
+### Related Files
+
+- `sessions/lib/frontmatter-sync.js` - Shared frontmatter parsing utility
+- `sessions/hooks/context_validation.js` - Refactored to use shared utility
+- `sessions/hooks/user_messages.js` - Refactored to use shared utility
+- `.claude/skills/cc-sessions-hooks/SKILL.md` - Should document this pattern
+
+---

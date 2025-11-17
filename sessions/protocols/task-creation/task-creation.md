@@ -283,7 +283,7 @@ The fix separates concerns: durable knowledge (LCMP) vs transient operational da
 
 **Note:** If the context-gathering agent runs in step 5, it will **add to** this Context Manifest section with discovered code references. Your backlinks provide the **conceptual** grounding; the agent adds the **technical** details.
 
-### 5: Run context-gathering agent or mark complete
+### 5: Context Gathering (Optional During Creation)
 
 Present the decision to the user:
 
@@ -291,15 +291,62 @@ Present the decision to the user:
 [DECISION: Context Gathering]
 Would you like me to run the context-gathering agent now to create a comprehensive context manifest?
 
-- YES: I'll run the agent to analyze the codebase and create context
-- NO: We'll skip this for now (must be done during task startup)
+**Options:**
+
+1. **Gather now** (recommended):
+   - Invoke context-gathering agent immediately
+   - Agent populates context manifest
+   - Sets `context_gathered: true` in frontmatter
+   - Task ready for implementation queue
+
+2. **Defer to startup** (acceptable):
+   - Leave `context_gathered: false` in frontmatter
+   - Document in task notes: "Context gathering deferred"
+   - Will become mandatory at task startup
+   - Task enters Context Queue (if using orchestration)
 
 Your choice:
 ```
 
-  - If yes: Use context-gathering agent on sessions/tasks/[priority]-[task-name].md
-  - If no: Mark this step complete and continue
-  - Context manifest MUST be complete before work begins (if not now, during task startup)
+**If yes (gather now):**
+- Use context-gathering agent on sessions/tasks/[priority]-[task-name].md
+- Agent will analyze codebase and create comprehensive context
+- Agent will update task frontmatter: `context_gathered: true`
+- Task is ready for implementation work
+
+**If no (defer to startup):**
+- Mark this step complete and continue
+- Ensure frontmatter has `context_gathered: false` (or leave missing, defaults to false)
+- Add note in task file: "Context gathering deferred to task startup"
+- Context gathering will become **mandatory** at task startup (blocking IMPLEMENT mode)
+
+**Note:** Skipping during creation makes gathering mandatory at startup before any implementation work can begin.
+
+**Error Recovery:**
+
+If context-gathering agent fails:
+1. Log failure to `context/gotchas.md` with error details
+2. Present options to user:
+   ```markdown
+   [ERROR: Context Gathering Failed]
+   The context-gathering agent encountered an error: <error message>
+
+   Options:
+   - RETRY: Invoke agent again (recommended for transient failures)
+   - MANUAL: Skip context gathering for now (will be required at task startup)
+   - ABORT: Cancel task creation and return to discussion mode
+
+   Your choice:
+   ```
+3. Based on user choice:
+   - **RETRY**: Invoke agent again with same parameters
+   - **MANUAL**:
+     - Leave `context_gathered: false` in frontmatter
+     - Add note in task file: "Context gathering failed during creation - will be retried at startup"
+     - Continue to step 6
+   - **ABORT**: Delete task file, exit protocol, return to discussion mode
+
+**Note**: If manual option chosen, context gathering will be mandatory at task startup (hook validation will block IMPLEMENT mode).
 
 ### 6: Update service index files if applicable
   - Check if task relates to any task indexes (sessions/tasks/indexes)

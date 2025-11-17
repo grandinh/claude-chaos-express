@@ -3,6 +3,7 @@ name: "[prefix]-[descriptive-name]"
 branch: "feature/[name]|fix/[name]|experiment/[name]|none"
 status: "pending|in-progress|completed|blocked"
 created: "YYYY-MM-DD"
+context_gathered: false  # Set to true after context-gathering agent completes
 depends_on: []  # Optional: list of task files this task depends on, e.g. ["task-file-1.md", "task-file-2.md"]
 submodules: []  # Optional: list of git submodules affected (delete if not super-repo)
 ---

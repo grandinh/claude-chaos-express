@@ -84,10 +84,57 @@ If present:
 ✓ Context manifest found and loaded
 ```
 
+**Actions:**
+- **`context_gathered: false` OR missing:**
+  - MUST invoke context-gathering agent before proceeding to IMPLEMENT
+  - Agent will:
+    - Analyze task requirements and dependencies
+    - Create comprehensive context manifest
+    - Update task file with manifest section
+    - Set `context_gathered: true` in frontmatter
+  - Block progression to IMPLEMENT until complete
+
+- **`context_gathered: true`:**
+  - Verify "Context Manifest" section exists in task file
+  - If missing or incomplete, re-run context-gathering agent
+  - Otherwise, proceed to step 4
+
+**Validation Checklist:**
+- [ ] Flag exists and is boolean
+- [ ] If true, Context Manifest section present
+- [ ] Manifest contains narrative explanation
+- [ ] Manifest contains technical references
+
 **Behavior:**
 - If `context_gathered: true` AND Context Manifest exists → Skip context gathering todo (step 4), proceed to "Initial Discussion & Planning" (step 5)
 - If `context_gathered: false` or missing → Context gathering todo will be added automatically (step 4)
 - If `context_gathered: true` but Context Manifest missing → This is an error state; context gathering todo will still be added (step 4)
+
+**Error Recovery:**
+
+If context-gathering agent fails:
+1. Log failure to `context/gotchas.md` with error details
+2. Present options to user:
+   ```markdown
+   [ERROR: Context Gathering Failed]
+   The context-gathering agent encountered an error: <error message>
+
+   Options:
+   - RETRY: Invoke agent again (recommended for transient failures)
+   - MANUAL: I'll create a minimal context manifest manually (requires your input)
+   - ABORT: Cancel task startup and return to discussion mode
+
+   Your choice:
+   ```
+3. Based on user choice:
+   - **RETRY**: Invoke agent again with same parameters
+   - **MANUAL**:
+     - Create minimal Context Manifest section with placeholder text
+     - Set `context_gathered: false` (still incomplete)
+     - Continue to step 5 but warn that context is incomplete
+   - **ABORT**: Exit protocol, return to discussion mode
+
+**Note**: Manual context manifest creation is a fallback only. The task will still require proper context gathering before IMPLEMENT mode (hook validation will block).
 
 ## 4. Gather context for the task
 

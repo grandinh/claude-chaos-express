@@ -1,0 +1,36 @@
+{
+  "agents": [
+    {
+      "id": "agent-1",
+      "status": "idle",
+      "currentTask": null,
+      "role": null,
+      "startedAt": "2025-11-17T09:34:31.889Z",
+      "completedTasks": 0,
+      "pid": null,
+      "cloudAgentId": null
+    },
+    {
+      "id": "agent-2",
+      "status": "working",
+      "currentTask": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-fix-orchestrator-status-npm-command.md",
+      "role": "context",
+      "startedAt": "2025-11-17T08:22:32.527Z",
+      "completedTasks": 0,
+      "pid": 37006,
+      "cloudAgentId": null
+    },
+    {
+      "id": "agent-3",
+      "status": "working",
+      "currentTask": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-fix-missing-ccpm-next-script.md",
+      "role": "context",
+      "startedAt": "2025-11-17T08:22:32.539Z",
+      "completedTasks": 0,
+      "pid": 37012,
+      "cloudAgentId": null
+    }
+  ],
+  "completedTasks": [],
+  "lastUpdated": "2025-11-17T09:34:32.010Z"
+}

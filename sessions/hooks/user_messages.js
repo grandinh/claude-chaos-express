@@ -23,6 +23,7 @@ const {
     isSubtask,
     isParentTask
 } = require('./shared_state.js');
+const { parseFrontmatter } = require('../lib/frontmatter-sync.js');
 ///-///
 
 //-//
@@ -544,15 +545,12 @@ if (!isApiCommand && taskStartDetected) {
     if (STATE.current_task?.filePath) {
         try {
             const taskContent = fs.readFileSync(STATE.current_task.filePath, 'utf8');
-            const frontmatterMatch = taskContent.match(/^---\n([\s\S]*?)\n---/);
-            if (frontmatterMatch) {
-                const frontmatter = frontmatterMatch[1];
-                const contextGatheredMatch = frontmatter.match(/^context_gathered:\s*(true|false)/m);
-                if (contextGatheredMatch) {
-                    contextAlreadyGathered = contextGatheredMatch[1] === 'true';
-                }
-                // If context_gathered flag is missing, default to false (backward compatibility)
+            const { frontmatter } = parseFrontmatter(taskContent);
+            if (frontmatter) {
+                // Extract context_gathered flag (defaults to false if missing)
+                contextAlreadyGathered = frontmatter.context_gathered === true;
             }
+            // If frontmatter is null or flag is missing, default to false (backward compatibility)
         } catch (error) {
             // If we can't read the file, assume context is not gathered
             contextAlreadyGathered = false;

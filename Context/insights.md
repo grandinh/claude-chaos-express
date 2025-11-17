@@ -920,3 +920,165 @@ Algorithm contradiction points to implementation bug, not data issue. Diagnostic
 - `sessions/tasks/m-create-handoff-protocol.md` - Task exposing bug
 
 ---
+
+## Context Manifest Validation Requires Semantic Understanding
+
+**Date:** 2025-11-17
+**Context:** h-enforce-context-gathering task
+**Impact:** Prevents false positives in context validation
+
+### Learning
+
+Simple string matching (`content.includes('## Context Manifest')`) creates false positives and validates incomplete context
+
+### Pattern Discovered
+
+Context Manifest validation must check:
+
+1. **Markdown heading structure** (not inside code blocks/comments)
+```javascript
+const headingRegex = /^#{1,6}\s+Context Manifest\s*$/m;
+```
+
+2. **Content extraction between headings**
+```javascript
+const afterHeading = content.substring(headingIndex);
+const nextHeadingMatch = afterHeading.match(/^#{1,6}\s+\w/m);
+```
+
+3. **Meaningful content filtering** (exclude empty lines, HTML comments)
+```javascript
+const meaningfulContent = sectionContent
+    .split('\n')
+    .filter(line => {
+        const trimmed = line.trim();
+        return trimmed.length > 0 && !trimmed.startsWith('<!--');
+    })
+    .join('\n');
+```
+
+4. **Sufficiency threshold** (minimum 50 characters)
+```javascript
+if (meaningfulContent.length < 50) {
+    return { valid: false, reason: 'content_insufficient' };
+}
+```
+
+### Why This Matters
+
+**False Positives Without Semantic Check:**
+- Code blocks containing "## Context Manifest" would pass string matching
+- HTML comments with the text would pass
+- Empty sections with just the heading would pass
+- All three create false sense of validation
+
+### Implementation
+
+Shared utility in `sessions/lib/context-validation-utils.js`:
+
+```javascript
+function hasValidContextManifest(content, minLength = 50) {
+    // 1. Find heading with proper markdown structure
+    const headingRegex = /^#{1,6}\s+Context Manifest\s*$/m;
+    const match = content.match(headingRegex);
+    if (!match) return { valid: false, reason: 'heading_missing' };
+
+    // 2-3. Extract and filter meaningful content
+    // 4. Check sufficiency threshold
+    return { valid: meaningfulContent.length >= minLength };
+}
+```
+
+### Application
+
+- Use `hasValidContextManifest()` utility for all Context Manifest checks
+- Never use simple string matching for markdown structure validation
+- Test with edge cases: code blocks, comments, empty sections
+- Document minimum content requirements in validation errors
+
+### Related Files
+
+- `sessions/lib/context-validation-utils.js` - Validation implementation
+- `sessions/hooks/context_validation.js` - Uses shared utility
+- `scripts/task-queue-manager.js` - Uses shared utility
+- `docs/context-gathering-enforcement.md` - Validation specification
+
+---
+
+## Protocol Error Recovery Prevents Deadlock
+
+**Date:** 2025-11-17
+**Context:** h-enforce-context-gathering task
+**Impact:** Prevents protocol deadlock when agents fail
+
+### Learning
+
+Protocols that invoke agents must handle failures, or agents get stranded waiting indefinitely
+
+### Pattern Discovered
+
+**Original protocols assumed agents always succeed:**
+```markdown
+- MUST invoke context-gathering agent before proceeding
+- Block progression until complete
+```
+
+This creates deadlock if agent fails/times out.
+
+### Solution: Explicit Recovery Paths
+
+Add "Error Recovery" section to all agent-invoking protocols:
+
+```markdown
+If context-gathering agent fails:
+1. Log failure to context/gotchas.md with error details
+2. Present options:
+   - RETRY: Invoke agent again (recommended for transient failures)
+   - MANUAL: Create minimal manifest manually (requires user input)
+   - ABORT: Cancel and return to discussion mode
+3. Based on user choice, proceed accordingly
+
+**Note:** Manual manifests still require proper context before IMPLEMENT mode
+```
+
+### Why This Matters
+
+- **Prevents Deadlock:** Agent doesn't wait forever if invocation fails
+- **Actionable Options:** User has clear recovery paths
+- **Failure Logging:** Issues captured for debugging
+- **Graceful Degradation:** Can continue with manual fallback
+
+### Implementation Example
+
+From `sessions/protocols/task-startup/task-startup.md`:
+
+```markdown
+**Error Recovery:**
+
+If context-gathering agent fails:
+1. Log failure to `context/gotchas.md` with error details
+2. Present options to user [RETRY/MANUAL/ABORT]
+3. Based on user choice:
+   - RETRY: Invoke agent again
+   - MANUAL: Create minimal manifest, set flag to false, warn incomplete
+   - ABORT: Exit protocol, return to discussion mode
+
+**Note:** Manual context manifest creation is a fallback only.
+```
+
+### Application
+
+- All protocols invoking agents must include "Error Recovery" section
+- Provide 3 options: RETRY/MANUAL/ABORT
+- Log failures before presenting options
+- Document fallback limitations clearly
+- Never assume agent invocation will succeed
+
+### Related Files
+
+- `sessions/protocols/task-startup/task-startup.md` - Error recovery section
+- `sessions/protocols/task-creation/task-creation.md` - Error recovery section
+- `docs/context-gathering-enforcement.md` - Recovery procedures
+- `context/gotchas.md` - Protocol error handling gap entry
+
+---

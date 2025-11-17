@@ -82,6 +82,43 @@ context_files:
 
 ```yaml
 schema_version: "1.0"
+timestamp: 2025-11-17T10:06:55Z
+from: cursor
+to: claude
+issue_id: none
+branch: feature/h-enforce-context-gathering
+repo_state:
+  branch: feature/h-enforce-context-gathering
+  last_commit: 9190224ed7c68fad2bb0604e37e80f36ad375ac5
+  dirty_files:
+    - scripts/agent-orchestrator.js
+completed:
+  - Implemented branch fetch for context gathering in orchestrator (scripts/agent-orchestrator.js)
+  - Added branch name storage in agent state when spawning cloud agents
+  - Modified getCloudAgentStatus() to return full response object instead of just status string
+  - Added validateGitConfig() method to verify git repository and origin remote configuration
+  - Added fetchAgentBranch() method with retry logic (2 attempts, 5-second delay, 30-second timeout)
+  - Updated handleAgentCompletion() to fetch branch and checkout task file for context gathering tasks
+  - Added Context Manifest validation after branch fetch to ensure manifest exists locally
+  - Implemented error handling: routes task back to context queue if fetch fails
+  - Fixed context gathering prioritization: unblocked context tasks now prioritized over blocked ones (scripts/task-queue-manager.js)
+next:
+  - Pick up code review task for orchestrator branch fetch implementation
+  - Review fetchAgentBranch() method for security, error handling, and edge cases
+  - Verify git operations handle authentication correctly for private repos
+  - Test branch fetch with various scenarios: missing branch, network failures, timeout cases
+  - Validate Context Manifest validation logic after fetch
+  - Check if branch cleanup is needed after successful fetch
+  - Verify retry logic handles transient network errors appropriately
+  - Review git command injection risks in branch name handling
+context_files:
+  - scripts/agent-orchestrator.js
+  - scripts/task-queue-manager.js
+  - docs/api/cursor-cloud-agents-api.md
+```
+
+```yaml
+schema_version: "1.0"
 timestamp: 2025-11-17T07:19:38Z
 from: cursor
 to: claude

@@ -1008,5 +1008,136 @@ If local development capability is needed in the future:
 
 ---
 
+## Context Enforcement Strategy: 4-Level Defense-in-Depth
+
+**Decision Date:** 2025-11-17
+**Context:** h-enforce-context-gathering task
+**Decision Made By:** Framework implementation
+
+### The Problem
+
+Tasks could reach IMPLEMENT mode without context manifests, causing agents to start work without sufficient context. This led to errors, wasted effort, and incomplete implementations.
+
+### Decision
+
+**Implement 4-level enforcement (flag → protocol → hook → queue) instead of single-point validation**
+
+### Rationale
+
+1. **Defense-in-Depth** - Multiple safety nets prevent bypassing validation at any single level
+2. **Early Feedback** - Each level catches failures that might slip through other levels
+3. **Better UX** - Fails early with clear messages (protocols) and at runtime (hooks)
+4. **Queue Safety** - Prevents implementation agents from receiving tasks without context
+
+**Trade-offs Accepted:**
+- ✓ More robust (multiple safety nets)
+- ✓ Better user experience (fails early with clear messages)
+- ✗ More complexity (4 systems to maintain)
+- ✗ Requires consistency between levels
+
+### Implementation
+
+**Level 1: Task File Flag** - `context_gathered: true|false` in frontmatter
+**Level 2: Protocol Validation** - Task startup/creation protocols check flag, block IMPLEMENT if false
+**Level 3: Hook Enforcement** - `context_validation.js` blocks mode transition if flag false
+**Level 4: Queue Gating** - Multi-agent orchestrator routes to context/implementation queue based on flag
+
+**Prevention of Drift:** Extracted shared validation utilities (`sessions/lib/context-validation-utils.js`) to ensure consistency
+
+### Consequences
+
+**Positive:**
+- 100% coverage (tasks must have context before implementation)
+- Multiple feedback points (early in workflow and at runtime)
+- Clear error messages with recovery guidance
+
+**Negative:**
+- More systems to maintain
+- Requires validation logic consistency across all 4 levels
+- Higher implementation complexity
+
+### Related Files
+
+- `sessions/tasks/TEMPLATE.md` - Flag implementation
+- `sessions/protocols/task-startup/task-startup.md` - Protocol validation
+- `sessions/protocols/task-creation/task-creation.md` - Protocol validation
+- `sessions/hooks/context_validation.js` - Hook enforcement
+- `docs/context-gathering-enforcement.md` - Complete specification
+- `sessions/tasks/h-enforce-context-gathering.md` - Task implementing this decision
+
+---
+
+## Hook System Pattern: Shared Utilities for Consistency
+
+**Decision Date:** 2025-11-17
+**Context:** h-enforce-context-gathering task
+**Decision Made By:** Framework implementation
+
+### The Problem
+
+Multiple hooks were independently parsing frontmatter using inline regex logic. This created:
+- Maintenance burden (bug fixes required changing 3+ files)
+- Inconsistency risk (hooks handled edge cases differently)
+- Duplication (same logic repeated in context_validation, user_messages, session_start)
+
+### Decision
+
+**Extract common logic to `sessions/lib/` instead of duplicating in each hook**
+
+### Rationale
+
+1. **DRY Principle** - Single source of truth for parsing/validation logic
+2. **Consistency** - All hooks use same implementation, handle edge cases identically
+3. **Easier Maintenance** - Bug fixes and improvements in one place
+4. **Framework Pattern** - Establishes pattern for future hook development
+
+**Trade-offs Accepted:**
+- ✓ DRY principle (no duplication)
+- ✓ Consistent behavior across all hooks
+- ✗ Requires discovering existing utilities (not always obvious)
+- ✗ Dependency management (hooks break if utility changes)
+
+### Implementation
+
+**Created Shared Utilities:**
+- `sessions/lib/frontmatter-sync.js` - `parseFrontmatter()` for YAML parsing
+- `sessions/lib/context-validation-utils.js` - `hasValidContextManifest()`, `validateTaskContext()`
+
+**Refactored Hooks:**
+- `sessions/hooks/context_validation.js` - Now uses shared utilities
+- `sessions/hooks/user_messages.js` - Now uses `parseFrontmatter()`
+
+**Pattern for Future Hooks:**
+```javascript
+const { parseFrontmatter } = require('../lib/frontmatter-sync.js');
+const { frontmatter } = parseFrontmatter(content);
+```
+
+### Application
+
+Always check `sessions/lib/` before implementing parsing/validation in hooks. If similar logic exists, use shared utility. If not, consider extracting new utility if logic might be reused.
+
+### Consequences
+
+**Positive:**
+- Single source of truth for frontmatter parsing
+- Consistent edge case handling (booleans, arrays, null values)
+- Framework pattern established for future development
+
+**Negative:**
+- Utilities must be discovered (documentation helps)
+- Breaking changes to utilities affect multiple hooks
+- Requires restart of Claude Code after utility changes
+
+### Related Files
+
+- `sessions/lib/frontmatter-sync.js` - Frontmatter parsing utility
+- `sessions/lib/context-validation-utils.js` - Context validation utility
+- `sessions/hooks/context_validation.js` - Refactored to use utilities
+- `sessions/hooks/user_messages.js` - Refactored to use utilities
+- `sessions/tasks/h-enforce-context-gathering.md` - Task implementing this pattern
+
+---
+
 *Decisions will be added here as they are made and documented during framework development and usage.*
 
