@@ -74,6 +74,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Trigger Cursor Cloud Agent
+        id: trigger-auto-fix
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
