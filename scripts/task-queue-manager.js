@@ -13,11 +13,7 @@
 const fs = require('fs');
 const path = require('path');
 const DependencyGraph = require('./dependency-graph');
-
-const PROJECT_ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-const TASKS_DIR = path.join(PROJECT_ROOT, 'sessions', 'tasks');
-const TASK_LOG = path.join(TASKS_DIR, '.new-tasks.log');
-const QUEUE_STATE = path.join(TASKS_DIR, '.task-queues.json');
+const { detectProjectRoot } = require('./utils');
 
 /**
  * Priority levels mapping
@@ -90,7 +86,19 @@ function calculatePriorityScore(task, options = {}) {
  * Manages context and implementation queues with priority-based selection
  */
 class TaskQueueManager {
-    constructor() {
+    /**
+     * @param {Object} options - Configuration options
+     * @param {string} options.projectRoot - Project root directory (optional)
+     * @param {string} options.tasksDir - Tasks directory (optional)
+     */
+    constructor(options = {}) {
+        // Set up paths (allow override for testing)
+        const projectRoot = options.projectRoot || detectProjectRoot();
+        this.tasksDir = options.tasksDir || path.join(projectRoot, 'sessions', 'tasks');
+        this.taskLog = path.join(this.tasksDir, '.new-tasks.log');
+        this.queueState = path.join(this.tasksDir, '.task-queues.json');
+
+        // Initialize queues
         this.contextQueue = [];
         this.implementationQueue = [];
         this.processedTasks = new Set();
@@ -102,8 +110,8 @@ class TaskQueueManager {
      * Load queue state from disk
      */
     loadState() {
-        if (fs.existsSync(QUEUE_STATE)) {
-            const state = JSON.parse(fs.readFileSync(QUEUE_STATE, 'utf8'));
+        if (fs.existsSync(this.queueState)) {
+            const state = JSON.parse(fs.readFileSync(this.queueState, 'utf8'));
             this.contextQueue = state.contextQueue || [];
             this.implementationQueue = state.implementationQueue || [];
             this.processedTasks = new Set(state.processedTasks || []);
@@ -126,7 +134,7 @@ class TaskQueueManager {
             dependencyGraph: this.dependencyGraph.toJSON(),
             lastUpdated: new Date().toISOString()
         };
-        fs.writeFileSync(QUEUE_STATE, JSON.stringify(state, null, 2), 'utf8');
+        fs.writeFileSync(this.queueState, JSON.stringify(state, null, 2), 'utf8');
     }
 
     /**
@@ -143,11 +151,11 @@ class TaskQueueManager {
      * @returns {Array<string>} - Array of new task paths
      */
     scanNewTasks() {
-        if (!fs.existsSync(TASK_LOG)) {
+        if (!fs.existsSync(this.taskLog)) {
             return [];
         }
 
-        const lines = fs.readFileSync(TASK_LOG, 'utf8').split('\n').filter(l => l.trim());
+        const lines = fs.readFileSync(this.taskLog, 'utf8').split('\n').filter(l => l.trim());
         const newTasks = [];
 
         lines.forEach(line => {
@@ -157,7 +165,7 @@ class TaskQueueManager {
                 const taskPath = match[1];
                 const fullPath = path.isAbsolute(taskPath)
                     ? taskPath
-                    : path.join(TASKS_DIR, taskPath);
+                    : path.join(this.tasksDir, taskPath);
 
                 if (!this.processedTasks.has(fullPath)) {
                     newTasks.push(fullPath);
@@ -167,6 +175,70 @@ class TaskQueueManager {
         });
 
         return newTasks;
+    }
+
+    /**
+     * Scan ALL tasks from the tasks directory (not just from log)
+     * Useful for initial population or recovery
+     * @param {Object} options - Options
+     * @param {Array<string>} options.excludePatterns - Patterns to exclude (e.g., 'TEMPLATE.md', 'done/')
+     * @param {boolean} options.includeCompleted - Whether to include completed tasks
+     * @param {boolean} options.forceRescan - Force rescan even if already processed
+     * @returns {Array<string>} - Array of task paths
+     */
+    scanAllTasks(options = {}) {
+        const {
+            excludePatterns = ['TEMPLATE.md', 'done/', 'archive/', 'indexes/', 'README', 'HANDOFF', 'PROMPT', 'TASK_', 'ROADMAP', 'DEPENDENCY', 'IMPLEMENTATION', 'QUICK-START', 'PARALLEL'],
+            includeCompleted = false,
+            forceRescan = false
+        } = options;
+
+        if (!fs.existsSync(this.tasksDir)) {
+            console.error(`Tasks directory not found: ${this.tasksDir}`);
+            return [];
+        }
+
+        const files = fs.readdirSync(this.tasksDir);
+        const tasks = [];
+
+        files.forEach(file => {
+            // Skip excluded patterns
+            if (excludePatterns.some(pattern => file.includes(pattern))) {
+                return;
+            }
+
+            // Only process .md files
+            if (!file.endsWith('.md')) {
+                return;
+            }
+
+            const fullPath = path.join(this.tasksDir, file);
+
+            // Skip if already processed (unless forceRescan)
+            if (!forceRescan && this.processedTasks.has(fullPath)) {
+                // Check if task is completed and we're excluding completed
+                const frontmatter = this.parseFrontmatter(fullPath);
+                if (!includeCompleted && frontmatter && frontmatter.status === 'completed') {
+                    return;
+                }
+            }
+
+            // Validate frontmatter exists
+            const frontmatter = this.parseFrontmatter(fullPath);
+            if (!frontmatter) {
+                console.warn(`⚠️  Skipping ${file}: invalid or missing frontmatter`);
+                return;
+            }
+
+            // Skip completed tasks unless explicitly included
+            if (!includeCompleted && frontmatter.status === 'completed') {
+                return;
+            }
+
+            tasks.push(fullPath);
+        });
+
+        return tasks;
     }
 
     /**
@@ -198,11 +270,30 @@ class TaskQueueManager {
     }
 
     /**
-     * Route task to appropriate queue based on context_gathered flag
+     * Validate context manifest exists in task file
      * @param {string} taskPath - Path to task file
+     * @returns {boolean} - True if context manifest exists
+     */
+    validateContextManifest(taskPath) {
+        try {
+            const content = fs.readFileSync(taskPath, 'utf8');
+            // Check for Context Manifest section (case-insensitive, flexible formatting)
+            const hasContextManifest = /##\s+Context Manifest|## Context Manifest/i.test(content);
+            return hasContextManifest;
+        } catch (error) {
+            console.error(`Failed to read task file ${taskPath}: ${error.message}`);
+            return false;
+        }
+    }
+
+    /**
+     * Route task to appropriate queue based on context_gathered flag
+     * Validates context manifest exists if context_gathered is true
+     * @param {string} taskPath - Path to task file
+     * @param {boolean} skipValidation - Skip context manifest validation (for recovery)
      * @returns {Object|null} - Routed task object or null
      */
-    routeTask(taskPath) {
+    routeTask(taskPath, skipValidation = false) {
         const frontmatter = this.parseFrontmatter(taskPath);
         if (!frontmatter) {
             return null;
@@ -211,9 +302,46 @@ class TaskQueueManager {
         // Check context_gathered flag (default: false)
         const contextGathered = frontmatter.context_gathered === true;
 
+        // CRITICAL: Validate context manifest if context_gathered is true
+        if (contextGathered && !skipValidation) {
+            const hasContextManifest = this.validateContextManifest(taskPath);
+            if (!hasContextManifest) {
+                console.warn(`⚠️  WARNING: Task ${path.basename(taskPath)} has context_gathered=true but no Context Manifest section found`);
+                console.warn(`   Routing to Context Queue for context gathering.`);
+                // Force to context queue
+                const task = {
+                    path: taskPath,
+                    relativePath: path.relative(this.tasksDir, taskPath),
+                    name: frontmatter.name || path.basename(taskPath, '.md'),
+                    contextGathered: false, // Override to false
+                    priority: frontmatter.priority || 'medium',
+                    leverage: frontmatter.leverage || 'medium',
+                    status: frontmatter.status || 'pending',
+                    dependsOn: frontmatter.depends_on || [],
+                    addedAt: new Date().toISOString(),
+                    validationIssue: 'missing_context_manifest'
+                };
+                this.contextQueue.push(task);
+                console.log(`📋 Routed to Context Queue (validation): ${task.relativePath}`);
+                
+                // Add to dependency graph
+                this.dependencyGraph.addTask(
+                    task.relativePath,
+                    task.dependsOn,
+                    {
+                        priority: task.priority,
+                        leverage: task.leverage,
+                        status: task.status
+                    }
+                );
+                this.saveState();
+                return task;
+            }
+        }
+
         const task = {
             path: taskPath,
-            relativePath: path.relative(TASKS_DIR, taskPath),
+            relativePath: path.relative(this.tasksDir, taskPath),
             name: frontmatter.name || path.basename(taskPath, '.md'),
             contextGathered,
             priority: frontmatter.priority || 'medium',
@@ -248,11 +376,13 @@ class TaskQueueManager {
 
     /**
      * Move task from context queue to implementation queue
-     * @param {string} taskPath - Task file path
+     * @param {string} taskPath - Task file path (full or relative)
      * @returns {boolean} - Success status
      */
     moveToImplementationQueue(taskPath) {
-        const index = this.contextQueue.findIndex(t => t.path === taskPath);
+        const index = this.contextQueue.findIndex(t =>
+            t.path === taskPath || t.relativePath === taskPath
+        );
         if (index === -1) {
             console.error(`Task not found in Context Queue: ${taskPath}`);
             return false;
@@ -271,13 +401,15 @@ class TaskQueueManager {
 
     /**
      * Remove task from queue
-     * @param {string} taskPath - Task file path
+     * @param {string} taskPath - Task file path (full or relative)
      * @param {string} queueName - 'context' or 'implementation'
      * @returns {boolean} - Success status
      */
     removeFromQueue(taskPath, queueName) {
         const queue = queueName === 'context' ? this.contextQueue : this.implementationQueue;
-        const index = queue.findIndex(t => t.path === taskPath);
+        const index = queue.findIndex(t =>
+            t.path === taskPath || t.relativePath === taskPath
+        );
 
         if (index !== -1) {
             queue.splice(index, 1);
@@ -310,7 +442,8 @@ class TaskQueueManager {
             // Check if dependencies are satisfied
             const depCheck = this.dependencyGraph.checkDependenciesSatisfied(
                 task.relativePath,
-                completedTasks
+                completedTasks,
+                this.tasksDir
             );
 
             const score = calculatePriorityScore(task, {
@@ -377,6 +510,116 @@ class TaskQueueManager {
             processedCount: this.processedTasks.size,
             contextRatio: contextRatio.toFixed(2),
             completedTasksCount: completedTasks.size
+        };
+    }
+
+    /**
+     * Process new tasks from log and route to queues
+     * Convenience wrapper for scanNewTasks() + routeTask()
+     * @returns {number} - Number of tasks processed
+     */
+    processNewTasks() {
+        const newTasks = this.scanNewTasks();
+        newTasks.forEach(taskPath => {
+            this.routeTask(taskPath);
+        });
+        return newTasks.length;
+    }
+
+    /**
+     * Process all tasks from directory and route to queues
+     * Useful for initial population or recovery
+     * @param {Object} options - Options (passed to scanAllTasks)
+     * @returns {Object} - Processing result with stats
+     */
+    processAllTasks(options = {}) {
+        const stats = {
+            scanned: 0,
+            routed: 0,
+            skipped: 0,
+            errors: []
+        };
+
+        // Rebuild dependency graph first
+        console.log('📊 Rebuilding dependency graph...');
+        const graphStats = this.rebuildDependencyGraph();
+        console.log(`   Tasks in graph: ${graphStats.tasksAdded}`);
+
+        // Scan all tasks
+        const allTasks = this.scanAllTasks(options);
+        stats.scanned = allTasks.length;
+
+        console.log(`\n📋 Found ${allTasks.length} task(s) to process\n`);
+
+        // Route each task
+        allTasks.forEach(taskPath => {
+            try {
+                // Check if already in a queue
+                const relativePath = path.relative(this.tasksDir, taskPath);
+                const inContextQueue = this.contextQueue.some(t => t.path === taskPath || t.relativePath === relativePath);
+                const inImplQueue = this.implementationQueue.some(t => t.path === taskPath || t.relativePath === relativePath);
+
+                if (inContextQueue || inImplQueue) {
+                    stats.skipped++;
+                    return;
+                }
+
+                const task = this.routeTask(taskPath);
+                if (task) {
+                    stats.routed++;
+                    this.processedTasks.add(taskPath);
+                } else {
+                    stats.skipped++;
+                }
+            } catch (error) {
+                stats.errors.push({ taskPath, error: error.message });
+                console.error(`❌ Error processing ${taskPath}: ${error.message}`);
+            }
+        });
+
+        this.saveState();
+        return stats;
+    }
+
+    /**
+     * Get queue state (alias for getStatus with simpler structure)
+     * @returns {Object} - Queue state
+     */
+    getQueueState() {
+        return {
+            contextQueue: this.contextQueue,
+            implementationQueue: this.implementationQueue,
+            processedTasks: Array.from(this.processedTasks),
+            lastUpdated: new Date().toISOString()
+        };
+    }
+
+    /**
+     * Remove task from any queue
+     * Convenience wrapper for removeFromQueue()
+     * @param {string} taskPath - Task file path or relative path
+     * @returns {boolean} - Success status
+     */
+    removeTask(taskPath) {
+        // Try both queues
+        return this.removeFromQueue(taskPath, 'context') ||
+               this.removeFromQueue(taskPath, 'implementation');
+    }
+
+    /**
+     * Get queue statistics
+     * @returns {Object} - Queue stats
+     */
+    getQueueStats() {
+        const total = this.contextQueue.length + this.implementationQueue.length;
+        const contextRatio = total > 0 ? this.contextQueue.length / total : 0;
+
+        return {
+            contextQueue: this.contextQueue.length,
+            implementationQueue: this.implementationQueue.length,
+            totalTasks: total,
+            contextRatio,
+            processedTasksCount: this.processedTasks.size
         };
     }
 }

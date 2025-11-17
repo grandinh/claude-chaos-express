@@ -1,11 +1,20 @@
 {
   "name": "agent-registry-scripts",
   "version": "1.0.0",
-  "description": "Agent registry management scripts and tests",
+  "description": "Agent registry management scripts, task queue manager, and orchestration tools",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:integration": "jest orchestrator-integration.test.js",
+    "queue-manager": "node task-queue-manager.js",
+    "queue-status": "node task-queue-manager.js --status",
+    "orchestrator": "node agent-orchestrator.js",
+    "orchestrator-status": "node orchestrator-status.js",
+    "dependency-graph": "node dependency-graph.js",
+    "dependency-check": "node dependency-graph.js --check-cycles",
+    "agent-registry": "node agent-registry.js",
+    "validate-all": "npm run dependency-check && npm run agent-registry validate && npm test"
   },
   "jest": {
     "testEnvironment": "node",
@@ -13,7 +22,9 @@
       "**/__tests__/**/*.test.js"
     ],
     "collectCoverageFrom": [
-      "agent-registry.js"
+      "agent-registry.js",
+      "dependency-graph.js",
+      "task-queue-manager.js"
     ],
     "coverageThreshold": {
       "global": {

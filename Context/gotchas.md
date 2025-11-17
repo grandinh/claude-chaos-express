@@ -350,4 +350,149 @@ if (typeof toolResponse === "string") {
 
 ---
 
+## Multi-Agent Orchestrator: Task Assignment Race Condition
+
+**Date Discovered:** 2025-11-16
+**Context:** Phase 3 runtime testing with real Claude CLI agents
+**Severity:** Critical - Causes multiple agents to work on same task simultaneously
+
+### The Problem
+
+When multiple agents are available (idle), the orchestrator's assignment loop assigns the **same task to multiple agents** instead of assigning different tasks to each agent.
+
+### Root Cause
+
+Tasks are removed from queue **only after agent completion**, not at assignment time. This creates a race condition:
+
+```javascript
+// Buggy flow in agent-orchestrator.js:
+1. assignNextTask() finds idle agent
+2. getNextTask() returns task from queue
+3. Task is NOT removed from queue yet
+4. assignTaskToAgent() spawns agent process
+5. saveState() persists assignment
+6. Loop continues to next idle agent
+7. getNextTask() returns SAME task (still in queue!)
+8. Second agent gets same task
+9. Process repeats for all idle agents
+```
+
+**Location:** `scripts/agent-orchestrator.js`
+- Line 457: `removeFromQueue()` called in `handleAgentCompletion()`
+- Should be called in `assignTaskToAgent()` instead
+
+### Impact
+
+**Observed Behavior:**
+- All 3 agents assigned `orchestrator-test-impl.md` simultaneously
+- PIDs: 70487, 70572, 70679 (all working on same task)
+- Implementation queue still contained task after assignments
+- Orchestrator state showed identical `currentTask` for all agents
+
+**Consequences:**
+- Wasted compute resources (3x agent spawns for 1 task)
+- File conflict potential (multiple agents editing same files)
+- Queue starvation (other tasks not assigned)
+- Role separation violation (if context task skipped)
+
+### The Fix (Completed 2025-11-16)
+
+**Primary Fix:** Moved `removeFromQueue()` call from `handleAgentCompletion()` to `assignTaskToAgent()` (line 243):
+
+```javascript
+// In assignTaskToAgent():
+assignTaskToAgent(agent, task, queueName) {
+    // ... validation checks ...
+
+    agent.status = 'working';
+    agent.currentTask = task.path;
+    agent.role = queueName;
+    agent.startedAt = new Date().toISOString();
+
+    // FIX: Remove from queue immediately upon assignment (prevents race condition)
+    this.queueManager.removeFromQueue(task.path, queueName);
+
+    console.log(`\n🎯 Assigning Task to ${agent.id}`);
+    this.saveState();
+
+    // Spawn agent based on mode (local or cloud)
+    // ... rest of method
+}
+
+// In handleAgentCompletion():
+handleAgentCompletion(agent, task, queueName) {
+    console.log(`\n✅ ${agent.id} completed task: ${task.relativePath}`);
+
+    // Update agent state
+    agent.status = 'idle';
+    agent.currentTask = null;
+    agent.completedTasks++;
+
+    // Mark task as completed (no longer in queue, already removed at assignment)
+    this.completedTasks.add(task.relativePath);
+
+    // If context gathering, move to implementation queue
+    if (queueName === 'context') {
+        this.updateTaskFlag(task.path, 'context_gathered', true);
+        this.queueManager.moveToImplementationQueue(task.path);
+    }
+
+    this.saveState();
+}
+```
+
+**Defensive Check:** Added duplicate assignment check as belt-and-suspenders (lines 164-171):
+```javascript
+// In assignNextTask():
+const alreadyAssigned = this.agents.some(a =>
+    a.currentTask === task.path && a.status === 'working'
+);
+if (alreadyAssigned) {
+    console.warn(`⚠️  Task ${task.relativePath} already assigned to another agent, skipping`);
+    return false;
+}
+```
+
+**Result:** Tasks removed from queue atomically with assignment, preventing race condition in concurrent assignment loops.
+
+### Prevention
+
+**Design Principle:** Remove from queue at assignment, not at completion.
+
+**Why This Matters:**
+- Assignment is the point of commitment
+- Queue represents **available** work, not **all** work
+- Completed tasks tracked separately (`completedTasks` Set)
+- Prevents race conditions in concurrent assignment loops
+
+**Testing Strategy:**
+- Always test with multiple idle agents
+- Verify queue state after each assignment (should be empty or reduced by 1)
+- Check agent states for duplicate `currentTask` values
+- Integration tests should cover rapid successive assignments
+
+### Related Files
+
+- `scripts/agent-orchestrator.js` - Orchestrator implementation (lines 175-194, 442-470)
+- `scripts/task-queue-manager.js` - Queue management (removeFromQueue method)
+- `sessions/tasks/h-multi-agent-orchestration.md` - Task documentation with bug details
+- `scripts/ORCHESTRATOR_TESTING.md` - Testing guide with reproduction steps
+
+### REPAIR Task
+
+**Status:** Completed 2025-11-17
+**Task:** `sessions/tasks/h-fix-orchestrator-task-assignment-race.md`
+
+**Fix Applied:**
+- Line 182 of `agent-orchestrator.js`: Added `removeFromQueue()` in `assignTaskToAgent()`
+- Line 460 (removed): Deleted redundant `removeFromQueue()` in `handleAgentCompletion()`
+- Lines 164-171: Added defensive duplicate assignment check in `assignNextTask()`
+
+**Verification:**
+- Runtime test: 2 tasks assigned to 2 different agents, no duplicates
+- Test suite: 152/152 tests passing
+- Queue state: Both queues empty after assignment (tasks properly removed)
+
+---
+
 *More gotchas will be added as they are discovered during framework development and usage.*

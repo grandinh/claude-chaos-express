@@ -1,12 +1,42 @@
-# Agent Registry Scripts
+# Scripts Directory
 
-Management scripts for the agent registry system.
+Management scripts for the agent registry system and multi-agent orchestration.
+
+## Overview
+
+This directory contains two major systems:
+
+1. **Agent Registry** - Centralized tracking and lifecycle management for 24 agents (18 Claude + 6 Cloud)
+2. **Multi-Agent Orchestration** - Automated task distribution across a 3-agent pool with dependency resolution
 
 ## Quick Start
 
+### Multi-Agent Orchestration
+
+```bash
+# Start orchestrator (foreground)
+npm run orchestrator
+
+# Monitor status
+npm run orchestrator-status
+
+# View dependency graph
+node dependency-graph.js
+
+# Manual queue management
+node task-queue-manager.js
+
+# Run tests
+npm test  # 152 tests
+```
+
+See **ORCHESTRATOR_CONFIG.md** for configuration and **ORCHESTRATOR_TESTING.md** for runtime testing procedures.
+
+### Agent Registry
+
 ```bash
 # Bootstrap registry (first-time setup or recovery)
-node scripts/agent-registry.js init
+node agent-registry.js init
 
 # Validate registry integrity
 node scripts/agent-registry.js validate
@@ -36,7 +66,193 @@ node scripts/agent-registry.js archive <agent>
 node scripts/agent-registry.js generate-docs
 ```
 
-## Command Reference
+---
+
+## Multi-Agent Orchestration System
+
+The orchestration system automates task distribution across a pool of 3 Claude Code agents.
+
+### Architecture
+
+```
+File Watcher → Task Queue Manager → [Context Queue | Implementation Queue]
+                      ↓
+              Agent Orchestrator (3-agent pool)
+                      ↓
+           [Agent-1 | Agent-2 | Agent-3]
+                      ↓
+              Dependency Graph
+```
+
+### Components
+
+**agent-orchestrator.js**
+- Manages pool of 3 Claude Code agents
+- Assigns tasks with load balancing
+- Supports local (Claude CLI) and cloud (Cursor Cloud Agent API) modes
+- Enforces context gathering before implementation
+
+**task-queue-manager.js**
+- Maintains dual queues (context + implementation)
+- Routes tasks based on `context_gathered` frontmatter flag
+- Multi-factor priority scoring: `(priority × leverage) + bonuses/penalties`
+- Validates Context Manifest exists before implementation routing
+
+**dependency-graph.js**
+- Builds dependency graph from `depends_on` frontmatter fields
+- Performs topological sort for execution order
+- Detects circular dependencies
+- Blocks task assignment until dependencies satisfied
+
+**orchestrator-status.js**
+- Real-time monitoring dashboard
+- Displays agent pool state, queue status, statistics
+- Run via `npm run orchestrator-status`
+
+**utils.js**
+- Shared utilities (project root detection)
+- Used across all orchestrator scripts
+
+### State Files
+
+All state files are located in `sessions/tasks/`:
+
+- **`.orchestrator-state.json`** - Agent pool state (status, assignments, completions)
+- **`.task-queues.json`** - Queue state (context + implementation tasks, dependency graph)
+- **`.new-tasks.log`** - Task detection log (written by file watcher)
+
+### Queue Routing
+
+Tasks are routed based on the `context_gathered` frontmatter flag:
+
+**Context Queue** (`context_gathered: false` or missing):
+- Agent gathers context and creates Context Manifest section
+- Agent updates frontmatter: `context_gathered: true`
+- Task automatically moves to implementation queue
+
+**Implementation Queue** (`context_gathered: true`):
+- Validation: Checks Context Manifest section exists
+- If validation fails: Task forced to context queue
+- Agent executes implementation todos
+- Agent updates frontmatter: `status: completed`
+
+### Priority Scoring
+
+Tasks scored using multi-factor algorithm:
+
+```
+score = (priority × leverage) + dependencyBonus + queueTimePenalty + contextBacklogBonus
+```
+
+**Factors:**
+- `priority`: ultra-high (4), high (3), medium (2), low (1)
+- `leverage`: ultra-high (4), high (3), medium (2), low (1)
+- `dependencyBonus`: +10 if satisfied, -1000 if blocked
+- `queueTimePenalty`: -0.1 per minute waiting
+- `contextBacklogBonus`: +5 if context ratio > 0.6
+
+### Operating the Orchestrator
+
+**Start (Foreground):**
+```bash
+cd scripts
+npm run orchestrator
+```
+
+**Start (Background with pm2):**
+```bash
+pm2 start scripts/agent-orchestrator.js --name orchestrator
+pm2 save
+```
+
+**Monitor:**
+```bash
+npm run orchestrator-status
+```
+
+**Stop:**
+```bash
+pm2 stop orchestrator
+# OR Ctrl+C in foreground mode
+```
+
+### Configuration
+
+**Environment Variables:**
+- `AGENT_MODE`: `local` (default) or `cloud`
+- `CLAUDE_CMD`: Path to Claude CLI (default: `claude`)
+- `CURSOR_API_TOKEN`: Required for cloud mode
+- `GITHUB_REPO`: Required for cloud mode
+- `GITHUB_REF`: Branch/tag for cloud mode (default: `main`)
+
+**Agent Pool Size:**
+Edit `AGENT_POOL_SIZE` in `agent-orchestrator.js` (default: 3)
+
+**Timeouts:**
+Edit `CONFIG` object in `agent-orchestrator.js`:
+- `contextTaskTimeout`: 30 minutes (default)
+- `implementationTaskTimeout`: 60 minutes (default)
+
+### Troubleshooting
+
+**Agents not picking up tasks:**
+```bash
+# Check queue state
+cat sessions/tasks/.task-queues.json | jq
+
+# Verify frontmatter
+npm run validate-frontmatter
+
+# Check dependencies
+node dependency-graph.js
+
+# Ensure context_gathered tasks have Context Manifest
+```
+
+**Tasks stuck in queue:**
+```bash
+# Check for circular dependencies
+node dependency-graph.js --check-cycles
+
+# Verify agent pool not failed
+npm run orchestrator-status
+
+# Check blocking dependencies
+cat sessions/tasks/your-task.md  # Check depends_on field
+```
+
+**Race condition (duplicate assignment):**
+- Verify tasks removed from queue at assignment (line 243)
+- Check defensive duplicate check exists (lines 164-171)
+- Monitor queue file: `watch -n 0.5 'cat sessions/tasks/.task-queues.json | jq'`
+
+### Testing
+
+```bash
+cd scripts
+npm test  # 152 tests (all passing)
+```
+
+**Test Coverage:**
+- Unit tests for all modules
+- Integration tests for orchestrator flow
+- Dependency graph algorithms
+- Queue routing and priority scoring
+- Context manifest validation
+
+**Runtime Testing:**
+See `ORCHESTRATOR_TESTING.md` for end-to-end testing procedures with real Claude CLI agents.
+
+### Documentation
+
+- **Configuration**: `ORCHESTRATOR_CONFIG.md` - Environment variables and settings
+- **Testing**: `ORCHESTRATOR_TESTING.md` - Runtime testing procedures and race condition verification
+- **Operations**: `docs/multi-agent-orchestration-operator-guide.md` - Complete operator manual
+- **Integration**: `claude.md` Section 7 - Framework integration and cc-sessions respect
+
+---
+
+## Agent Registry Command Reference
 
 ### Init Command
 

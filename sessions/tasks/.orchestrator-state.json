@@ -1,0 +1,36 @@
+{
+  "agents": [
+    {
+      "id": "agent-1",
+      "status": "working",
+      "currentTask": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/orchestrator-test-impl.md",
+      "role": "implementation",
+      "startedAt": "2025-11-17T04:36:48.891Z",
+      "completedTasks": 0,
+      "pid": 87416,
+      "cloudAgentId": null
+    },
+    {
+      "id": "agent-2",
+      "status": "working",
+      "currentTask": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/orchestrator-test-context.md",
+      "role": "context",
+      "startedAt": "2025-11-17T04:36:53.892Z",
+      "completedTasks": 0,
+      "pid": 87514,
+      "cloudAgentId": null
+    },
+    {
+      "id": "agent-3",
+      "status": "idle",
+      "currentTask": null,
+      "role": null,
+      "startedAt": null,
+      "completedTasks": 0,
+      "pid": null,
+      "cloudAgentId": null
+    }
+  ],
+  "completedTasks": [],
+  "lastUpdated": "2025-11-17T04:36:58.847Z"
+}

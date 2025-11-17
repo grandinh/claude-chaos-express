@@ -13,8 +13,9 @@
 const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
+const { detectProjectRoot } = require('./utils');
 
-const PROJECT_ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+const PROJECT_ROOT = detectProjectRoot();
 const TASKS_DIR = path.join(PROJECT_ROOT, 'sessions', 'tasks');
 
 /**
@@ -274,15 +275,25 @@ class DependencyGraph {
      * Check if all dependencies for a task are satisfied
      * @param {string} taskName - Task to check
      * @param {Set<string>} completedTasks - Set of completed task names
+     * @param {string} tasksDir - Optional tasks directory for file existence checks
      * @returns {Object} - {satisfied: boolean, blocking: Array<string>}
      */
-    checkDependenciesSatisfied(taskName, completedTasks = new Set()) {
+    checkDependenciesSatisfied(taskName, completedTasks = new Set(), tasksDir = null) {
         const normalizedTask = normalizeTaskName(taskName);
         const deps = this.adjacencyList.get(normalizedTask) || [];
 
         const blocking = deps.filter(dep => {
-            // If dependency is not in graph, consider it external/satisfied
+            // If dependency is not in graph, check file existence if tasksDir provided
             if (!this.adjacencyList.has(dep)) {
+                // If tasksDir provided, verify the dependency file exists
+                if (tasksDir) {
+                    const depPath = path.join(tasksDir, dep);
+                    if (!fs.existsSync(depPath)) {
+                        // Dependency file doesn't exist - this is blocking
+                        return true;
+                    }
+                }
+                // Either no tasksDir provided, or file exists - consider it external/satisfied
                 return false;
             }
 
