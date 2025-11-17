@@ -57,6 +57,9 @@ Context/insights.md
 # Development metadata
 repo_state/
 
+# Security scanning cache files
+.cache_ggshield
+
 # Optional non-code assets (excluded with --minimal flag)
 # These can be excluded during installation
 assets/
