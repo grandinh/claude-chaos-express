@@ -142,7 +142,8 @@ class TaskQueueManager {
      */
     rebuildDependencyGraph() {
         this.dependencyGraph = new DependencyGraph();
-        const stats = this.dependencyGraph.buildFromDirectory();
+        const depsFile = path.join(this.tasksDir, 'dependencies.yaml');
+        const stats = this.dependencyGraph.buildFromDirectory(undefined, depsFile);
         return stats;
     }
 
@@ -262,7 +263,8 @@ class TaskQueueManager {
 
         const yaml = require('js-yaml');
         try {
-            return yaml.load(frontmatterMatch[1]);
+            // SECURITY: Use SAFE_SCHEMA to prevent arbitrary code execution from malicious YAML
+            return yaml.load(frontmatterMatch[1], { schema: yaml.SAFE_SCHEMA });
         } catch (error) {
             console.error(`Failed to parse frontmatter: ${error.message}`);
             return null;
@@ -324,10 +326,17 @@ class TaskQueueManager {
                 this.contextQueue.push(task);
                 console.log(`📋 Routed to Context Queue (validation): ${task.relativePath}`);
                 
+                // Get manual dependencies and merge with frontmatter dependencies
+                const depsFile = path.join(this.tasksDir, 'dependencies.yaml');
+                const manualDeps = this.dependencyGraph.loadManualDependencies(depsFile);
+                const taskId = task.relativePath.replace('.md', '');
+                const manualDepsForTask = manualDeps[taskId] || manualDeps[task.relativePath] || manualDeps[task.name] || [];
+                const allDeps = [...new Set([...task.dependsOn, ...manualDepsForTask])];
+
                 // Add to dependency graph
                 this.dependencyGraph.addTask(
                     task.relativePath,
-                    task.dependsOn,
+                    allDeps,
                     {
                         priority: task.priority,
                         leverage: task.leverage,
@@ -359,10 +368,17 @@ class TaskQueueManager {
             console.log(`📋 Routed to Context Queue: ${task.relativePath}`);
         }
 
+        // Get manual dependencies and merge with frontmatter dependencies
+        const depsFile = path.join(this.tasksDir, 'dependencies.yaml');
+        const manualDeps = this.dependencyGraph.loadManualDependencies(depsFile);
+        const taskId = task.relativePath.replace('.md', '');
+        const manualDepsForTask = manualDeps[taskId] || manualDeps[task.relativePath] || manualDeps[task.name] || [];
+        const allDeps = [...new Set([...task.dependsOn, ...manualDepsForTask])];
+
         // Add to dependency graph
         this.dependencyGraph.addTask(
             task.relativePath,
-            task.dependsOn,
+            allDeps,
             {
                 priority: task.priority,
                 leverage: task.leverage,

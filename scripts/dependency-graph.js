@@ -17,6 +17,7 @@ const { detectProjectRoot } = require('./utils');
 
 const PROJECT_ROOT = detectProjectRoot();
 const TASKS_DIR = path.join(PROJECT_ROOT, 'sessions', 'tasks');
+const DEFAULT_DEPS_FILE = path.join(TASKS_DIR, 'dependencies.yaml');
 
 /**
  * Parse frontmatter from a markdown file
@@ -36,7 +37,8 @@ function parseFrontmatter(filePath) {
     }
 
     try {
-        return yaml.load(frontmatterMatch[1]);
+        // SECURITY: Use SAFE_SCHEMA to prevent arbitrary code execution from malicious YAML
+        return yaml.load(frontmatterMatch[1], { schema: yaml.SAFE_SCHEMA });
     } catch (error) {
         console.error(`Failed to parse frontmatter in ${filePath}: ${error.message}`);
         return null;
@@ -107,21 +109,50 @@ class DependencyGraph {
     }
 
     /**
+     * Load manual dependencies from YAML file
+     * @param {string} depsFile - Path to dependencies.yaml file
+     * @returns {Object} - Map of task names to their manual dependencies
+     */
+    loadManualDependencies(depsFile = DEFAULT_DEPS_FILE) {
+        if (!fs.existsSync(depsFile)) {
+            return {};
+        }
+
+        try {
+            const content = fs.readFileSync(depsFile, 'utf8');
+            // SECURITY: Use SAFE_SCHEMA to prevent arbitrary code execution from malicious YAML
+            const data = yaml.load(content, { schema: yaml.SAFE_SCHEMA });
+            return data || {};
+        } catch (error) {
+            console.warn(`Error reading dependencies file ${depsFile}: ${error.message}`);
+            return {};
+        }
+    }
+
+    /**
      * Build graph from all tasks in sessions/tasks directory
      * @param {Array<string>} excludePatterns - Patterns to exclude (e.g., 'TEMPLATE.md', 'done/', etc.)
+     * @param {string} depsFile - Path to manual dependencies YAML file
      * @returns {Object} - Build result with stats
      */
-    buildFromDirectory(excludePatterns = ['TEMPLATE.md', 'done/', 'archive/', 'indexes/']) {
+    buildFromDirectory(excludePatterns = ['TEMPLATE.md', 'done/', 'archive/', 'indexes/'], depsFile = DEFAULT_DEPS_FILE) {
         const stats = {
             tasksScanned: 0,
             tasksAdded: 0,
             invalidFrontmatter: 0,
+            manualDepsLoaded: 0,
             errors: []
         };
 
         if (!fs.existsSync(TASKS_DIR)) {
             stats.errors.push(`Tasks directory not found: ${TASKS_DIR}`);
             return stats;
+        }
+
+        // Load manual dependencies
+        const manualDeps = this.loadManualDependencies(depsFile);
+        if (Object.keys(manualDeps).length > 0) {
+            stats.manualDepsLoaded = Object.keys(manualDeps).length;
         }
 
         const files = fs.readdirSync(TASKS_DIR);
@@ -148,7 +179,17 @@ class DependencyGraph {
                 return;
             }
 
-            const dependencies = frontmatter.depends_on || [];
+            // Get frontmatter dependencies
+            const frontmatterDeps = frontmatter.depends_on || [];
+            
+            // Get manual dependencies (try both with and without .md extension, and by name)
+            const taskId = file.replace('.md', '');
+            const taskName = frontmatter.name || taskId;
+            const manualDepsForTask = manualDeps[taskId] || manualDeps[file] || manualDeps[taskName] || [];
+            
+            // Merge and deduplicate dependencies
+            const allDeps = [...new Set([...frontmatterDeps, ...manualDepsForTask])];
+            
             const metadata = {
                 priority: frontmatter.priority,
                 leverage: frontmatter.leverage,
@@ -157,7 +198,7 @@ class DependencyGraph {
                 branch: frontmatter.branch
             };
 
-            this.addTask(file, dependencies, metadata);
+            this.addTask(file, allDeps, metadata);
             stats.tasksAdded++;
         });
 

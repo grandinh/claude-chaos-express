@@ -1,0 +1,209 @@
+name: Auto-Fix Issue
+
+on:
+  issues:
+    types: [opened, labeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to auto-fix'
+        required: true
+        type: number
+
+jobs:
+  trigger-auto-fix:
+    runs-on: ubuntu-latest
+    # Only trigger for issues with 'auto-fix' label
+    if: |
+      (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'auto-fix')) ||
+      (github.event.action == 'labeled' && github.event.label.name == 'auto-fix') ||
+      github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Get Issue Number
+        id: issue
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "number=${{ github.event.inputs.issue_number }}" >> $GITHUB_OUTPUT
+          else
+            echo "number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check Issue Labels
+        id: labels
+        env:
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+        run: |
+          set -euo pipefail
+          # Get issue labels
+          LABELS=$(gh issue view $ISSUE_NUMBER --json labels -q '.labels[].name' | tr '\n' ',' | sed 's/,$//')
+          echo "labels=$LABELS" >> $GITHUB_OUTPUT
+          
+          # Check for excluded labels
+          EXCLUDED=("complex" "manual-review" "security" "breaking-change" "database")
+          SKIP=false
+          IFS=',' read -ra LABEL_ARRAY <<< "$LABELS"
+          for label in "${LABEL_ARRAY[@]}"; do
+            for excluded in "${EXCLUDED[@]}"; do
+              if [ "$label" = "$excluded" ]; then
+                echo "⚠️ Issue has excluded label: $excluded"
+                SKIP=true
+                break
+              fi
+            done
+            if [ "$SKIP" = "true" ]; then
+              break
+            fi
+          done
+          
+          echo "skip=$SKIP" >> $GITHUB_OUTPUT
+
+      - name: Skip if Excluded Labels Present
+        if: steps.labels.outputs.skip == 'true'
+        run: |
+          echo "⏭️ Skipping auto-fix due to excluded labels"
+          gh issue comment ${{ steps.issue.outputs.number }} --body "🤖 Auto-fix agent: Skipping automatic fix due to excluded labels (complex, manual-review, security, breaking-change, or database). Please handle this issue manually."
+          exit 0
+
+      - name: Get Issue Details
+        if: steps.labels.outputs.skip != 'true'
+        id: issue-details
+        env:
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+        run: |
+          set -euo pipefail
+          gh issue view $ISSUE_NUMBER --json title,body > /tmp/issue.json
+          TITLE=$(jq -r '.title' /tmp/issue.json)
+          BODY=$(jq -r '.body' /tmp/issue.json)
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$BODY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Trigger Cursor Cloud Agent
+        if: steps.labels.outputs.skip != 'true'
+        id: trigger-auto-fix
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          ISSUE_TITLE: ${{ steps.issue-details.outputs.title }}
+          ISSUE_BODY: ${{ steps.issue-details.outputs.body }}
+        run: |
+          # Read Cloud Agent config
+          CONFIG_FILE=".cursor/cloud-agents/auto-fix-issue.json"
+          
+          if [ ! -f "$CONFIG_FILE" ]; then
+            echo "❌ Cloud Agent config not found: $CONFIG_FILE"
+            exit 1
+          fi
+          
+          # Prepare agent prompt with issue details
+          PROMPT=$(cat <<EOF
+          Analyze and fix GitHub Issue #$ISSUE_NUMBER
+          
+          **Title:** $ISSUE_TITLE
+          
+          **Description:**
+          $ISSUE_BODY
+          
+          Follow the auto-fix-issue agent workflow:
+          1. Analyze the issue
+          2. Create branch: feature/auto-fix-$ISSUE_NUMBER
+          3. Implement the fix
+          4. Create PR linking to issue #$ISSUE_NUMBER
+          EOF
+          )
+          
+          # Call Cursor Cloud Agents API
+          RESPONSE=$(curl -s -X POST "https://api.cursor.com/v0/agents" \
+            -H "Authorization: Bearer $CURSOR_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"agentConfig\": $(jq -c . $CONFIG_FILE),
+              \"repository\": \"${{ github.repository }}\",
+              \"branch\": \"feature/auto-fix-$ISSUE_NUMBER\",
+              \"targetBranch\": \"main\",
+              \"prompt\": $(echo "$PROMPT" | jq -Rs .),
+              \"autoCreatePR\": true,
+              \"webhook\": {
+                \"url\": \"$WEBHOOK_URL\",
+                \"events\": [\"completed\", \"failed\"]
+              }
+            }")
+          
+          # Extract agent ID from response
+          AGENT_ID=$(echo "$RESPONSE" | jq -r '.id // empty')
+          
+          if [ -z "$AGENT_ID" ]; then
+            echo "❌ Failed to create agent"
+            echo "Response: $RESPONSE"
+            # Use --body-file to safely pass the response without shell interpretation issues
+            printf '🤖 Auto-fix agent: Failed to start. Error: %s' "$RESPONSE" | \
+              gh issue comment $ISSUE_NUMBER --body-file -
+            exit 1
+          fi
+          
+          echo "✅ Agent started: $AGENT_ID"
+          echo "agent_id=$AGENT_ID" >> $GITHUB_OUTPUT
+          
+          # Comment on issue
+          gh issue comment $ISSUE_NUMBER --body <<EOF
+🤖 Auto-fix agent started. Agent ID: \`$AGENT_ID\`
+
+I'll analyze the issue and create a fix. This may take 10-30 minutes.
+EOF
+
+      - name: Monitor Agent Status
+        if: steps.labels.outputs.skip != 'true' && steps.trigger-auto-fix.outputs.agent_id != ''
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          AGENT_ID: ${{ steps.trigger-auto-fix.outputs.agent_id }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+        run: |
+          echo "⏳ Monitoring agent status..."
+          
+          MAX_ATTEMPTS=60  # 30 minutes max (30s * 60)
+          ATTEMPT=0
+          
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            STATUS=$(curl -s -H "Authorization: Bearer $CURSOR_API_KEY" \
+              "https://api.cursor.com/v0/agents/$AGENT_ID" | jq -r '.status // "unknown"')
+            
+            echo "Attempt $((ATTEMPT + 1))/$MAX_ATTEMPTS: Status = $STATUS"
+            
+            if [ "$STATUS" = "completed" ]; then
+              echo "✅ Agent completed successfully"
+              
+              # Get PR URL from agent response
+              PR_URL=$(curl -s -H "Authorization: Bearer $CURSOR_API_KEY" \
+                "https://api.cursor.com/v0/agents/$AGENT_ID" | jq -r '.prUrl // empty')
+              
+              if [ -n "$PR_URL" ]; then
+                gh issue comment $ISSUE_NUMBER --body "✅ Auto-fix completed! PR created: $PR_URL"
+              else
+                gh issue comment $ISSUE_NUMBER --body "✅ Auto-fix completed! Check for new PRs."
+              fi
+              
+              exit 0
+            elif [ "$STATUS" = "failed" ]; then
+              echo "❌ Agent failed"
+              
+              ERROR=$(curl -s -H "Authorization: Bearer $CURSOR_API_KEY" \
+                "https://api.cursor.com/v0/agents/$AGENT_ID" | jq -r '.error // "Unknown error"')
+              
+              # Use --body-file to safely pass the error message without shell interpretation issues
+              # This properly handles newlines and special characters
+              printf '❌ Auto-fix failed. Error: %s\n\nPlease review manually or provide more details.' "$ERROR" | \
+                gh issue comment $ISSUE_NUMBER --body-file -
+              
+              exit 1
+            fi
+            
+            sleep 30
+            ATTEMPT=$((ATTEMPT + 1))
+          done
+          
+          echo "⏱️ Timeout waiting for agent completion"
+          gh issue comment $ISSUE_NUMBER --body "⏱️ Auto-fix is taking longer than expected. Agent is still running. Check agent status manually."
+

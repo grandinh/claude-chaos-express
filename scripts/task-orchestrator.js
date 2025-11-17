@@ -141,7 +141,8 @@ function loadManualDependencies(depsFile) {
     
     try {
         const content = fs.readFileSync(depsFile, 'utf8');
-        const data = yaml.load(content);
+        // SECURITY: Use SAFE_SCHEMA to prevent arbitrary code execution from malicious YAML
+        const data = yaml.load(content, { schema: yaml.SAFE_SCHEMA });
         return data || {};
     } catch (error) {
         console.warn(`Error reading dependencies file ${depsFile}: ${error.message}`);

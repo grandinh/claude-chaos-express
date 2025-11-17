@@ -591,7 +591,8 @@ class AgentOrchestrator {
 
             if (frontmatterMatch) {
                 const yaml = require('js-yaml');
-                const frontmatter = yaml.load(frontmatterMatch[1]);
+                // SECURITY: Use SAFE_SCHEMA to prevent arbitrary code execution from malicious YAML
+                const frontmatter = yaml.load(frontmatterMatch[1], { schema: yaml.SAFE_SCHEMA });
                 frontmatter[flag] = value;
 
                 const newFrontmatter = yaml.dump(frontmatter, { lineWidth: -1 });

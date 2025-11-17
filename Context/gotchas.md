@@ -1703,3 +1703,24 @@ pm2 restart orchestrator
 - Documented recovery procedure in operator guide and CLAUDE.md troubleshooting section
 
 **Context:** REPAIR-orchestrator-health-2025-11-16, affects h-multi-agent-orchestration.md
+
+## 2025-11-17T07:37:39.466Z - Orchestrator Agent Failure
+
+- Agent: agent-3
+- Task: h-CODE-REVIEW-critical-yaml-security.md
+- Role: context
+- Reason: exit code 143
+
+## 2025-11-17T07:37:39.467Z - Orchestrator Agent Failure
+
+- Agent: agent-1
+- Task: deprecated/m-implement-cursor-auto-task-pickup.md
+- Role: context
+- Reason: exit code 143
+
+## 2025-11-17T07:37:39.467Z - Orchestrator Agent Failure
+
+- Agent: agent-2
+- Task: h-enforce-context-gathering.md
+- Role: context
+- Reason: exit code 143

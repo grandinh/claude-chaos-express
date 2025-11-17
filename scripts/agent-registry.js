@@ -214,7 +214,8 @@ function parseFrontmatter(content) {
   // Use js-yaml for robust YAML parsing
   let frontmatter;
   try {
-    frontmatter = yaml.load(match[1]);
+    // SECURITY: Use SAFE_SCHEMA to prevent arbitrary code execution from malicious YAML
+    frontmatter = yaml.load(match[1], { schema: yaml.SAFE_SCHEMA });
   } catch (err) {
     // Return null on parse error (caller will handle)
     return null;

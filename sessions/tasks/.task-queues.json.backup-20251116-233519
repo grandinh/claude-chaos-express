@@ -9,7 +9,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.447Z"
+      "addedAt": "2025-11-17T07:14:02.752Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-code-review-findings-workflow.md",
@@ -20,7 +20,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.448Z"
+      "addedAt": "2025-11-17T07:14:02.753Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-consolidate-tier-docs.md",
@@ -31,7 +31,7 @@
       "leverage": "medium",
       "status": "proposed",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.449Z"
+      "addedAt": "2025-11-17T07:14:02.754Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-context-lcmp-path-sync.md",
@@ -42,7 +42,18 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.449Z"
+      "addedAt": "2025-11-17T07:14:02.754Z"
+    },
+    {
+      "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-orchestrator-health-2025-11-16.md",
+      "relativePath": "REPAIR-orchestrator-health-2025-11-16.md",
+      "name": "REPAIR-orchestrator-health-2025-11-16",
+      "contextGathered": false,
+      "priority": "high",
+      "leverage": "high",
+      "status": "pending",
+      "dependsOn": [],
+      "addedAt": "2025-11-17T07:14:02.755Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-pause-detection-robustness.md",
@@ -53,7 +64,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.453Z"
+      "addedAt": "2025-11-17T07:14:02.756Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-pm-command-script-paths.md",
@@ -64,7 +75,7 @@
       "leverage": "medium",
       "status": "open",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.456Z"
+      "addedAt": "2025-11-17T07:14:02.757Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-skill-invocation-mechanism.md",
@@ -75,7 +86,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.457Z"
+      "addedAt": "2025-11-17T07:14:02.757Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-CODE-REVIEW-warning-cloud-timeout.md",
@@ -86,7 +97,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.461Z"
+      "addedAt": "2025-11-17T07:14:02.759Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-align-cursor-claude-logging-standards.md",
@@ -97,7 +108,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.462Z"
+      "addedAt": "2025-11-17T07:14:02.759Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-breach-telemetry-ledger.md",
@@ -108,7 +119,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.463Z"
+      "addedAt": "2025-11-17T07:14:02.760Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-create-health-check-script.md",
@@ -119,7 +130,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.463Z"
+      "addedAt": "2025-11-17T07:14:02.761Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-create-quick-start-guide.md",
@@ -130,7 +141,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.464Z"
+      "addedAt": "2025-11-17T07:14:02.762Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-create-troubleshooting-guide.md",
@@ -141,7 +152,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.466Z"
+      "addedAt": "2025-11-17T07:14:02.763Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-deduplicate-framework-docs.md",
@@ -152,7 +163,7 @@
       "leverage": "medium",
       "status": "proposed",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.467Z"
+      "addedAt": "2025-11-17T07:14:02.763Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-documentation-consolidation-alignment.md",
@@ -163,7 +174,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.467Z"
+      "addedAt": "2025-11-17T07:14:02.764Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-eldritch-commit-composer.md",
@@ -174,7 +185,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.468Z"
+      "addedAt": "2025-11-17T07:14:02.764Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-enhance-handoff-for-cursor-independence.md",
@@ -185,7 +196,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.469Z"
+      "addedAt": "2025-11-17T07:14:02.765Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-fix-tasksdir-parameter-inconsistency.md",
@@ -196,7 +207,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.471Z"
+      "addedAt": "2025-11-17T07:14:02.766Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-fix-test-script-directory-issue.md",
@@ -207,7 +218,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.473Z"
+      "addedAt": "2025-11-17T07:14:02.766Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-implement-automation-strategy.md",
@@ -218,7 +229,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.476Z"
+      "addedAt": "2025-11-17T07:14:02.767Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-implement-code-search-parallelization.md",
@@ -229,7 +240,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.479Z"
+      "addedAt": "2025-11-17T07:14:02.767Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-implement-github-branch-workflow-automation.md",
@@ -240,7 +251,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.480Z"
+      "addedAt": "2025-11-17T07:14:02.768Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-implement-numeric-impact-priority-system.md",
@@ -251,7 +262,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.482Z"
+      "addedAt": "2025-11-17T07:14:02.768Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-implement-parallel-agent-invocation.md",
@@ -262,7 +273,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.484Z"
+      "addedAt": "2025-11-17T07:14:02.769Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-implement-skill-validation-script.md",
@@ -273,7 +284,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.488Z"
+      "addedAt": "2025-11-17T07:14:02.770Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-normalize-trigger-keywords.md",
@@ -284,7 +295,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.490Z"
+      "addedAt": "2025-11-17T07:14:02.771Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-optimize-skill-triggers.md",
@@ -295,7 +306,7 @@
       "leverage": "medium",
       "status": "proposed",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.492Z"
+      "addedAt": "2025-11-17T07:14:02.771Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-quick-framework-fixes.md",
@@ -306,7 +317,7 @@
       "leverage": "medium",
       "status": "proposed",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.493Z"
+      "addedAt": "2025-11-17T07:14:02.772Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-refactor-claudekit-hooks-to-proper-setup.md",
@@ -317,7 +328,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.494Z"
+      "addedAt": "2025-11-17T07:14:02.772Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-remove-claudekit-hook-dependency.md",
@@ -328,7 +339,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.495Z"
+      "addedAt": "2025-11-17T07:14:02.773Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-rightsize-contextkit-footprint.md",
@@ -339,7 +350,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.496Z"
+      "addedAt": "2025-11-17T07:14:02.774Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-stationmaster-control-plane.md",
@@ -350,7 +361,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.498Z"
+      "addedAt": "2025-11-17T07:14:02.774Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-streamline-handoff-logging.md",
@@ -361,7 +372,7 @@
       "leverage": "medium",
       "status": "proposed",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.500Z"
+      "addedAt": "2025-11-17T07:14:02.775Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-test-cloud-agent-infrastructure.md",
@@ -372,7 +383,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.502Z"
+      "addedAt": "2025-11-17T07:14:02.775Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-track-telemetry-ritual-map.md",
@@ -383,7 +394,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.503Z"
+      "addedAt": "2025-11-17T07:14:02.776Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-vision-codex-progress-ledger.md",
@@ -394,7 +405,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.504Z"
+      "addedAt": "2025-11-17T07:14:02.776Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-CODE-REVIEW-suggestion-base64-comment.md",
@@ -405,7 +416,7 @@
       "leverage": "low",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.509Z"
+      "addedAt": "2025-11-17T07:14:02.776Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-CODE-REVIEW-suggestion-error-messages.md",
@@ -416,7 +427,7 @@
       "leverage": "low",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.511Z"
+      "addedAt": "2025-11-17T07:14:02.777Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-CODE-REVIEW-suggestion-graph-validation.md",
@@ -427,7 +438,7 @@
       "leverage": "low",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.514Z"
+      "addedAt": "2025-11-17T07:14:02.777Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-CODE-REVIEW-suggestion-health-check.md",
@@ -438,7 +449,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.515Z"
+      "addedAt": "2025-11-17T07:14:02.778Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-CODE-REVIEW-suggestion-magic-numbers.md",
@@ -449,7 +460,7 @@
       "leverage": "low",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.517Z"
+      "addedAt": "2025-11-17T07:14:02.778Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-CODE-REVIEW-suggestion-project-root.md",
@@ -460,7 +471,7 @@
       "leverage": "low",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.518Z"
+      "addedAt": "2025-11-17T07:14:02.779Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-CODE-REVIEW-suggestion-queue-logging.md",
@@ -471,7 +482,7 @@
       "leverage": "low",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.519Z"
+      "addedAt": "2025-11-17T07:14:02.780Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-CODE-REVIEW-warning-input-validation.md",
@@ -482,7 +493,7 @@
       "leverage": "low",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.521Z"
+      "addedAt": "2025-11-17T07:14:02.780Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-context-summarization.md",
@@ -493,7 +504,7 @@
       "leverage": "medium",
       "status": "parked",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.522Z"
+      "addedAt": "2025-11-17T07:14:02.781Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-context-window-budgeting.md",
@@ -504,7 +515,7 @@
       "leverage": "medium",
       "status": "parked",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.523Z"
+      "addedAt": "2025-11-17T07:14:02.781Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-create-agents-documentation.md",
@@ -515,7 +526,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.524Z"
+      "addedAt": "2025-11-17T07:14:02.782Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-create-configuration-wizard.md",
@@ -526,7 +537,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.525Z"
+      "addedAt": "2025-11-17T07:14:02.782Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-create-success-metrics-dashboard.md",
@@ -537,7 +548,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.527Z"
+      "addedAt": "2025-11-17T07:14:02.783Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-document-continuous-worker-scope.md",
@@ -548,7 +559,7 @@
       "leverage": "medium",
       "status": "deprecated",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.528Z"
+      "addedAt": "2025-11-17T07:14:02.783Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-dynamic-skill-loading.md",
@@ -559,7 +570,7 @@
       "leverage": "medium",
       "status": "parked",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.531Z"
+      "addedAt": "2025-11-17T07:14:02.784Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-implement-agent-registry-caching.md",
@@ -570,7 +581,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.532Z"
+      "addedAt": "2025-11-17T07:14:02.784Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-implement-context-gathering-cache.md",
@@ -581,7 +592,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.533Z"
+      "addedAt": "2025-11-17T07:14:02.784Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-implement-context-window-budgeting.md",
@@ -592,7 +603,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.535Z"
+      "addedAt": "2025-11-17T07:14:02.785Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-implement-performance-dashboard-v2.md",
@@ -603,7 +614,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.536Z"
+      "addedAt": "2025-11-17T07:14:02.785Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-implement-state-persistence-batching.md",
@@ -614,7 +625,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.538Z"
+      "addedAt": "2025-11-17T07:14:02.786Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-implement-task-template-generation.md",
@@ -625,7 +636,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.539Z"
+      "addedAt": "2025-11-17T07:14:02.786Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-maintain-agent-documentation.md",
@@ -636,7 +647,7 @@
       "leverage": "medium",
       "status": "not-started",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.541Z"
+      "addedAt": "2025-11-17T07:14:02.787Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-merge-contextkit-planning.md",
@@ -647,7 +658,7 @@
       "leverage": "medium",
       "status": "parked",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.542Z"
+      "addedAt": "2025-11-17T07:14:02.790Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-modularize-knowledge.md",
@@ -658,7 +669,7 @@
       "leverage": "medium",
       "status": "parked",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.543Z"
+      "addedAt": "2025-11-17T07:14:02.791Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-review-branch-creation-in-task-init.md",
@@ -669,7 +680,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.545Z"
+      "addedAt": "2025-11-17T07:14:02.792Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-review-lcmp-squish-workflow-integration.md",
@@ -680,18 +691,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.546Z"
-    },
-    {
-      "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-review-post-tool-use-string-conversion-fix.md",
-      "relativePath": "l-review-post-tool-use-string-conversion-fix.md",
-      "name": "l-review-post-tool-use-string-conversion-fix",
-      "contextGathered": false,
-      "priority": "medium",
-      "leverage": "medium",
-      "status": "pending",
-      "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.548Z"
+      "addedAt": "2025-11-17T07:14:02.792Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-review-task-dependency-graph-implementation.md",
@@ -702,7 +702,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.555Z"
+      "addedAt": "2025-11-17T07:14:02.793Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-review-todo-change-block-json-control.md",
@@ -713,7 +713,7 @@
       "leverage": "medium",
       "status": "open",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.556Z"
+      "addedAt": "2025-11-17T07:14:02.794Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-smarter-file-search.md",
@@ -724,7 +724,7 @@
       "leverage": "medium",
       "status": "parked",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.557Z"
+      "addedAt": "2025-11-17T07:14:02.794Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-unified-healthcheck-command.md",
@@ -735,7 +735,7 @@
       "leverage": "medium",
       "status": "proposed",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.557Z"
+      "addedAt": "2025-11-17T07:14:02.796Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-CODE-REVIEW-orchestrator-queue-enhancements.md",
@@ -746,7 +746,7 @@
       "leverage": "high",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.558Z"
+      "addedAt": "2025-11-17T07:14:02.796Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-CODE-REVIEW-warning-env-exposure.md",
@@ -757,7 +757,7 @@
       "leverage": "low",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.558Z"
+      "addedAt": "2025-11-17T07:14:02.797Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-CODE-REVIEW-warning-promise-rejection.md",
@@ -768,7 +768,7 @@
       "leverage": "low",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.559Z"
+      "addedAt": "2025-11-17T07:14:02.797Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-CODE-REVIEW-warning-state-race.md",
@@ -779,7 +779,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.559Z"
+      "addedAt": "2025-11-17T07:14:02.798Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-add-code-review-auto-invoke-triggers.md",
@@ -790,7 +790,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.560Z"
+      "addedAt": "2025-11-17T07:14:02.798Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-create-error-recovery-guide.md",
@@ -801,7 +801,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.560Z"
+      "addedAt": "2025-11-17T07:14:02.799Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-create-examples-directory.md",
@@ -812,7 +812,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.561Z"
+      "addedAt": "2025-11-17T07:14:02.799Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-create-handoff-protocol.md",
@@ -825,7 +825,7 @@
       "dependsOn": [
         "m-implement-task-registry.md"
       ],
-      "addedAt": "2025-11-17T07:37:53.562Z"
+      "addedAt": "2025-11-17T07:14:02.799Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-create-integration-tests.md",
@@ -836,7 +836,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.563Z"
+      "addedAt": "2025-11-17T07:14:02.800Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-create-visual-workflow-examples.md",
@@ -847,7 +847,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.564Z"
+      "addedAt": "2025-11-17T07:14:02.801Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-document-alignment-context-integration.md",
@@ -858,7 +858,7 @@
       "leverage": "medium",
       "status": "not-started",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.564Z"
+      "addedAt": "2025-11-17T07:14:02.801Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-document-typical-workflows.md",
@@ -869,7 +869,7 @@
       "leverage": "medium",
       "status": "proposed",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.568Z"
+      "addedAt": "2025-11-17T07:14:02.802Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-enhance-lcmp-prompting.md",
@@ -880,7 +880,7 @@
       "leverage": "medium",
       "status": "proposed",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.569Z"
+      "addedAt": "2025-11-17T07:14:02.802Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-ensure-backlinking-in-task-creation.md",
@@ -891,7 +891,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.572Z"
+      "addedAt": "2025-11-17T07:14:02.803Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-fix-missing-ccpm-next-script.md",
@@ -902,7 +902,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.577Z"
+      "addedAt": "2025-11-17T07:14:02.803Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-fix-orchestrator-status-npm-command.md",
@@ -913,7 +913,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.582Z"
+      "addedAt": "2025-11-17T07:14:02.804Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-implement-artifact-lifecycle.md",
@@ -924,7 +924,20 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.585Z"
+      "addedAt": "2025-11-17T07:14:02.804Z"
+    },
+    {
+      "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-implement-cursor-automation.md",
+      "relativePath": "m-implement-cursor-automation.md",
+      "name": "m-implement-cursor-automation",
+      "contextGathered": false,
+      "priority": "medium",
+      "leverage": "medium",
+      "status": "deprecated",
+      "dependsOn": [
+        "m-create-handoff-protocol.md"
+      ],
+      "addedAt": "2025-11-17T07:14:02.805Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-implement-custom-skill-rules.md",
@@ -935,7 +948,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.586Z"
+      "addedAt": "2025-11-17T07:14:02.806Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-implement-plugin-backlinking.md",
@@ -946,7 +959,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.587Z"
+      "addedAt": "2025-11-17T07:14:02.806Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-implement-task-dependency-graph-v2.md",
@@ -957,7 +970,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.590Z"
+      "addedAt": "2025-11-17T07:14:02.807Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-implement-task-registry.md",
@@ -968,7 +981,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.592Z"
+      "addedAt": "2025-11-17T07:14:02.807Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-implement-user-onboarding.md",
@@ -979,7 +992,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.595Z"
+      "addedAt": "2025-11-17T07:14:02.808Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-integrate-agent-registry-with-skill-rules.md",
@@ -990,7 +1003,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.597Z"
+      "addedAt": "2025-11-17T07:14:02.808Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-investigate-optional-sot-files.md",
@@ -1001,7 +1014,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.598Z"
+      "addedAt": "2025-11-17T07:14:02.809Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-optimize-skill-directory-mapping.md",
@@ -1012,7 +1025,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.599Z"
+      "addedAt": "2025-11-17T07:14:02.810Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-prune-skill-trigger-noise.md",
@@ -1023,7 +1036,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.601Z"
+      "addedAt": "2025-11-17T07:14:02.810Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-reconcile-task-reference-drift.md",
@@ -1034,7 +1047,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.604Z"
+      "addedAt": "2025-11-17T07:14:02.811Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-release-v0.1.0-installable-package.md",
@@ -1045,7 +1058,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.611Z"
+      "addedAt": "2025-11-17T07:14:02.811Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-simplify-handoff-process.md",
@@ -1056,7 +1069,7 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.612Z"
+      "addedAt": "2025-11-17T07:14:02.812Z"
     },
     {
       "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/orchestrator-test-context.md",
@@ -1067,18 +1080,65 @@
       "leverage": "medium",
       "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.613Z"
+      "addedAt": "2025-11-17T07:14:02.813Z"
     },
     {
-      "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-orchestrator-task-validation.md",
-      "relativePath": "REPAIR-orchestrator-task-validation.md",
-      "name": "[prefix]-[descriptive-name]",
+      "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/orchestrator-test-impl.md",
+      "relativePath": "orchestrator-test-impl.md",
+      "name": "orchestrator-test-impl",
+      "contextGathered": false,
+      "priority": "high",
+      "leverage": "medium",
+      "status": "pending",
+      "dependsOn": [],
+      "addedAt": "2025-11-17T07:14:02.813Z",
+      "validationIssue": "missing_context_manifest"
+    },
+    {
+      "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-review-post-tool-use-string-conversion-fix.md",
+      "relativePath": "l-review-post-tool-use-string-conversion-fix.md",
+      "name": "l-review-post-tool-use-string-conversion-fix",
       "contextGathered": false,
       "priority": "medium",
       "leverage": "medium",
-      "status": "pending|in-progress|completed|blocked",
+      "status": "pending",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:40:44.981Z"
+      "addedAt": "2025-11-17T07:19:52.901Z"
+    },
+    {
+      "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-fix-orchestrator-code-review-warnings.md",
+      "relativePath": "m-fix-orchestrator-code-review-warnings.md",
+      "name": "m-fix-orchestrator-code-review-warnings",
+      "contextGathered": false,
+      "priority": "medium",
+      "leverage": "medium",
+      "status": "pending",
+      "dependsOn": [],
+      "addedAt": "2025-11-17T07:22:17.989Z"
+    },
+    {
+      "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/deprecated/m-implement-cursor-automation.md",
+      "relativePath": "deprecated/m-implement-cursor-automation.md",
+      "name": "m-implement-cursor-automation",
+      "contextGathered": false,
+      "priority": "medium",
+      "leverage": "medium",
+      "status": "deprecated",
+      "dependsOn": [
+        "m-create-handoff-protocol.md"
+      ],
+      "addedAt": "2025-11-17T07:34:28.119Z"
+    },
+    {
+      "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/deprecated/m-implement-cursor-auto-task-pickup.md",
+      "relativePath": "deprecated/m-implement-cursor-auto-task-pickup.md",
+      "name": "m-implement-cursor-auto-task-pickup",
+      "contextGathered": false,
+      "priority": "high",
+      "leverage": "ultra-high",
+      "status": "deprecated",
+      "dependsOn": [],
+      "addedAt": "2025-11-17T07:34:28.122Z"
     }
   ],
   "implementationQueue": [
@@ -1091,26 +1151,16 @@
       "leverage": "high",
       "status": "in-progress",
       "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.450Z"
-    },
-    {
-      "path": "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-fix-orchestrator-code-review-warnings.md",
-      "relativePath": "m-fix-orchestrator-code-review-warnings.md",
-      "name": "m-fix-orchestrator-code-review-warnings",
-      "contextGathered": true,
-      "priority": "medium",
-      "leverage": "medium",
-      "status": "pending",
-      "dependsOn": [],
-      "addedAt": "2025-11-17T07:37:53.581Z"
+      "addedAt": "2025-11-17T07:14:02.756Z"
     }
   ],
   "processedTasks": [
+    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/orchestrator-test-context.md",
+    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/orchestrator-test-impl.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/?-investigate-optional-sot-files.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-code-review-findings-workflow.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-consolidate-tier-docs.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-context-lcmp-path-sync.md",
-    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-orchestrator-queue-path-format.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-pause-detection-robustness.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-pm-command-script-paths.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-skill-invocation-mechanism.md",
@@ -1130,10 +1180,10 @@
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-fix-test-script-directory-issue.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-implement-automation-strategy.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-implement-code-search-parallelization.md",
-    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-implement-github-branch-workflow-automation.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-implement-numeric-impact-priority-system.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-implement-parallel-agent-invocation.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-implement-skill-validation-script.md",
+    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-multi-agent-orchestration.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-normalize-trigger-keywords.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-optimize-skill-triggers.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-quick-framework-fixes.md",
@@ -1171,12 +1221,10 @@
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-modularize-knowledge.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-review-branch-creation-in-task-init.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-review-lcmp-squish-workflow-integration.md",
-    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-review-post-tool-use-string-conversion-fix.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-review-task-dependency-graph-implementation.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-review-todo-change-block-json-control.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-smarter-file-search.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-unified-healthcheck-command.md",
-    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-CODE-REVIEW-orchestrator-queue-enhancements.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-CODE-REVIEW-warning-env-exposure.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-CODE-REVIEW-warning-promise-rejection.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-CODE-REVIEW-warning-state-race.md",
@@ -1190,10 +1238,9 @@
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-document-typical-workflows.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-enhance-lcmp-prompting.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-ensure-backlinking-in-task-creation.md",
-    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-fix-missing-ccpm-next-script.md",
-    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-fix-orchestrator-code-review-warnings.md",
-    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-fix-orchestrator-status-npm-command.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-implement-artifact-lifecycle.md",
+    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-implement-cursor-auto-task-pickup.md",
+    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-implement-cursor-automation.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-implement-custom-skill-rules.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-implement-plugin-backlinking.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-implement-task-dependency-graph-v2.md",
@@ -1206,9 +1253,17 @@
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-reconcile-task-reference-drift.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-release-v0.1.0-installable-package.md",
     "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-simplify-handoff-process.md",
-    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/orchestrator-test-context.md",
-    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/orchestrator-test-impl.md",
-    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-orchestrator-task-validation.md"
+    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-unified-cursor-automation.md",
+    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-fix-missing-ccpm-next-script.md",
+    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-fix-orchestrator-status-npm-command.md",
+    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-orchestrator-health-2025-11-16.md",
+    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/REPAIR-orchestrator-queue-path-format.md",
+    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/h-implement-github-branch-workflow-automation.md",
+    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-CODE-REVIEW-orchestrator-queue-enhancements.md",
+    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/l-review-post-tool-use-string-conversion-fix.md",
+    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/m-fix-orchestrator-code-review-warnings.md",
+    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/deprecated/m-implement-cursor-automation.md",
+    "/Users/grandinharrison/Desktop/claude-code-projects/claude-chaos-express/sessions/tasks/deprecated/m-implement-cursor-auto-task-pickup.md"
   ],
   "dependencyGraph": {
     "adjacencyList": [
@@ -1229,14 +1284,16 @@
         "dependencies": []
       },
       {
+        "task": "REPAIR-orchestrator-health-2025-11-16.md",
+        "dependencies": []
+      },
+      {
         "task": "REPAIR-orchestrator-queue-path-format.md",
         "dependencies": []
       },
       {
         "task": "REPAIR-pause-detection-robustness.md",
-        "dependencies": [
-          "REPAIR-code-review-findings-workflow.md"
-        ]
+        "dependencies": []
       },
       {
         "task": "REPAIR-pm-command-script-paths.md",
@@ -1328,9 +1385,7 @@
       },
       {
         "task": "h-implement-skill-validation-script.md",
-        "dependencies": [
-          "REPAIR-skill-invocation-mechanism.md"
-        ]
+        "dependencies": []
       },
       {
         "task": "h-normalize-trigger-keywords.md",
@@ -1342,9 +1397,7 @@
       },
       {
         "task": "h-quick-framework-fixes.md",
-        "dependencies": [
-          "REPAIR-consolidate-tier-docs.md"
-        ]
+        "dependencies": []
       },
       {
         "task": "h-refactor-claudekit-hooks-to-proper-setup.md",
@@ -1483,10 +1536,6 @@
         "dependencies": []
       },
       {
-        "task": "l-review-post-tool-use-string-conversion-fix.md",
-        "dependencies": []
-      },
-      {
         "task": "l-review-task-dependency-graph-implementation.md",
         "dependencies": []
       },
@@ -1565,16 +1614,22 @@
         "dependencies": []
       },
       {
-        "task": "m-fix-orchestrator-code-review-warnings.md",
-        "dependencies": []
-      },
-      {
         "task": "m-fix-orchestrator-status-npm-command.md",
         "dependencies": []
       },
       {
         "task": "m-implement-artifact-lifecycle.md",
         "dependencies": []
+      },
+      {
+        "task": "m-implement-cursor-auto-task-pickup.md",
+        "dependencies": []
+      },
+      {
+        "task": "m-implement-cursor-automation.md",
+        "dependencies": [
+          "m-create-handoff-protocol.md"
+        ]
       },
       {
         "task": "m-implement-custom-skill-rules.md",
@@ -1622,12 +1677,7 @@
       },
       {
         "task": "m-release-v0.1.0-installable-package.md",
-        "dependencies": [
-          "h-create-health-check-script.md",
-          "m-create-integration-tests.md",
-          "h-create-quick-start-guide.md",
-          "h-create-troubleshooting-guide.md"
-        ]
+        "dependencies": []
       },
       {
         "task": "m-simplify-handoff-process.md",
@@ -1642,7 +1692,21 @@
         "dependencies": []
       },
       {
-        "task": "REPAIR-orchestrator-task-validation.md",
+        "task": "l-review-post-tool-use-string-conversion-fix.md",
+        "dependencies": []
+      },
+      {
+        "task": "m-fix-orchestrator-code-review-warnings.md",
+        "dependencies": []
+      },
+      {
+        "task": "deprecated/m-implement-cursor-automation.md",
+        "dependencies": [
+          "m-create-handoff-protocol.md"
+        ]
+      },
+      {
+        "task": "deprecated/m-implement-cursor-auto-task-pickup.md",
         "dependencies": []
       }
     ],
@@ -1672,6 +1736,13 @@
         "task": "REPAIR-context-lcmp-path-sync.md",
         "priority": "high",
         "leverage": "medium",
+        "status": "pending",
+        "created": "2025-11-17"
+      },
+      {
+        "task": "REPAIR-orchestrator-health-2025-11-16.md",
+        "priority": "high",
+        "leverage": "high",
         "status": "pending",
         "created": "2025-11-17"
       },
@@ -2109,13 +2180,6 @@
         "created": "2025-11-17"
       },
       {
-        "task": "l-review-post-tool-use-string-conversion-fix.md",
-        "priority": "medium",
-        "leverage": "medium",
-        "status": "pending",
-        "created": "2025-11-17"
-      },
-      {
         "task": "l-review-task-dependency-graph-implementation.md",
         "priority": "low",
         "leverage": "medium",
@@ -2249,13 +2313,6 @@
         "created": "2025-11-17"
       },
       {
-        "task": "m-fix-orchestrator-code-review-warnings.md",
-        "priority": "medium",
-        "leverage": "medium",
-        "status": "pending",
-        "created": "2025-11-17"
-      },
-      {
         "task": "m-fix-orchestrator-status-npm-command.md",
         "priority": "medium",
         "leverage": "medium",
@@ -2267,6 +2324,20 @@
         "priority": "medium",
         "leverage": "medium",
         "status": "pending",
+        "created": "2025-11-17"
+      },
+      {
+        "task": "m-implement-cursor-auto-task-pickup.md",
+        "priority": "high",
+        "leverage": "ultra-high",
+        "status": "deprecated",
+        "created": "2025-11-17"
+      },
+      {
+        "task": "m-implement-cursor-automation.md",
+        "priority": "medium",
+        "leverage": "medium",
+        "status": "deprecated",
         "created": "2025-11-17"
       },
       {
@@ -2374,13 +2445,34 @@
         "created": "2025-11-17"
       },
       {
-        "task": "REPAIR-orchestrator-task-validation.md",
+        "task": "l-review-post-tool-use-string-conversion-fix.md",
         "priority": "medium",
         "leverage": "medium",
-        "status": "pending|in-progress|completed|blocked",
+        "status": "pending",
+        "created": "2025-11-17"
+      },
+      {
+        "task": "m-fix-orchestrator-code-review-warnings.md",
+        "priority": "medium",
+        "leverage": "medium",
+        "status": "pending",
+        "created": "2025-11-17"
+      },
+      {
+        "task": "deprecated/m-implement-cursor-automation.md",
+        "priority": "medium",
+        "leverage": "medium",
+        "status": "deprecated",
+        "created": "2025-11-17"
+      },
+      {
+        "task": "deprecated/m-implement-cursor-auto-task-pickup.md",
+        "priority": "high",
+        "leverage": "ultra-high",
+        "status": "deprecated",
         "created": "2025-11-17"
       }
     ]
   },
-  "lastUpdated": "2025-11-17T07:40:44.983Z"
+  "lastUpdated": "2025-11-17T07:34:28.122Z"
 }
