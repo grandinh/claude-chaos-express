@@ -1,3 +1,9 @@
+---
+name: code-review-trigger
+description: Natural language wrapper for code review - automatically triggers /code-review when users express intent to review code, check for bugs, or validate code quality
+schema_version: 1.0
+---
+
 # code-review-trigger
 
 **Type:** ANALYSIS-ONLY

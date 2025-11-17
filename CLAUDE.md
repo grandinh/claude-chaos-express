@@ -276,10 +276,14 @@ The framework includes **20 operational skills** in `.claude/skills/` that provi
 - Skills can auto-trigger based on user input or be manually invoked.
 
 **File Organization:**
-- All skill files MUST be in `.claude/skills/<skill-name>.md` (flat structure, root level)
-- Do NOT use subdirectories (e.g., `WRITE-CAPABLE/`, `ANALYSIS-ONLY/`, `WORKFLOW-TRIGGERS/`)
-- The skill activation system expects all skills at root level
-- Skill categorization (WRITE-CAPABLE, ANALYSIS-ONLY, etc.) is handled via metadata in `skill-rules.json`, not directory structure
+- Each skill MUST be in its own directory: `.claude/skills/<skill-name>/`
+- Each directory must contain a file named `SKILL.md`
+- SKILL.md must have YAML frontmatter with `name` and `description` fields
+- Example: `.claude/skills/error-tracking/SKILL.md`
+- Do NOT use flat `.md` files in root (e.g., `error-tracking.md` is incorrect)
+- Skill categorization (WRITE-CAPABLE, ANALYSIS-ONLY, etc.) is handled via metadata in `skill-rules.json`
+- Skills are auto-discovered by Claude Code from the filesystem based on this structure
+- **Important:** Claude Code must be restarted after adding or modifying skills for discovery to occur
 
 ### 4.3 Skill Precedence
 
@@ -307,7 +311,7 @@ The skill system includes feedback loop capabilities:
 - **Workflow suggestions** – Lightweight UX for suggesting next steps after skill completion
 - **Automated skill assessment** – New skills automatically trigger assessment suggestions via hook system
 
-See `.claude/skills/README.md` for detailed skill documentation and `skill-developer.md` for the self-improvement system.
+See `.claude/skills/README.md` for detailed skill documentation and `.claude/skills/skill-developer/SKILL.md` for the self-improvement system.
 
 Concrete examples and validation steps are in `claude-reference.md`.
 
@@ -334,7 +338,7 @@ When new skill files are created in `.claude/skills/`, the framework automatical
 - When uncertain, recommends MANUAL-ONLY invocation
 - Ensures only valuable skills auto-trigger to prevent noise and token waste
 
-See `.claude/skills/skill-assessor.md` for detailed assessment methodology.
+See `.claude/skills/skill-assessor/SKILL.md` for detailed assessment methodology.
 
 ---
 

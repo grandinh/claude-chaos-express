@@ -1,3 +1,9 @@
+---
+name: validation-trigger
+description: Natural language wrapper for validation commands - automatically triggers /validate-and-fix when users request quality checks, linting, or auto-fixes
+schema_version: 1.0
+---
+
 # validation-trigger
 
 **Type:** WRITE-CAPABLE

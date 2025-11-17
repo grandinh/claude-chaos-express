@@ -1,3 +1,9 @@
+---
+name: skill-developer
+description: Guide the development and modification of skills within the cc-sessions framework - helps create new skills, modify existing ones, and ensure proper integration with the skill activation system
+schema_version: 1.0
+---
+
 # skill-developer
 
 **Type:** WRITE-CAPABLE

@@ -1,3 +1,9 @@
+---
+name: contextkit-planning-trigger
+description: Natural language wrapper for ContextKit planning commands - automatically triggers /ctxk:plan commands when users request planning assistance
+schema_version: 1.0
+---
+
 # contextkit-planning-trigger
 
 **Type:** ANALYSIS-ONLY

@@ -133,7 +133,13 @@ The shame ritual should NOT trigger when:
 
 ### 3.1 Skill File Structure (ANALYSIS-ONLY)
 
-Example: `.claude/skills/error-tracking.md`
+Example: `.claude/skills/error-tracking/SKILL.md`
+
+**Important:** Skills must follow the directory-based structure:
+- Each skill in its own directory: `.claude/skills/<skill-name>/`
+- Directory must contain a file named `SKILL.md`
+- SKILL.md must have YAML frontmatter with `name`, `description`, and `schema_version` fields
+- Claude Code must be restarted after adding/modifying skills for discovery to occur
 
 ```markdown
 # error-tracking
@@ -178,9 +184,15 @@ In any DAIC mode:
 - ✓ Respects all cc-sessions rules
 ```
 
-### 2.2 Skill File Structure (WRITE-CAPABLE)
+### 3.2 Skill File Structure (WRITE-CAPABLE)
 
-Example: `.claude/skills/cc-sessions-core.md`
+Example: `.claude/skills/cc-sessions-core/SKILL.md`
+
+**Important:** WRITE-CAPABLE skills follow the same directory structure as ANALYSIS-ONLY skills.
+- Each skill in its own directory: `.claude/skills/<skill-name>/`
+- Directory must contain a file named `SKILL.md`
+- SKILL.md must have YAML frontmatter with `name`, `description`, and `schema_version` fields
+- Claude Code must be restarted after adding/modifying skills for discovery to occur
 
 ```markdown
 # cc-sessions-core
@@ -380,10 +392,10 @@ if (["Edit", "Write", "MultiEdit"].includes(toolName)) {
 ```markdown
 # Scenario: User creates new "database-migration" skill
 
-1. User creates `.claude/skills/database-migration.md` in IMPLEMENT mode
+1. User creates `.claude/skills/database-migration/SKILL.md` in IMPLEMENT mode with proper YAML frontmatter
 
 2. Hook detects file creation and prints to stderr:
-   [New Skill Detected] database-migration.md created but not yet in skill-rules.json.
+   [New Skill Detected] database-migration/SKILL.md created but not yet in skill-rules.json.
 
    💡 Recommendation: Assess this skill for auto-invocation...
 
@@ -447,7 +459,7 @@ if (["Edit", "Write", "MultiEdit"].includes(toolName)) {
 8. Assessment logged in context/decisions.md:
    ### Skill Assessment: database-migration - 2025-11-15
 
-   **Skill File:** `.claude/skills/database-migration.md`
+   **Skill File:** `.claude/skills/database-migration/SKILL.md`
    **Assessed By:** skill-assessor (context-gathering + code-analyzer)
 
    **Purpose**: Guidance for database schema migrations

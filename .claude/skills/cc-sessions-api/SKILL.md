@@ -1,3 +1,9 @@
+---
+name: cc-sessions-api
+description: Specialized guidance for developing cc-sessions API commands and subsystems for state management, task operations, configuration, and protocol execution
+schema_version: 1.0
+---
+
 # cc-sessions-api
 
 **Type:** WRITE-CAPABLE

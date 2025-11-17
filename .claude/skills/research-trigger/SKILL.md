@@ -1,3 +1,9 @@
+---
+name: research-trigger
+description: Natural language wrapper for research command - automatically triggers /research when users ask questions requiring deep research, best practices lookup, or multi-source information gathering
+schema_version: 1.0
+---
+
 # research-trigger
 
 **Type:** ANALYSIS-ONLY

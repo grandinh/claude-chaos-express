@@ -1,3 +1,9 @@
+---
+name: cc-sessions-hooks
+description: Specialized guidance for creating, modifying, and debugging cc-sessions hooks that enforce DAIC discipline, write-gating, and framework integrity
+schema_version: 1.0
+---
+
 # cc-sessions-hooks
 
 **Type:** WRITE-CAPABLE

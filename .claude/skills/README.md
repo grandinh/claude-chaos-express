@@ -188,11 +188,61 @@ Skills can suggest next steps after completion using lightweight approval UX:
 
 Use the `skill-developer` skill in IMPLEMENT mode:
 
-1. Create `.claude/skills/my-skill.md` with:
-   - Skill type (ANALYSIS-ONLY or WRITE-CAPABLE)
-   - Purpose and core behavior
-   - Safety guardrails
-   - Examples
+1. Create `.claude/skills/my-skill-name/SKILL.md` using this template:
+
+```markdown
+---
+name: my-skill-name
+description: Brief one-line description of what this skill does
+schema_version: 1.0
+---
+
+# my-skill-name
+
+**Type:** ANALYSIS-ONLY (or WRITE-CAPABLE)
+**DAIC Modes:** DISCUSS, ALIGN, IMPLEMENT, CHECK (or IMPLEMENT only for WRITE-CAPABLE)
+**Priority:** High/Medium/Low
+
+## Trigger Reference
+
+This skill activates on:
+- **Keywords:** "keyword1", "keyword2", "keyword3"
+- **Intent Patterns:** `pattern1.*?pattern2`, `another.*?pattern`
+
+From: `skill-rules.json` - my-skill-name configuration
+
+## Purpose
+
+Clear description of what this skill does and when it should be used.
+
+## Core Behavior
+
+When activated:
+
+1. **Step 1**
+   - What happens first
+   - Key actions
+
+2. **Step 2**
+   - What happens next
+   - More details
+
+## Natural Language Examples
+
+**Triggers this skill:**
+- ✓ "example trigger phrase"
+- ✓ "another example"
+
+**Doesn't trigger:**
+- ✗ "non-matching phrase"
+
+## Safety Guardrails
+
+**[WRITE-CAPABLE or ANALYSIS-ONLY] RULES:**
+- ✓ List safety rules
+- ✓ Constraints and limitations
+
+```
 
 2. **IMPORTANT: Skill assessment is automatically suggested**
    - When you create a new skill file, the `post_tool_use.js` hook detects it
@@ -240,7 +290,7 @@ The framework includes an automated skill assessment system to prevent skill blo
 - Token cost analysis prevents bloat
 - All decisions logged for future reference
 
-**See:** `.claude/skills/skill-assessor.md` for detailed assessment methodology
+**See:** `.claude/skills/skill-assessor/SKILL.md` for detailed assessment methodology
 
 ### Skill Precedence
 
@@ -263,35 +313,58 @@ When multiple skills could apply:
 ├── skill-rules.json                    # Trigger configuration (v3.0.0)
 ├── skill-usage.json                    # Usage tracking (created on first use)
 │
-├── WRITE-CAPABLE Skills (4 total) - all .md files in root:
-│   ├── cc-sessions-core.md
-│   ├── cc-sessions-hooks.md
-│   ├── cc-sessions-api.md
-│   └── skill-developer.md
+├── WRITE-CAPABLE Skills (4 total):
+│   ├── cc-sessions-core/
+│   │   └── SKILL.md
+│   ├── cc-sessions-hooks/
+│   │   └── SKILL.md
+│   ├── cc-sessions-api/
+│   │   └── SKILL.md
+│   └── skill-developer/
+│       └── SKILL.md
 │
-├── ANALYSIS-ONLY Skills (7 total) - all .md files in root:
-│   ├── error-tracking.md
-│   ├── framework_version_check.md
-│   ├── framework_health_check.md
-│   ├── framework_repair_suggester.md
-│   ├── lcmp_recommendation.md
-│   ├── daic_mode_guidance.md
-│   └── skill-assessor.md
+├── ANALYSIS-ONLY Skills (7 total):
+│   ├── error-tracking/
+│   │   └── SKILL.md
+│   ├── framework_version_check/
+│   │   └── SKILL.md
+│   ├── framework_health_check/
+│   │   └── SKILL.md
+│   ├── framework_repair_suggester/
+│   │   └── SKILL.md
+│   ├── lcmp_recommendation/
+│   │   └── SKILL.md
+│   ├── daic_mode_guidance/
+│   │   └── SKILL.md
+│   └── skill-assessor/
+│       └── SKILL.md
 │
-└── WORKFLOW-TRIGGER Skills (9 total - NEW in v3.0) - all .md files in root:
-    ├── code-review-trigger.md          # Natural language for /code-review
-    ├── research-trigger.md             # Natural language for /research
-    ├── pm-workflow-trigger.md          # Natural language for PM commands
-    ├── pm-status-trigger.md            # Natural language for status queries
-    ├── git-workflow-trigger.md         # Natural language for git operations
-    ├── contextkit-planning-trigger.md  # Natural language for ContextKit
-    ├── testing-trigger.md              # Natural language for test execution
-    ├── validation-trigger.md           # Natural language for quality checks
-    └── checkpoint-trigger.md           # Natural language for checkpoints
+└── WORKFLOW-TRIGGER Skills (9 total - NEW in v3.0):
+    ├── code-review-trigger/
+    │   └── SKILL.md
+    ├── research-trigger/
+    │   └── SKILL.md
+    ├── pm-workflow-trigger/
+    │   └── SKILL.md
+    ├── pm-status-trigger/
+    │   └── SKILL.md
+    ├── git-workflow-trigger/
+    │   └── SKILL.md
+    ├── contextkit-planning-trigger/
+    │   └── SKILL.md
+    ├── testing-trigger/
+    │   └── SKILL.md
+    ├── validation-trigger/
+    │   └── SKILL.md
+    └── checkpoint-trigger/
+        └── SKILL.md
 ```
 
-**IMPORTANT:** All skill files MUST be located directly in `.claude/skills/<skill-name>.md` (flat structure).
-Do NOT create subdirectories - the Skill tool expects all skills at root level.
+**IMPORTANT:** All skills MUST follow the official Claude Code format:
+- Each skill in its own directory: `.claude/skills/<skill-name>/`
+- Directory must contain a file named `SKILL.md`
+- SKILL.md must have YAML frontmatter with `name`, `description`, and `schema_version` fields
+- **Claude Code must be restarted after adding or modifying skills for discovery to occur**
 
 ---
 

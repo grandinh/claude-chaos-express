@@ -1,3 +1,9 @@
+---
+name: pm-status-trigger
+description: Natural language wrapper for PM status commands - automatically triggers /pm:status, /pm:next, /pm:blocked, /pm:in-progress when users ask about project status, next tasks, or blockers
+schema_version: 1.0
+---
+
 # pm-status-trigger
 
 **Type:** ANALYSIS-ONLY

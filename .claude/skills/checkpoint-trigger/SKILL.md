@@ -1,3 +1,9 @@
+---
+name: checkpoint-trigger
+description: Natural language wrapper for checkpoint commands - automatically triggers /checkpoint:create, /checkpoint:restore, /checkpoint:list when users request checkpoint operations
+schema_version: 1.0
+---
+
 # checkpoint-trigger
 
 **Type:** WRITE-CAPABLE

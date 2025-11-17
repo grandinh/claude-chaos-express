@@ -1,3 +1,9 @@
+---
+name: git-workflow-trigger
+description: Natural language wrapper for git commands - automatically triggers /git:commit, /git:status, /git:push when users express git workflow intent
+schema_version: 1.0
+---
+
 # git-workflow-trigger
 
 **Type:** WRITE-CAPABLE

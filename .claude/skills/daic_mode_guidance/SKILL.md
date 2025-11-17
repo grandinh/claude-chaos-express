@@ -1,3 +1,9 @@
+---
+name: daic_mode_guidance
+description: Explain the DAIC (Discuss-Align-Implement-Check) workflow, help users understand current mode, what's allowed in each mode, and how to transition between modes - ANALYSIS-ONLY skill
+schema_version: 1.0
+---
+
 # daic_mode_guidance
 
 **Type:** ANALYSIS-ONLY

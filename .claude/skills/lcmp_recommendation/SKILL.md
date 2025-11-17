@@ -1,3 +1,9 @@
+---
+name: lcmp_recommendation
+description: Suggest LCMP compaction when explicitly requested - provides guidance on promoting durable information to decisions.md, insights.md, and gotchas.md without auto-compaction
+schema_version: 1.0
+---
+
 # lcmp_recommendation
 
 **Type:** ANALYSIS-ONLY

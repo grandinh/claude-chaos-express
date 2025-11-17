@@ -165,8 +165,8 @@ Framework documentation inconsistently referenced `.cc-sessions/` paths instead 
 **7 files with incorrect paths:**
 1. CLAUDE.md (4 occurrences)
 2. claude-reference.md (1 occurrence)
-3. .claude/skills/cc-sessions-core.md (1 occurrence)
-4. .claude/skills/framework_health_check.md (4 occurrences)
+3. .claude/skills/cc-sessions-core/SKILL.md (1 occurrence - now restructured)
+4. .claude/skills/framework_health_check/SKILL.md (4 occurrences - now restructured)
 5. Context/Features/001-CustomizeSkillRules.md (2 occurrences)
 6. sessions/tasks/m-implement-custom-skill-rules.md (1 occurrence)
 7. sessions/tasks/done/m-repo-initialization.md (1 occurrence)

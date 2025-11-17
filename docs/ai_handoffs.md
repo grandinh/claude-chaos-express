@@ -82,6 +82,69 @@ context_files:
 
 ```yaml
 schema_version: "1.0"
+timestamp: 2025-01-20T20:00:00Z
+from: cursor
+to: claude
+issue_id: none
+branch: feature/REPAIR-skill-invocation-mechanism
+completed:
+  - Implemented task dependency graph orchestrator (scripts/task-orchestrator.js)
+  - Created dependency analysis tool with cycle detection, topological sorting, and parallel execution recommendations
+  - Updated task template to include depends_on field
+  - Created dependencies.yaml for manual dependency declarations
+  - Created comprehensive documentation (task-orchestrator-README.md and examples)
+  - Updated task m-implement-task-dependency-graph with implementation details
+next:
+  - Pick up sessions/tasks/l-review-task-dependency-graph-implementation.md for code review
+  - Review code quality, error handling, edge cases, and integration points
+  - Validate algorithms (topological sort, cycle detection) are correct
+  - Check integration with existing cc-sessions infrastructure
+  - Verify documentation accuracy and completeness
+  - Provide recommendations if issues are found
+context_files:
+  - scripts/task-orchestrator.js
+  - scripts/task-orchestrator-README.md
+  - scripts/task-orchestrator-example.md
+  - sessions/tasks/dependencies.yaml
+  - sessions/tasks/TEMPLATE.md
+  - sessions/tasks/m-implement-task-dependency-graph
+  - sessions/hooks/shared_state.js
+  - sessions/api/task_commands.js
+```
+
+```yaml
+schema_version: "1.0"
+timestamp: 2025-01-20T12:00:00Z
+from: cursor
+to: claude
+issue_id: none
+branch: feature/h-implement-automation-strategy
+completed:
+  - Created comprehensive automation strategy document (docs/automation-strategy.md) covering GitHub webhooks, Cloud Agents, and multi-service integration
+  - Created Cloud Agent configuration (.cursor/cloud-agents/auto-fix-issue.json) for automatic issue fixing
+  - Created GitHub Actions workflow (.github/workflows/auto-fix-issue.yml) for triggering automation on issue events
+  - Created implementation task manifest (sessions/tasks/h-implement-automation-strategy.md) with phased approach
+next:
+  - Pick up sessions/tasks/h-implement-automation-strategy.md as next active task
+  - Phase 1: Set up GitHub secrets (CURSOR_API_KEY, WEBHOOK_URL) and test end-to-end automation
+  - Phase 1: Validate Cloud Agent config and GitHub Actions workflow with test issues
+  - Phase 1: Test excluded label handling, complexity detection, and error scenarios
+  - Phase 2: Integrate /pm:issue-analyze for complexity assessment before auto-fixing
+  - Phase 2: Implement PR auto-merge for low-risk changes with safety checks
+  - Phase 2: Add monitoring and observability for automation success rates
+  - Phase 3: Design and implement Linear integration (polling service, status sync)
+context_files:
+  - docs/automation-strategy.md
+  - .cursor/cloud-agents/auto-fix-issue.json
+  - .github/workflows/auto-fix-issue.yml
+  - sessions/tasks/h-implement-automation-strategy.md
+  - .cursor/cloud-agents/webhooks/setup-guide.md
+  - .claude/commands/pm/issue-start.md
+  - .claude/commands/pm/issue-analyze.md
+```
+
+```yaml
+schema_version: "1.0"
 timestamp: 2025-01-20T00:00:00Z
 from: cursor
 to: claude
@@ -201,7 +264,7 @@ context_files:
   - docs/ai_handoffs.md
   - docs/agent_bridge_protocol.md
   - claude.md
-  - .claude/skills/handoff-receiver.md
+  - .claude/skills/handoff-receiver/SKILL.md
   - scripts/validate-handoffs.sh
 ```
 

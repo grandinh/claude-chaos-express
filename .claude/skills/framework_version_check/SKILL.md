@@ -1,3 +1,9 @@
+---
+name: framework_version_check
+description: Validate version synchronization between claude.md and claude-reference.md to ensure framework documentation consistency and detect version drift
+schema_version: 1.0
+---
+
 # framework_version_check
 
 **Type:** ANALYSIS-ONLY

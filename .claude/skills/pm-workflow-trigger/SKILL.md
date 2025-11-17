@@ -1,3 +1,9 @@
+---
+name: pm-workflow-trigger
+description: Natural language wrapper for PM workflow commands - automatically triggers /pm:epic-start, /pm:issue-start, /pm:prd-parse when users express PM workflow intent
+schema_version: 1.0
+---
+
 # pm-workflow-trigger
 
 **Type:** WRITE-CAPABLE

@@ -1,3 +1,9 @@
+---
+name: skill-assessor
+description: Orchestrate comprehensive assessment of newly created skills to determine if they should auto-trigger using context-gathering, code-analyzer, and optional research-expert agents with prioritized evaluation criteria
+schema_version: 1.0
+---
+
 # skill-assessor
 
 **Type:** ANALYSIS-ONLY
@@ -72,7 +78,7 @@ When a new skill file is detected in `.claude/skills/`, this skill coordinates a
 
 **Invoke context-gathering agent** with prompt:
 ```
-Analyze the skill file at `.claude/skills/[skill-name].md` and provide:
+Analyze the skill file at `.claude/skills/[skill-name]/SKILL.md` and provide:
 1. Comprehensive summary of skill's purpose and behavior
 2. Identification of the problem domain it addresses
 3. Expected user interaction patterns
@@ -229,7 +235,7 @@ After each assessment, the following should be added to `context/decisions.md`:
 ```markdown
 ### Skill Assessment: [skill-name] - [YYYY-MM-DD]
 
-**Skill File:** `.claude/skills/[skill-name].md`
+**Skill File:** `.claude/skills/[skill-name]/SKILL.md`
 **Assessed By:** skill-assessor (context-gathering + code-analyzer [+ research-expert])
 
 **Purpose**: [Brief description of what skill does]
@@ -277,8 +283,8 @@ skill-assessor response:
 
 **Example 2: Hook detects new skill creation**
 
-[Hook detects `.claude/skills/api-design-assistant.md` was created]
-Hook stderr: "[New Skill Detected] api-design-assistant.md created but not yet in skill-rules.json..."
+[Hook detects `.claude/skills/api-design-assistant/SKILL.md` was created]
+Hook stderr: "[New Skill Detected] api-design-assistant/SKILL.md created but not yet in skill-rules.json..."
 
 Claude: "I'll assess this skill using skill-assessor."
 
@@ -301,7 +307,7 @@ skill-assessor response:
 
 This skill works in conjunction with the `post_tool_use.js` hook:
 
-1. Hook detects new skill file creation in `.claude/skills/*.md`
+1. Hook detects new skill file creation in `.claude/skills/*/SKILL.md`
 2. Hook prints stderr suggestion to assess the skill
 3. Claude sees the suggestion and invokes skill-assessor
 4. skill-assessor orchestrates agent analysis and evaluation

@@ -289,6 +289,398 @@ Agent instructions ("Wait for user confirmation before proceeding") **override**
 - Systematic tracking of findings without losing them
 - User maintains control over what becomes a task vs. what gets ignored
 
+## Implementation Instructions
+
+### Step 1: Enhance Pause Detection in post_tool_use.js
+
+**File:** `sessions/hooks/post_tool_use.js`
+
+**Location:** After line 110 (in `shouldPauseForUserInput` function), the code-review detection already exists. We need to enhance it to store findings in state.
+
+**Action:** Modify the pause detection section (around lines 130-142) to store code-review findings when detected:
+
+```javascript
+//!> Subagent cleanup
+if (toolName === "Task" && STATE.flags.subagent) {
+    // Check if agent requested pause before cleaning up
+    if (shouldPauseForUserInput(toolName, toolOutput)) {
+        // Check if this is a code-review findings pause
+        const isCodeReviewFindings = toolOutput.match(/\[FINDINGS: Code Review\]/);
+        
+        if (isCodeReviewFindings) {
+            // Extract findings from output
+            const findings = extractCodeReviewFindings(toolOutput);
+            editState(s => {
+                s.flags.waiting_for_user_input = true;
+                s.flags.pause_reason = "code_review_findings";
+                s.flags.code_review_findings = findings; // Store findings for task creation
+            });
+            console.error("[PAUSE] Code-review completed with findings. Waiting for user response...");
+        } else {
+            // Other pause types (existing behavior)
+            editState(s => {
+                s.flags.waiting_for_user_input = true;
+                s.flags.pause_reason = "agent_requested";
+            });
+            console.error("[PAUSE] Agent requested user input. Waiting for response...");
+        }
+        // Exit before cleanup - transcript directories preserved for resume
+        process.exit(0);
+    }
+    // ... rest of cleanup code
+}
+```
+
+**Add helper function** (before the subagent cleanup section, around line 118):
+
+```javascript
+//!> Extract code-review findings from output
+function extractCodeReviewFindings(output) {
+    const findings = {
+        critical: [],
+        warnings: [],
+        suggestions: []
+    };
+    
+    // Extract critical issues (🔴)
+    const criticalMatch = output.match(/Critical Issues?:\s*\n([\s\S]*?)(?=Warnings?:|Suggestions?:|How would you like|Your choice:|$)/i);
+    if (criticalMatch) {
+        const criticalText = criticalMatch[1];
+        // Extract each finding (lines starting with □ or - or numbered)
+        const criticalItems = criticalText.split(/\n/).filter(line => {
+            return line.trim().match(/^[□\-\d\.]\s*(.+)/);
+        }).map(line => {
+            const match = line.match(/^[□\-\d\.]\s*(.+)/);
+            return match ? match[1].trim() : null;
+        }).filter(Boolean);
+        findings.critical = criticalItems;
+    }
+    
+    // Extract warnings (🟡)
+    const warningsMatch = output.match(/Warnings?:\s*\n([\s\S]*?)(?=Suggestions?:|How would you like|Your choice:|$)/i);
+    if (warningsMatch) {
+        const warningsText = warningsMatch[1];
+        const warningItems = warningsText.split(/\n/).filter(line => {
+            return line.trim().match(/^[□\-\d\.]\s*(.+)/);
+        }).map(line => {
+            const match = line.match(/^[□\-\d\.]\s*(.+)/);
+            return match ? match[1].trim() : null;
+        }).filter(Boolean);
+        findings.warnings = warningItems;
+    }
+    
+    // Extract suggestions (🟢)
+    const suggestionsMatch = output.match(/Suggestions?:\s*\n([\s\S]*?)(?=How would you like|Your choice:|$)/i);
+    if (suggestionsMatch) {
+        const suggestionsText = suggestionsMatch[1];
+        const suggestionItems = suggestionsText.split(/\n/).filter(line => {
+            return line.trim().match(/^[□\-\d\.]\s*(.+)/);
+        }).map(line => {
+            const match = line.match(/^[□\-\d\.]\s*(.+)/);
+            return match ? match[1].trim() : null;
+        }).filter(Boolean);
+        findings.suggestions = suggestionItems;
+    }
+    
+    return findings;
+}
+//!<
+```
+
+### Step 2: Add Response Parsing in user_messages.js
+
+**File:** `sessions/hooks/user_messages.js`
+
+**Location:** After line 235 (in the "RESUME AFTER PAUSE" section)
+
+**Action:** Replace the existing resume logic (lines 228-235) with enhanced code-review response handling:
+
+```javascript
+/// ===== RESUME AFTER PAUSE ===== ///
+//!> Resume after user input
+if (STATE.flags.waiting_for_user_input) {
+    // Check if this is a code-review findings response
+    if (STATE.flags.pause_reason === "code_review_findings") {
+        const response = parseCodeReviewResponse(prompt);
+        
+        if (response === "YES" || response === "1") {
+            // User wants to fix issues now - stay in current task
+            editState(s => {
+                s.flags.waiting_for_user_input = false;
+                s.flags.pause_reason = null;
+                s.flags.code_review_findings = null; // Clear findings
+            });
+            // Workflow continues in current task
+        } else if (response === "NO" || response === "2") {
+            // User wants to proceed - clear flags and continue workflow
+            editState(s => {
+                s.flags.waiting_for_user_input = false;
+                s.flags.pause_reason = null;
+                s.flags.code_review_findings = null;
+            });
+            // Workflow continues to next agent
+        } else if (response === "LOG ALL" || response === "3") {
+            // Create tasks for all findings
+            const findings = STATE.flags.code_review_findings || { critical: [], warnings: [], suggestions: [] };
+            const createdTasks = createCodeReviewTasks(findings, "ALL");
+            
+            // Report created tasks
+            console.error(`\n[CODE-REVIEW] Created ${createdTasks.length} tasks:\n${createdTasks.map(t => `  - ${t}`).join('\n')}\n`);
+            
+            // Clear flags and continue
+            editState(s => {
+                s.flags.waiting_for_user_input = false;
+                s.flags.pause_reason = null;
+                s.flags.code_review_findings = null;
+            });
+        } else if (response === "SELECT" || response === "4") {
+            // User wants to select which findings become tasks
+            // For now, treat SELECT same as LOG ALL (multi-select UI can be added later)
+            // TODO: Implement multi-select parsing
+            const findings = STATE.flags.code_review_findings || { critical: [], warnings: [], suggestions: [] };
+            const createdTasks = createCodeReviewTasks(findings, "ALL");
+            
+            console.error(`\n[CODE-REVIEW] Created ${createdTasks.length} tasks:\n${createdTasks.map(t => `  - ${t}`).join('\n')}\n`);
+            
+            editState(s => {
+                s.flags.waiting_for_user_input = false;
+                s.flags.pause_reason = null;
+                s.flags.code_review_findings = null;
+            });
+        } else {
+            // Unrecognized response - keep waiting
+            console.error("[WARNING] Unrecognized code-review response. Please respond with: YES (1), NO (2), LOG ALL (3), or SELECT (4)");
+        }
+    } else {
+        // Other pause types (existing behavior)
+        editState(s => {
+            s.flags.waiting_for_user_input = false;
+            s.flags.pause_reason = null;
+        });
+    }
+}
+//!<
+```
+
+**Add helper functions** (before the RESUME AFTER PAUSE section, around line 220):
+
+```javascript
+//!> Parse code-review response from user message
+function parseCodeReviewResponse(message) {
+    const msg = message.trim().toUpperCase();
+    
+    // Check for explicit options
+    if (msg.match(/^(YES|1|FIX NOW|FIX ISSUES)/)) return "YES";
+    if (msg.match(/^(NO|2|PROCEED|CONTINUE|ACCEPT)/)) return "NO";
+    if (msg.match(/^(LOG ALL|3|CREATE ALL|CREATE TASKS)/)) return "LOG ALL";
+    if (msg.match(/^(SELECT|4|CHOOSE|PICK)/)) return "SELECT";
+    
+    // Check for numeric responses
+    if (msg === "1") return "YES";
+    if (msg === "2") return "NO";
+    if (msg === "3") return "LOG ALL";
+    if (msg === "4") return "SELECT";
+    
+    return null;
+}
+//!<
+
+//!> Create CODE-REVIEW task files
+function createCodeReviewTasks(findings, mode) {
+    const createdTasks = [];
+    const tasksDir = path.join(PROJECT_ROOT, 'sessions', 'tasks');
+    const templatePath = path.join(tasksDir, 'TEMPLATE.md');
+    
+    // Read template
+    let template = "";
+    if (fs.existsSync(templatePath)) {
+        template = fs.readFileSync(templatePath, 'utf-8');
+    } else {
+        // Fallback template
+        template = `---
+name: {name}
+status: pending
+created: {date}
+---
+
+# {title}
+
+## Problem/Goal
+{description}
+
+## Success Criteria
+- [ ] Fix the issue identified in code review
+
+## Context Manifest
+**Source:** Code review finding from task completion
+**Original Finding:** {original_finding}
+
+## Work Log
+`;
+    }
+    
+    // Create tasks for critical issues
+    findings.critical.forEach((finding, index) => {
+        const taskName = sanitizeTaskName(`h-CODE-REVIEW-critical-${finding.substring(0, 50)}`);
+        const taskPath = path.join(tasksDir, `${taskName}.md`);
+        
+        // Skip if already exists
+        if (fs.existsSync(taskPath)) {
+            return;
+        }
+        
+        const taskContent = template
+            .replace(/{name}/g, taskName.replace('.md', ''))
+            .replace(/{date}/g, new Date().toISOString().split('T')[0])
+            .replace(/{title}/g, `CODE-REVIEW: Critical - ${finding.substring(0, 100)}`)
+            .replace(/{description}/g, finding)
+            .replace(/{original_finding}/g, finding);
+        
+        fs.writeFileSync(taskPath, taskContent);
+        createdTasks.push(`${taskName}.md`);
+    });
+    
+    // Create tasks for warnings
+    findings.warnings.forEach((finding, index) => {
+        const taskName = sanitizeTaskName(`m-CODE-REVIEW-warning-${finding.substring(0, 50)}`);
+        const taskPath = path.join(tasksDir, `${taskName}.md`);
+        
+        if (fs.existsSync(taskPath)) {
+            return;
+        }
+        
+        const taskContent = template
+            .replace(/{name}/g, taskName.replace('.md', ''))
+            .replace(/{date}/g, new Date().toISOString().split('T')[0])
+            .replace(/{title}/g, `CODE-REVIEW: Warning - ${finding.substring(0, 100)}`)
+            .replace(/{description}/g, finding)
+            .replace(/{original_finding}/g, finding);
+        
+        fs.writeFileSync(taskPath, taskContent);
+        createdTasks.push(`${taskName}.md`);
+    });
+    
+    // Create tasks for suggestions
+    findings.suggestions.forEach((finding, index) => {
+        const taskName = sanitizeTaskName(`l-CODE-REVIEW-suggestion-${finding.substring(0, 50)}`);
+        const taskPath = path.join(tasksDir, `${taskName}.md`);
+        
+        if (fs.existsSync(taskPath)) {
+            return;
+        }
+        
+        const taskContent = template
+            .replace(/{name}/g, taskName.replace('.md', ''))
+            .replace(/{date}/g, new Date().toISOString().split('T')[0])
+            .replace(/{title}/g, `CODE-REVIEW: Suggestion - ${finding.substring(0, 100)}`)
+            .replace(/{description}/g, finding)
+            .replace(/{original_finding}/g, finding);
+        
+        fs.writeFileSync(taskPath, taskContent);
+        createdTasks.push(`${taskName}.md`);
+    });
+    
+    return createdTasks;
+}
+
+//!> Sanitize task name for filename
+function sanitizeTaskName(name) {
+    return name
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .substring(0, 100); // Limit length
+}
+//!<
+```
+
+### Step 3: Update shared_state.js to Support Findings Storage
+
+**File:** `sessions/hooks/shared_state.js`
+
+**Location:** Find the `SessionsFlags` class definition (search for `class SessionsFlags`)
+
+**Action:** Add `code_review_findings` field to the class:
+
+```javascript
+class SessionsFlags {
+    constructor() {
+        // ... existing fields ...
+        this.waiting_for_user_input = false;
+        this.pause_reason = null;
+        this.code_review_findings = null; // NEW: Store findings for task creation
+        // ... rest of fields ...
+    }
+    
+    // ... existing methods ...
+}
+```
+
+### Step 4: Add Natural Language Triggers
+
+**File:** `.claude/skills/skill-rules.json` (or wherever skill rules are stored)
+
+**Action:** Find or create entry for `code-review-trigger` skill and add triggers:
+
+```json
+{
+  "code-review-trigger": {
+    "type": "ANALYSIS-ONLY",
+    "skillType": "trigger",
+    "daicMode": ["DISCUSS", "ALIGN", "IMPLEMENT", "CHECK"],
+    "priority": "medium",
+    "triggers": {
+      "keywords": [
+        "review this code",
+        "check for bugs",
+        "validate code quality",
+        "code review",
+        "review code",
+        "check code quality",
+        "analyze code",
+        "code analysis",
+        "find bugs",
+        "code quality check"
+      ],
+      "patterns": [
+        "(review|check|validate|analyze).*?(code|quality|bugs|issues)",
+        "code.*?(review|quality|check|analysis)",
+        "(find|identify|detect).*?(bugs|issues|problems).*?code"
+      ]
+    }
+  }
+}
+```
+
+### Step 5: Verify Protocol Already Has Format
+
+**File:** `sessions/protocols/task-completion/task-completion.md`
+
+**Action:** Verify the protocol already includes the 4-option format (it does, see lines 31-63). No changes needed unless format needs adjustment.
+
+### Step 6: Testing
+
+1. **Test pause detection:**
+   - Run a task completion that triggers code-review
+   - Verify workflow pauses when findings are present
+   - Verify findings are stored in state
+
+2. **Test response parsing:**
+   - Respond with "YES" - verify workflow continues in current task
+   - Respond with "NO" - verify workflow continues to next agent
+   - Respond with "LOG ALL" - verify tasks are created and workflow continues
+   - Respond with "SELECT" - verify tasks are created (multi-select can be enhanced later)
+
+3. **Test task creation:**
+   - Verify tasks are created with correct naming pattern
+   - Verify tasks have correct priority prefixes (h-/m-/l-)
+   - Verify tasks include original finding in context
+
+4. **Test natural language triggers:**
+   - Try phrases like "review this code", "check for bugs"
+   - Verify code-review skill/command is suggested or invoked
+
 ## Work Log
 
 <!-- Work log entries will be added during implementation -->

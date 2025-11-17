@@ -1,3 +1,9 @@
+---
+name: handoff-receiver
+description: Parse and execute incoming handoffs from Cursor following the normalized handoff schema with mixed-capability phases (analysis and write-capable)
+schema_version: 1.0
+---
+
 # Handoff Receiver Skill
 
 ## Purpose

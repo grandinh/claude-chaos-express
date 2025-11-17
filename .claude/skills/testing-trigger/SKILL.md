@@ -1,3 +1,9 @@
+---
+name: testing-trigger
+description: Natural language wrapper for testing commands - automatically triggers /testing:run when users request test execution
+schema_version: 1.0
+---
+
 # testing-trigger
 
 **Type:** ANALYSIS-ONLY

@@ -1,3 +1,9 @@
+---
+name: framework_repair_suggester
+description: Detect framework and tooling issues then suggest creating REPAIR- tasks to address them systematically - ANALYSIS-ONLY skill that identifies problems and proposes structured fixes
+schema_version: 1.0
+---
+
 # framework_repair_suggester
 
 **Type:** ANALYSIS-ONLY
@@ -169,7 +175,7 @@ Write-gating enforcement is broken. Write tools (Edit, Write, MultiEdit) are not
 Skills are configured in skill-rules.json but not activating when expected. This suggests either trigger patterns are incorrect, or the skill activation system isn't working properly.
 
 **Investigation Steps:**
-1. Verify .claude/skills/*.md files exist for all configured skills
+1. Verify .claude/skills/*/SKILL.md files exist for all configured skills
 2. Test skill loading with simple trigger phrases
 3. Review auto-trigger implementation (if any)
 4. Check Claude Code skill loading mechanism
@@ -177,7 +183,7 @@ Skills are configured in skill-rules.json but not activating when expected. This
 
 **Files to Review:**
 - .claude/skills/skill-rules.json
-- .claude/skills/*.md (all skill prompt files)
+- .claude/skills/*/SKILL.md (all skill prompt files)
 - Skill activation logs (if available)
 
 **Proposed Fix:**

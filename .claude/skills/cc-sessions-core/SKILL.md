@@ -1,3 +1,9 @@
+---
+name: cc-sessions-core
+description: Provide comprehensive guidance for developing and maintaining the cc-sessions framework core functionality - primary skill for hooks, sessions, tasks, middleware, route handlers, and API endpoints
+schema_version: 1.0
+---
+
 # cc-sessions-core
 
 **Type:** WRITE-CAPABLE

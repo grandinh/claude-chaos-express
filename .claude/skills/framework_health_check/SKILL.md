@@ -1,3 +1,9 @@
+---
+name: framework_health_check
+description: Execute comprehensive framework health checks to validate core cc-sessions functionality including write-gating, state persistence, skill precedence, LCMP freshness, and handoff log structure
+schema_version: 1.0
+---
+
 # framework_health_check
 
 **Type:** ANALYSIS-ONLY

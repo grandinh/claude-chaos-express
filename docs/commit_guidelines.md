@@ -365,7 +365,7 @@ sessions exceed 50% of window and contain durable learnings.
 
 Manifested changes:
 - .claude/skills/skill-rules.json (new skill definition)
-- .claude/skills/lcmp_recommendation.md (skill prompt)
+- .claude/skills/lcmp_recommendation/SKILL.md (skill prompt)
 
 Awakening vector: Triggers on keywords: /squish, compaction,
 LCMP, context cleanup

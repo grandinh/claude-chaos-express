@@ -1,3 +1,9 @@
+---
+name: error-tracking
+description: Provide analysis and recommendations for error handling patterns, Sentry integration, and error monitoring strategies - ANALYSIS-ONLY skill that provides guidance without modifying code
+schema_version: 1.0
+---
+
 # error-tracking
 
 **Type:** ANALYSIS-ONLY
